@@ -1,0 +1,1 @@
+print('Result: ' + str(sum(range(101))))

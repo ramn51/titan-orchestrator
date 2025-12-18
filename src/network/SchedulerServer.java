@@ -6,10 +6,13 @@ import scheduler.WorkerRegistry;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -21,6 +24,8 @@ public class SchedulerServer {
     private final ExecutorService threadPool;
     Scheduler scheduler;
     private final ServerSocket serverSocket;
+
+    private static final String PERM_FILES_DIR = "perm_files";
 
     public SchedulerServer(int port, Scheduler scheduler) throws IOException {
         this.port = port;
@@ -83,6 +88,58 @@ public class SchedulerServer {
         }
     }
 
+    private String handleDeployRequest(String fileName) {
+        try {
+            File file = new File(PERM_FILES_DIR + File.separator + fileName);
+            if (!file.exists()) {
+                return "ERROR: File not found in " + PERM_FILES_DIR;
+            }
+
+            byte[] fileBytes = Files.readAllBytes(file.toPath());
+            String base64Content = Base64.getEncoder().encodeToString(fileBytes);
+
+            // 2. Construct a Payload that contains EVERYTHING the worker needs
+            // Format: DEPLOY_PAYLOAD|filename|base64data
+            String payload = "DEPLOY_PAYLOAD|" + fileName + "|" + base64Content;
+            Job job = new Job(payload, 1, 0);
+            scheduler.submitJob(job);
+
+            System.out.println("📦 [DEPLOY] Job queued for file: " + fileName);
+            return "DEPLOY_QUEUED";
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "ERROR: Server File IO issue";
+        }
+    }
+
+
+    private String handleRunScript(String fileName){
+        try {
+
+
+            File file = new File(PERM_FILES_DIR + File.separator + fileName);
+            if (!file.exists()) {
+                return "ERROR: File not found in " + PERM_FILES_DIR;
+            }
+
+            byte[] fileBytes = Files.readAllBytes(file.toPath());
+            String base64Content = Base64.getEncoder().encodeToString(fileBytes);
+
+
+            if (base64Content == null) return "ERROR: File not found";
+
+            String payload = "RUN_PAYLOAD|" + fileName + "|" + base64Content;
+            // Payload: RUN_PAYLOAD|filename|base64
+            Job job = new Job(payload, 1, 0);
+            scheduler.submitJob(job);
+            return "JOB_QUEUED";
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "ERROR: Server File IO issue";
+        }
+    }
+
     private void parseAndSubmitDAG(String request){
         String [] jobs = request.split(";");
         for(String jobDef: jobs){
@@ -96,7 +153,28 @@ public class SchedulerServer {
         }
     }
 
+
+
+
     private String processCommand(String request){
+        if (request.startsWith("DEPLOY")) {
+            // Expected format: DEPLOY|server.py
+            String[] parts = request.split("\\|");
+            if (parts.length < 2) return "ERROR: Missing filename";
+
+            String fileName = parts[1];
+            return handleDeployRequest(fileName);
+        }
+
+        if (request.startsWith("RUN")) {
+            // Format: EXECUTE RUN_SCRIPT|filename
+            String[] parts = request.split("\\|");
+            if (parts.length < 2) return "ERROR: Missing filename";
+            String filename = parts[1];
+
+            return handleRunScript(filename);
+        }
+
         if (request.equalsIgnoreCase("STATS")) {
             return scheduler.getSystemStats();
         }

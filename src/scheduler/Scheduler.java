@@ -172,7 +172,10 @@ public class Scheduler {
                 System.out.println(" Job Processing: " + job);
 
                 String[] parts = job.getPayload().split("\\|", 2);
-                String reqTaskSkill = parts[0];
+                String rawHeader = parts[0];
+                String reqTaskSkill = (rawHeader.equals("DEPLOY_PAYLOAD") || rawHeader.equals("RUN_PAYLOAD"))
+                        ? "GENERAL"
+                        : rawHeader;
 
                 List<Worker> availableWorkers = workerRegistry.getWorkersByCapability(reqTaskSkill);
                 if(availableWorkers.isEmpty()){
@@ -210,19 +213,25 @@ public class Scheduler {
                 System.out.println("🚀 Dispatching " + job.getPayload() + " to Worker " + selectedWorker.port());
 
                 try{
-                    String response = schedulerClient.sendRequest(selectedWorker.host(), selectedWorker.port(),
-                            "EXECUTE " + job.getPayload());
+//                    String response = schedulerClient.sendRequest(selectedWorker.host(), selectedWorker.port(),
+//                            "EXECUTE " + job.getPayload());
 
-                    if (response != null && !response.startsWith("ERROR") && !response.startsWith("JOB_FAILED")) {
+                        String response = executeJobRequest(job, selectedWorker);
                         System.out.println("✅ Job Finished: " + response);
                         job.setStatus(Job.Status.COMPLETED);
                         history.put(job.getId(), job.getStatus());
-
                         unlockChildren(job.getId());
-                    } else {
-                        System.err.println("❌ Job Failed on Worker " + selectedWorker.port() + ": " + response);
-                        throw new RuntimeException("Worker returned error: " + response);
-                    }
+
+//                    if (response != null && !response.startsWith("ERROR") && !response.startsWith("JOB_FAILED")) {
+//                        System.out.println("✅ Job Finished: " + response);
+//                        job.setStatus(Job.Status.COMPLETED);
+//                        history.put(job.getId(), job.getStatus());
+//
+//                        unlockChildren(job.getId());
+//                    } else {
+//                        System.err.println("❌ Job Failed on Worker " + selectedWorker.port() + ": " + response);
+//                        throw new RuntimeException("Worker returned error: " + response);
+//                    }
                 } catch (Exception e){
                     handleJobFailure(job);
 //                    history.put(job.getId(), job.getStatus());
@@ -246,6 +255,78 @@ public class Scheduler {
             history.put(job.getId(), Job.Status.PENDING);
             taskQueue.offer(job);
         }
+    }
+
+    private String executeJobRequest(Job job, Worker worker) throws Exception {
+        if (job.getPayload().startsWith("DEPLOY_PAYLOAD")) {
+            return executeDeploySequence(job, worker);
+        } else if (job.getPayload().startsWith("RUN_PAYLOAD")) {
+            return executeRunOneOff(job, worker);
+        }
+        else {
+            return executeStandardTask(job, worker);
+        }
+    }
+
+    private String executeStandardTask(Job job, Worker worker) throws Exception {
+        return sendExecuteCommand(worker, job.getPayload());
+    }
+
+    private String executeDeploySequence(Job job, Worker worker) throws Exception {
+        String[] parts = job.getPayload().split("\\|", 3);
+        String filename = parts[1];
+        String base64Script = parts[2];
+
+        // Step 1: Stage
+        String stageResp = sendExecuteCommand(worker, "STAGE_FILE|" + filename + "|" + base64Script);
+        if (!stageResp.contains("FILE_SAVED")) {
+            throw new RuntimeException("Staging failed. Expected FILE_SAVED, got: " + stageResp);
+        }
+        System.out.println("✅ File Staged");
+
+        // Step 2: Start
+        String startResp = sendExecuteCommand(worker, "START_SERVICE|" + filename + "|" + job.getId());
+        if (!startResp.contains("DEPLOYED_SUCCESS")) {
+            throw new RuntimeException("Start failed. Expected DEPLOYED_SUCCESS, got: " + startResp);
+        }
+
+        String pid = startResp.contains("PID:") ? startResp.split("PID:")[1].trim() : "UNKNOWN";
+        return "DEPLOYED_SUCCESS PID:" + pid;
+    }
+
+    private String executeRunOneOff(Job job, Worker worker) throws Exception {
+        String[] parts = job.getPayload().split("\\|", 3);
+        String filename = parts[1];
+        String base64Script = parts[2];
+
+        // STEP 1: STAGE (Same as Deploy)
+        String stageResp = sendExecuteCommand(worker, "STAGE_FILE|" + filename + "|" + base64Script);
+        if (!stageResp.contains("FILE_SAVED")) {
+            throw new RuntimeException("Staging failed: " + stageResp);
+        }
+        System.out.println("✅ File Staged for Run");
+
+        // STEP 2: RUN AND WAIT
+        // Protocol: EXECUTE RUN_SCRIPT|filename
+        String runResp = sendExecuteCommand(worker, "RUN_SCRIPT|" + filename);
+
+        // Worker returns: COMPLETED|0|Output...
+        if (!runResp.startsWith("COMPLETED")) {
+            throw new RuntimeException("Run failed: " + runResp);
+        }
+
+        return "RESULT: " + runResp;
+    }
+
+    private String sendExecuteCommand(Worker worker, String rawCommand) throws Exception {
+        String request = "EXECUTE " + rawCommand;
+        String response = schedulerClient.sendRequest(worker.host(), worker.port(), request);
+
+        if (response == null || response.startsWith("ERROR") || response.startsWith("JOB_FAILED")) {
+            System.err.println("❌ Job Failed on Worker " + worker.port() + ": " + response);
+            throw new RuntimeException("Worker Error: " + response);
+        }
+        return response;
     }
 
     private void unlockChildren(String parentId){

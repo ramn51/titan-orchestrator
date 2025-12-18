@@ -1,13 +1,17 @@
 package network;
 
 import scheduler.TaskHandler;
+import scheduler.tasks.FileHandler;
 import scheduler.tasks.PdfConversionHandler;
+import scheduler.tasks.ScriptExecutorHandler;
+import scheduler.tasks.ServiceHandler;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,13 +40,15 @@ public class RpcWorkerServer {
         workerPool = Executors.newFixedThreadPool(MAX_THREADS);
         activeJobs =  new AtomicInteger(0);
 
-        addTaskHandler(capability);
+        addTaskHandler();
     }
 
-    public void addTaskHandler(String capability){
-        if(capability.contains("PDF_CONVERT")){
-            taskHanlderMap.put("PDF_CONVERT", new PdfConversionHandler());
-        }
+    public void addTaskHandler(){
+        taskHanlderMap.put("PDF_CONVERT", new PdfConversionHandler());
+        taskHanlderMap.put("STAGE_FILE", new FileHandler());
+        taskHanlderMap.put("START_SERVICE", new ServiceHandler("START"));
+        taskHanlderMap.put("STOP_SERVICE", new ServiceHandler("STOP"));
+        taskHanlderMap.put("RUN_SCRIPT", new ScriptExecutorHandler());
     }
 
     public void start() throws Exception {
@@ -170,7 +176,7 @@ public class RpcWorkerServer {
     }
 
     public static void main(String args[]) throws Exception{
-        RpcWorkerServer rpcWorkerServer = new RpcWorkerServer(8080, "localhost", 9090, "PDF_CONVERT");
+        RpcWorkerServer rpcWorkerServer = new RpcWorkerServer(8080, "localhost", 9090, "GENERAL");
         rpcWorkerServer.start();
     }
 }
