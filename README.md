@@ -1,88 +1,182 @@
------
+
+---
 
 # ⚡ Titan: Distributed Task Orchestrator
 
-**Titan** is a high-performance, distributed job scheduler and workflow orchestrator. It is designed to manage complex task lifecycles across a cluster of workers with a focus on reliability, priority, and resource efficiency.
+**Titan** is a high-performance, fault-tolerant distributed task orchestrator built from scratch in Java. Unlike traditional job schedulers, Titan implements a **"Push-Based" Resource-Aware Architecture**, making it capable of managing complex dependency graphs (DAGs), temporal workflows, and real-time load balancing without external dependencies like Zookeeper or Redis.
 
-> **Status:** Phase 5 Complete (Smart Resource Allocation & Scheduling)
+> **Status:** Phase 6 Complete (DAGs, Cascading Failures, CLI Dashboard)
 
 ## 🏗 System Architecture
 
-### 1\. The Scheduler (The Brain)
+Titan operates on a **Multi-Stage Queue Architecture** (often described as "Waterfall Scheduling"). A job must pass through three distinct gates before execution:
 
-* **Dual-Queue Engine:** \* **Waiting Room (`DelayQueue`):** Holds future/scheduled jobs with zero CPU overhead until their execution time.
-    * **Active Queue (`PriorityBlockingQueue`):** Manages ready-to-run jobs, ensuring high-priority (VIP) tasks jump to the front of the line.
-* **Smart Dispatcher:** Uses a **Least-Connections** algorithm. It queries worker health via heartbeats and routes tasks to the node with the lowest current load.
-* **Resilience Controller:** Implements a 3-strike retry policy, a **Dead Letter Queue (DLQ)** for poison-pill tasks, and network timeout handling to detect "zombie" workers.
+### 1. The Orchestrator (The Brain)
 
-### 2\. The Worker (The Limbs)
+* **Gate 1: Logic (DAG Engine):** Jobs start in the `DAG Waiting Room`. They are "Blocked" until all parent dependencies (defined in the DAG) successfully complete.
+* **Gate 2: Time (Delay Queue):** Once unblocked, jobs move to the `Waiting Room` where they sit with zero CPU overhead until their scheduled start time.
+* **Gate 3: Resources (Active Queue):** Finally, jobs enter the `PriorityQueue`. The **Smart Dispatcher** uses a **Least-Connections Algorithm** to push tasks to the worker with the lowest real-time load.
 
-* **Resource Guarding:** Enforces a `FixedThreadPool` limit (e.g., 4 concurrent tasks). If the worker is at capacity, it enters a `SATURATED` state and notifies the scheduler.
-* **Atomic Load Tracking:** Uses `AtomicInteger` to track real-time task count, reporting this via a `PONG|LOAD|MAX` handshake.
+### 2. The Worker (The Muscle)
 
-### 3\. The Protocol (The Language)
+* **Resource Guarding:** Enforces a strict `FixedThreadPool` limit. If saturated, it rejects new work to prevent cascading cluster failure.
+* **Atomic Load Tracking:** Reports real-time CPU/Task load back to the Master via `PONG` heartbeats.
 
-* **TitanProtocol:** A custom, length-prefixed binary protocol over TCP.
-* **Commands:** `REGISTER`, `SUBMIT`, `EXECUTE`, `PING/PONG`, `JOB_COMPLETE`.
+### 3. The Protocol (The Language)
 
------
+* **TitanProtocol:** A custom, length-prefixed binary protocol over TCP (no HTTP overhead).
+* **Commands:** `REGISTER`, `SUBMIT_DAG`, `EXECUTE`, `PING/PONG`, `STATS`.
+
+---
 
 ## ✅ Core Capabilities
 
-| Feature | Implementation Detail |
-| :--- | :--- |
-| **Fault Tolerance** | Automatic retries on worker crash; timeout detection. |
-| **Priority** | 3-level priority (Low, Normal, High) with "line-cutting" logic. |
-| **Scheduling** | Cron-like delay support via `DelayQueue`. |
-| **Load Balancing** | Smart "Least-Loaded" worker selection (Resource-Aware). |
-| **Discovery** | Dynamic worker registration; capability-based routing. |
+| Feature | Description |
+| --- | --- |
+| **🔗 Dependency Graphs** | Supports complex DAG patterns (Diamond, Fan-out/Fan-in). |
+| **💥 Cascading Failure** | Implements a **"Kill Switch."** If a parent job fails (and exhausts retries), the entire downstream branch is automatically frozen and cancelled to prevent data corruption. |
+| **⏳ Temporal Scheduling** | Jobs can be scheduled to run *immediately* after dependencies or after a fixed *time delay*. |
+| **⚡ Resource-Aware Push** | unlike standard BPMN engines (Activiti/Camunda) that use a **DB Polling** model, Titan **Pushes** tasks to the least-loaded worker for lower latency. |
+| **🛡️ Fault Tolerance** | Automatic 3-strike retry policy and Dead Letter Queue (DLQ) for "poison pill" tasks. |
 
------
+---
 
-## 🚀 Quick Start
+## 🐳 Quick Start (Docker)
 
-1.  **Start Scheduler:** `java scheduler.Scheduler 9090`
-2.  **Start Worker:** `java network.RpcWorkerServer 8080 localhost 9090 PDF_CONVERT`
-3.  **Submit Task:** `SUBMIT PDF_CONVERT|my_file.pdf|2|5000` (Skill | Data | Priority | Delay)
+The easiest way to run a full cluster (1 Scheduler + 3 Workers) is using Docker Compose.
 
------
+**1. Create `docker-compose.yml**`
+
+```yaml
+version: '3.8'
+services:
+  titan-scheduler:
+    build: .
+    command: ["java", "-cp", "out/production/DistributedOrchestrator", "scheduler.TitanMaster"]
+    ports:
+      - "9090:9090"
+  worker-1:
+    build: .
+    command: ["java", "-cp", "out/production/DistributedOrchestrator", "network.TitanWorker"]
+    depends_on:
+      - titan-scheduler
+
+```
+
+**2. Run the Cluster**
+
+```bash
+docker-compose up --build
+
+```
+
+**3. Connect via CLI**
+
+```bash
+java -cp out/production/DistributedOrchestrator client.TitanCli
+
+```
+
+---
+
+## 🖥️ Manual Setup (Localhost)
+
+If you prefer running without Docker, open **three separate terminals**:
+
+1. **Terminal 1 (Scheduler):**
+```bash
+java scheduler.TitanMaster
+# Output: ✅ SchedulerServer Listening on port 9090
+
+```
+
+
+2. **Terminal 2 (Worker):**
+```bash
+java network.TitanWorker
+# Output: ✅ Successfully registered with Scheduler!
+
+```
+
+
+3. **Terminal 3 (CLI):**
+```bash
+java client.TitanCli
+# Output: Connected to localhost:9090
+
+```
+
+
+
+---
+
+## 🎮 CLI Usage & Sample Output
+
+The Titan CLI provides a real-time dashboard into the "Brain" of the orchestrator.
+
+| Command | Usage | Description |
+| --- | --- | --- |
+| **Stats** | `stats` | View active workers, queue sizes, and blocked jobs. |
+| **Submit Job** | `submit <SKILL> <DATA>` | Submit a single, independent task. |
+| **Submit DAG** | `dag <RAW_STRING>` | Submit a complex dependency graph. |
+
+### Sample: The "Twin Engine" Stress Test
+
+(Running a fast "Diamond" Graph and a slow "Timer" Graph simultaneously)
+
+```text
+titan> stats
+📡 Server Response:
+
+--- 🛰️ TITAN SYSTEM MONITOR ---
+Active Workers:    3
+Execution Queue:   2 jobs      <-- (Parallel execution of Diamond branches)
+Delayed (Time):    1 jobs      <-- (Timer job waiting for 15s)
+Blocked (DAG):     1 jobs      <-- (Final merge step waiting for branches)
+Dead Letter (DLQ): 0 jobs
+-------------------------------
+Worker Status:
+ • [8081] Load: 1 | Skill: [TEST]
+ • [8082] Load: 1 | Skill: [TEST]
+
+```
+
+---
 
 ## 📂 Project Structure
 
 ```text
 src/
+├── client/
+│   └── TitanCli.java            # Remote CLI dashboard
 ├── network/
 │   ├── TitanProtocol.java       # Binary framing logic
-│   ├── RpcClient.java           # Scheduler's communication tool (with Timeouts)
-│   ├── RpcWorkerServer.java     # Worker implementation (Fixed Pool & Load Tracking)
-│   └── SchedulerServer.java     # Job ingestion server
+│   ├── RpcClient.java           # Communication with Timeouts
+│   ├── RpcWorkerServer.java     # Worker implementation
+│   └── TitanWorker.java         # Worker Entry Point
 ├── scheduler/
-│   ├── Job.java                 # FSM-based Task object (Comparable)
-│   ├── ScheduledJob.java        # DelayQueue wrapper
-│   ├── Worker.java              # Mutable worker state (Load & Health)
-│   ├── Scheduler.java           # The core "Brain" and Dispatch Loop
-│   └── WorkerRegistry.java      # Dynamic inventory of the cluster
+│   ├── Job.java                 # Task object (DAG & Status Logic)
+│   ├── Scheduler.java           # The core "Brain" (DAG + Delay + Dispatch)
+│   ├── TitanMaster.java         # Scheduler Entry Point
+│   └── WorkerRegistry.java      # Dynamic cluster inventory
+
 ```
 
+---
+
+## 🔮 Roadmap
+
 ### Phase 6: Workflow Orchestration (DAGs)
-Focus: Task Dependencies.
 
-[ ] Dependency Management: Support for Directed Acyclic Graphs (DAGs). "Task B starts only after Task A succeeds."
+* [x] **Dependency Management:** Support for Directed Acyclic Graphs (DAGs).
+* [x] **Cascading Failures:** Automatic cancellation of children if parent fails.
+* [x] **CLI:** Real-time system monitoring.
 
-[ ] Data Passing: Implementation of a shared "Context" or "Blob Store" to pass outputs from one worker to the next.
+### Phase 7: Persistence & Reliability (Next Up)
 
-### Phase 7: Persistence & Reliability
-Focus: Data Integrity.
+* [ ] **State Journaling:** Log job state changes (SQLite) to recover execution after a crash.
+* [ ] **Reconciliation Loop:** Recover "orphaned" tasks on startup.
 
-[ ] SQLite/Journaling: Log every job state change to disk to ensure 0% data loss during Scheduler restarts.
+### Phase 8: High Availability
 
-[ ] Reconciliation Loop: A startup process to recover "Running" jobs that were interrupted by a crash.
-
-### Phase 8: Cluster Observability
-Focus: Monitoring.
-
-[ ] Admin Dashboard: A lightweight CLI or Web UI to view real-time worker load, queue depth, and DLQ status.
-
-[ ] Centralized Logging: Aggregate worker logs at the Scheduler level for easier debugging.
-
------
+* [ ] **Leader Election:** Allow multiple Masters to run with automatic failover.
