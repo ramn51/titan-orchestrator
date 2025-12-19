@@ -1,5 +1,3 @@
----
-
 # 🛰️ Titan: A Distributed Job Orchestrator
 
 **Titan** is a **hybrid infrastructure** and **workload orchestrator** built from scratch in Java.
@@ -97,38 +95,43 @@ java client.TitanCli
 
 The easiest way to run a full cluster (1 Scheduler + 3 Workers) is using Docker Compose.
 
-**1. Create `docker-compose.yml`**
+**1. Create docker-compose.yml**
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   titan-scheduler:
     build: .
-    command: ["java", "-cp", "out/production/DistributedOrchestrator", "scheduler.TitanMaster"]
+    command:
+      - java
+      - -cp
+      - out/production/DistributedOrchestrator
+      - scheduler.TitanMaster
     ports:
       - "9090:9090"
 
   worker-1:
     build: .
-    command: ["java", "-cp", "out/production/DistributedOrchestrator", "network.TitanWorker"]
+    command:
+      - java
+      - -cp
+      - out/production/DistributedOrchestrator
+      - network.TitanWorker
     depends_on:
       - titan-scheduler
-
 ```
 
 **2. Run the Cluster**
 
 ```bash
 docker-compose up --build
-
 ```
 
 **3. Connect via CLI**
 
 ```bash
 java -cp out/production/DistributedOrchestrator client.TitanCli
-
 ```
 
 
