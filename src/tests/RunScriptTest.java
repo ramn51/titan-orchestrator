@@ -50,7 +50,7 @@ public class RunScriptTest {
 
         // Send RUN command
         // Protocol: RUN|filename
-        String response = sendSchedulerCommand("RUN|calc.py");
+        String response = sendSchedulerCommand(TitanProtocol.OP_RUN, "calc.py");
 
         System.out.println("<< Scheduler Response: " + response);
 
@@ -75,13 +75,16 @@ public class RunScriptTest {
         Files.write(Paths.get("perm_files", "calc.py"), py.getBytes());
     }
 
-    private static String sendSchedulerCommand(String request) throws IOException {
+    private static String sendSchedulerCommand(byte opCode, String payload) throws IOException {
         try (Socket socket = new Socket("localhost", SCHEDULER_PORT);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
 
-            TitanProtocol.send(out, request);
-            return TitanProtocol.read(in);
+            TitanProtocol.send(out, opCode, payload);
+
+            // Read Packet
+            TitanProtocol.TitanPacket packet = TitanProtocol.read(in);
+            return packet.payload;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

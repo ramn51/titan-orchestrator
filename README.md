@@ -1,36 +1,61 @@
 # 🛰️ Titan: A Distributed Job Orchestrator
 
-**Titan** is a **hybrid infrastructure** and **workload orchestrator** built from scratch in Java.
+**Titan** is a **hybrid distributed orchestrator** designed for small-to-medium scale environments.
 
-Unlike traditional job schedulers that merely execute tasks on static hardware, Titan functions as a **self-provisioning platform**. It blends the workload management capabilities of tools like Apache Airflow (DAGs, dependencies) with the node orchestration capabilities of Kubernetes (dynamic scaling, self-replication).
+It synthesizes the core capabilities of batch schedulers (DAGs, dependencies) and infrastructure managers (dynamic scaling) into a single, unified runtime.
 
-It doesn't just run your code; it intelligently expands the cluster infrastructure to meet the demands of your code.
+### Philosophy
+Titan is not designed to replace enterprise-grade tools like Kubernetes or Airflow. Instead, it offers a **lightweight alternative** for scenarios where running a full cluster stack is overkill. It strictly focuses on the *essential* primitives of orchestration—resolving dependencies and managing worker lifecycles—without the operational complexity, heavy dependencies, or steep learning curve of the larger ecosystems.
+
+### Core Capabilities
+Titan provides a streamlined environment for diverse workloads:
+* **Universal Execution:** Runs one-off operational scripts, long-running services, and compiled binaries in the same cluster.
+* **Hybrid DAGs:** Orchestrates dependency chains where a single DAG can mix ephemeral scripts, persistent services, and infrastructure provisioning tasks.
+* **Autonomous Operations:** Features built-in **self-scaling** (workers spawning new workers to handle burst loads) and **self-healing** (automatic job retries).
+
+*Built as a systems engineering initiative, Titan explores the "hard parts" of distributed computing—custom RPC protocols, consensus, and state management—implemented from scratch in Java with **zero external dependencies**.*
 
 ## [INFO] Key Features
 
 - **Dual-Layer Orchestration**:
     - **Workload Layer**: Manages complex job dependencies, retries, and scheduling priorities.
     - **Infrastructure Layer**: Workers act as infrastructure agents, capable of spawning new nodes (containers/processes) on demand to handle burst loads.
-- **DAG Execution Engine**: Supports complex dependency chains (e.g., *Task A → Task B & C → Task D*). It handles "Waiting Rooms" for blocked jobs and executes them automatically when dependencies resolve.
-- **Recursive Scaling ("Inception")**: A unique capability where Workers have the intelligence to spawn *new* Worker nodes dynamically based on workload instructions.
-- **Hybrid Payloads**: A unified pipeline that handles diverse task types:
-    -  **Script Execution**: Python/Shell scripts (Source distribution + Base64 encoding).
-    -  **Deployment**: JAR/Binary propagation (Bytecode distribution).
-    -  **Logical Tasks**: Email alerts, PDF conversions, DB cleanup signals.
-- **Custom TCP Protocol**: Efficient, binary-packed communication layer (`TITAN_PROTOCOL`) with "Smart Parsing" for variable-length payloads.
-- **Real-time Dashboard**: A Flask-based (Python) UI for visualizing cluster health, load, and active services.
+- **DAG-Based Scheduling**: Supports complex dependency chains (e.g., *Task A → Task B & C → Task D*). It handles "Waiting Rooms" for blocked jobs and executes them automatically when dependencies resolve.
+- **Recursive Scaling**: Workers can spawn new child processes (other Workers) on demand. This allows the cluster to scale horizontally on a single machine to utilize available CPU cores during high load.
+- **Hybrid Payloads**: Native support for diverse payloads without external runners:
+    -  **Scripts**: Python/Shell (Base64 encoded transfer).
+    -  **Binaries**: JAR/Binary propagation (Bytecode distribution).
+    -  **Ops Tasks**: Email alerts, PDF conversions, DB cleanup signals.
+- **Custom TCP Protocol**: Implements a custom wire protocol (`TITAN_PROTOCOL`) using fixed-header framing (Version + OpCode + Length). Designed to handle TCP fragmentation and avoid the overhead of text-based protocols like JSON.
+- **Real-time Dashboard**: A lightweight Flask (Python) UI to visualize node health, active job queues, and real-time logs..
 
 ## 🛠️ Architecture
 
-The system follows a classic **Master-Slave (Leader-Follower)** architecture:
+The system follows a **Leader-Follower** topology with a decoupled control plane:
 
 1. **Scheduler (Master - Port 9090):**
-    - The "Brain" of the cluster. Parses DAGs, manages the `JobQueue`, and assigns tasks via a **Least-Connections Load Balancing** strategy.
-
+    - Role: The "Brain" of the cluster.
+    - Responsibilities:
+        - Parses Job DAGs and builds execution trees.
+        - Manages the JobQueue and WaitingRoom (for tasks pending dependencies).
+        - Assigns tasks using a Least-Connections load-balancing algorithm.
+        - Maintains cluster state consistency via WAL.
 2. **RpcWorker (Node):**
     - The "Muscle" of the cluster. Executes generic payloads.
-    - **Self-Replication**: Can execute a `DEPLOY` job to spin up a child process (another Worker) on a different port, effectively scaling the cluster horizontally on demand.
+    - Responsibilities:
+      - Executes payloads (Python scripts, Shell commands, JARs).
+      - Streams generic logs via UDP to the aggregation layer.
+      - Listens for "Inception" commands to spawn child nodes.
+3. **The Protocol:**
+   - Communication between Master and Workers happens over a raw TCP socket using TITAN_PROTO:
+   [ HEADER (8 Bytes) ]
+   | Version (1B) | OpCode (1B) | Flags (1B) | Spare (1B) | Payload Length (4B) |
+   [ BODY ]
+   | Binary Payload (Variable) ... |
 
+4. **Zero-Dependency Architecture:**
+   - No external database: Manages state in-memory with a custom Write-Ahead Log (WAL) for crash recovery and durability.
+   - No external networking libs: Built on raw Java java.nio and java.net sockets.
 
 
 ##  File System

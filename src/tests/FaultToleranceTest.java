@@ -63,8 +63,8 @@ public class FaultToleranceTest {
                 try (Socket regSocket = new Socket("localhost", 9090);
                      DataOutputStream out = new DataOutputStream(regSocket.getOutputStream());
                      DataInputStream in = new DataInputStream(regSocket.getInputStream())) {
-                    TitanProtocol.send(out, "REGISTER||8082||PDF_CONVERT");
-                    TitanProtocol.read(in); // Wait for ACK
+                    TitanProtocol.send(out, TitanProtocol.OP_REGISTER, "8082||PDF_CONVERT");
+                    TitanProtocol.read(in); // Wait for ACK Packet
                     System.out.println("😈 Bad Worker (8082) Registered.");
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -76,12 +76,15 @@ public class FaultToleranceTest {
                     DataInputStream in = new DataInputStream(conn.getInputStream());
                     DataOutputStream out = new DataOutputStream(conn.getOutputStream());
 
-                    String req = TitanProtocol.read(in); // Read EXECUTE
-                    if (req.startsWith("PING")) {
-                        TitanProtocol.send(out, "PONG");
+                    TitanProtocol.TitanPacket req = TitanProtocol.read(in);
+
+                    // FIX: Check OpCode
+                    if (req.opCode == TitanProtocol.OP_HEARTBEAT) {
+                        TitanProtocol.send(out, TitanProtocol.OP_ACK, "PONG");
                     } else {
-                        System.out.println("😈 Bad Worker rejecting: " + req);
-                        TitanProtocol.send(out, "JOB_FAILED_POISON_PILL");
+                        System.out.println("😈 Bad Worker rejecting: " + req.payload);
+                        // FIX: Send OP_ERROR to trigger retry logic immediately
+                        TitanProtocol.send(out, TitanProtocol.OP_ERROR, "JOB_FAILED_POISON_PILL");
                     }
                     conn.close();
                 }
@@ -111,9 +114,12 @@ public class FaultToleranceTest {
         try (Socket client = new Socket("localhost", 9090);
              DataOutputStream out = new DataOutputStream(client.getOutputStream());
              DataInputStream in = new DataInputStream(client.getInputStream())) {
-            TitanProtocol.send(out, "SUBMIT " + payload);
-            String ack = TitanProtocol.read(in);
-            System.out.println("User Submitted: " + payload + " | Ack: " + ack);
+            // Use OP_SUBMIT_JOB, remove "SUBMIT " string prefix
+            TitanProtocol.send(out, TitanProtocol.OP_SUBMIT_JOB, payload);
+
+            // Read Packet
+            TitanProtocol.TitanPacket ack = TitanProtocol.read(in);
+            System.out.println("User Submitted: " + payload + " | Ack: " + ack.payload);
         } catch (Exception e) {
             e.printStackTrace();
         }

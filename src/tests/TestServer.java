@@ -19,11 +19,13 @@ public class TestServer {
                 try (Socket socket = server.accept()) {
                     // Read the request
                     DataInputStream in = new DataInputStream(socket.getInputStream());
-                    String msg = TitanProtocol.read(in);
-                    System.out.println("Message from client" + msg);
-
                     DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                    TitanProtocol.send(out, "Echo: " + msg + "Someof");
+
+                    TitanProtocol.TitanPacket packet = TitanProtocol.read(in);
+                    System.out.println("Message from client: " + packet.payload);
+
+                    // FIX 2: Send with OpCode (Using OP_DATA = 0x52)
+                    TitanProtocol.send(out, TitanProtocol.OP_DATA, "Echo: " + packet.payload + " SomeOf");
                 }
 
             } catch (Exception e) {
@@ -38,11 +40,12 @@ public class TestServer {
         try{
             Socket socket = new Socket("localhost", 9999);
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-            TitanProtocol.send(out, "Testing TCP!");
+            TitanProtocol.send(out, TitanProtocol.OP_DATA, "Testing TCP!");
 
             DataInputStream in = new DataInputStream(socket.getInputStream());
-            String response = TitanProtocol.read(in);
-            System.out.println("[Client] Got back: " + response);
+
+            TitanProtocol.TitanPacket response = TitanProtocol.read(in);
+            System.out.println("[Client] Got back: " + response.payload);
 
         } catch (Exception e){
             e.printStackTrace();

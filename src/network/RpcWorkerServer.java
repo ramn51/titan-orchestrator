@@ -49,13 +49,26 @@ public class RpcWorkerServer {
         taskHanlderMap.put("START_SERVICE", new ServiceHandler("START", this));
         taskHanlderMap.put("STOP_SERVICE", new ServiceHandler("STOP", this));
         taskHanlderMap.put("RUN_SCRIPT", new ScriptExecutorHandler());
+
+        taskHanlderMap.put("DEPLOY_PAYLOAD", new FileHandler());
+
+        // This is for Shutting down the worker
+        taskHanlderMap.put("SHUTDOWN_WORKER", (payload) -> {
+            new Thread(() -> {
+                try { Thread.sleep(1000); } catch (Exception e) {}
+                System.out.println("Received SHUTDOWN command. Exiting...");
+                System.exit(0);
+            }).start();
+            return "ACK_SHUTTING_DOWN";
+        });
     }
 
     public void start() throws Exception {
         System.out.println("DEBUG: Attempting to bind to port: " + this.port);
-        registerWithScheduler();
+
         try(ServerSocket serverSocket = new ServerSocket(port)){
             System.out.println("Worker Server started on port " + port);
+            registerWithScheduler();
 
             while(this.isRunning){
                 Socket clientSocket = serverSocket.accept();
@@ -71,13 +84,13 @@ public class RpcWorkerServer {
         try(Socket socket = new Socket(schedulerHost, schedulerPort);
             DataInputStream in = new DataInputStream(socket.getInputStream());
             DataOutputStream out = new DataOutputStream(socket.getOutputStream())){
-            String requestPayload = "REGISTER||"+  port + "||" + capability;
-            TitanProtocol.send(out, requestPayload);
-            String response = TitanProtocol.read(in);
-            if ("REGISTERED".equals(response)) {
+            String requestPayload = port + "||" + capability;
+            TitanProtocol.send(out, TitanProtocol.OP_REGISTER, requestPayload);
+            TitanProtocol.TitanPacket responsePacket = TitanProtocol.read(in);
+            if ("REGISTERED".equals(responsePacket.payload)) {
                 System.out.println("[OK] Successfully registered with Scheduler!");
             } else {
-                System.err.println("[FAIL] Registration failed: " + response);
+                System.err.println("[FAIL] Registration failed: " + responsePacket.payload);
             }
         }catch (IOException e){
             e.printStackTrace();
@@ -88,46 +101,94 @@ public class RpcWorkerServer {
         try(socket; DataInputStream in = new DataInputStream(socket.getInputStream());
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
         ){
-            String request = TitanProtocol.read(in);
-            if (request == null) {
-                return;
-            }
-//            System.out.println("Received command: " + request);
-            if (request.startsWith("PING")) {
-                TitanProtocol.send(out, "PONG|" + activeJobs.get() + "|" + MAX_THREADS);
-            }
-            else if(request.startsWith("EXECUTE")){
-                if(activeJobs.get() >= MAX_THREADS){
-                    TitanProtocol.send(out, "ERROR_WORKER_SATURATED");
-                } else{
-                    activeJobs.incrementAndGet();
-                    //.get() on the future to block THIS thread until the pool thread finishes
-                    //This keeps the socket open while the work is happening
-                    workerPool.submit(() ->{
-                        try{
-                            String response = processCommand(request);
-                            synchronized (out) {
-                                try {
-                                    TitanProtocol.send(out, response);
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                        } catch (Exception e){
-                            System.out.println("Some Erorr happened in the workerpool executor threads");
-                            return;
-                        } finally {
-                            activeJobs.decrementAndGet();
+            while (!socket.isClosed()) {
+                try {
+                    TitanProtocol.TitanPacket packet = TitanProtocol.read(in);
+
+                    if (packet.opCode == TitanProtocol.OP_HEARTBEAT) {
+                        String stats = "PONG|" + activeJobs.get() + "|" + MAX_THREADS;
+                        TitanProtocol.send(out, TitanProtocol.OP_ACK, stats);
+
+                    } else if (packet.opCode == TitanProtocol.OP_STAGE) {
+                        handleExecution(out, packet.payload, "STAGE_FILE");
+                    } else if (packet.opCode == TitanProtocol.OP_START_SERVICE) {
+                        handleExecution(out, packet.payload, "START_SERVICE");
+                    } else if (packet.opCode == TitanProtocol.OP_STOP) {
+                        handleExecution(out, packet.payload, "STOP_SERVICE");
+                    } else if (packet.opCode == TitanProtocol.OP_RUN) {
+                        if (packet.payload.startsWith("SHUTDOWN_WORKER")) {
+                            System.out.println("Worker received kill signal. Shutting down...");
+                            // Send confirmation back before dying
+                            TitanProtocol.send(out, TitanProtocol.OP_RUN, "SUCCESS: Worker shutting down.");
+                            Thread.sleep(100); // add busy waiting for the OS to handle the exit
+                            System.exit(0);
                         }
-                    }).get();
+
+                        handleExecution(out, packet.payload, "RUN_SCRIPT");
+                    }
+                } catch (EOFException e) {
+                    System.out.println("Scheduler disconnected.");
+                    break;
+                } catch (Exception e) {
+                    System.err.println("Error processing packet: " + e.getMessage());
+                    break;
                 }
             }
         } catch (IOException e){
-            System.err.println("Error handling client: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Connection error in clientHandler: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void handleExecution(DataOutputStream out, String payload, String forceTaskType) {
+        if(activeJobs.get() >= MAX_THREADS){
+            try {
+                TitanProtocol.send(out, TitanProtocol.OP_ERROR, "ERROR_WORKER_SATURATED");
+            } catch (IOException e) { e.printStackTrace(); }
+        } else {
+            activeJobs.incrementAndGet();
+            try {
+                workerPool.submit(() -> {
+                    try {
+                        // If forceTaskType is set (for DEPLOY), use it. Otherwise parse from payload.
+                        String response = (forceTaskType != null)
+                                ? processCommandExplicit(forceTaskType, payload)
+                                : processCommand(payload);
+
+                        byte status = response.startsWith("ERROR") || response.contains("FAILED")
+                                ? TitanProtocol.OP_ERROR
+                                : TitanProtocol.OP_ACK;
+
+                        synchronized (out) {
+                            try {
+                                TitanProtocol.send(out, status, response);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Worker execution error: " + e.getMessage());
+                    } finally {
+                        activeJobs.decrementAndGet();
+                    }
+                }).get();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private String processCommandExplicit(String taskType, String taskData) {
+        TaskHandler handler = taskHanlderMap.get(taskType);
+        if(handler!=null){
+            try{
+                return handler.execute(taskData);
+            } catch (Exception e){
+                return "JOB_FAILED " + e.getMessage();
+            }
+        }
+        return "ERROR: Unknown TaskType " + taskType;
     }
 
     public void notifyMasterOfServiceStop(String serviceId) {
@@ -135,9 +196,7 @@ public class RpcWorkerServer {
         try (Socket socket = new Socket(this.schedulerHost, this.schedulerPort);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
-
-            String message = "UNREGISTER_SERVICE|" + serviceId;
-            TitanProtocol.send(out, message);
+            TitanProtocol.send(out, TitanProtocol.OP_UNREGISTER_SERVICE, serviceId);
             System.out.println("[TitanProtocol] Sent UNREGISTER_SERVICE for " + serviceId);
 
         } catch (IOException e) {
@@ -145,16 +204,14 @@ public class RpcWorkerServer {
         }
     }
 
-    private String processCommand(String request){
-        if(request.startsWith("EXECUTE")){
-            // The request will be of the form EXECUTE PDF_CONVERT|fileName.docx
-            String jobData = request.substring(8);
-            String [] parts = jobData.split("\\|", 2);
+    private String processCommand(String payload){
+            // Payload format: "TASK_TYPE|ARGS..."
+            String[] parts = payload.split("\\|", 2);
             if(parts.length < 2)
                 return "INVALID_JOB_FORMAT";
 
-            String taskType = parts[0];
-            String payload = parts[1];
+            String taskType = parts[0]; // Ex: "START_SERVICE" or "PDF_CONVERT"
+            String taskData = parts[1]; // Ex: "file.jar|jobId|8085"
 
             if (payload.contains("SLEEP")) {
                 try { Thread.sleep(5000); } catch (Exception e) {}
@@ -171,18 +228,13 @@ public class RpcWorkerServer {
             TaskHandler handler = taskHanlderMap.get(taskType);
             if(handler!=null){
                 try{
-                   return handler.execute(payload);
+                   return handler.execute(taskData);
                 } catch (Exception e){
                     return "JOB_FAILED" + e.getMessage();
                 }
             } else{
                 return "ERROR: Task doesnt exist so I dont know how to do " + taskType;
             }
-        } else if(request.contains("PING")){
-            return "PONG|" + activeJobs.get() + "|" + MAX_THREADS;
-        } else {
-            return "UNKNOWN_COMMAND";
-        }
     }
 
     public void stop(){

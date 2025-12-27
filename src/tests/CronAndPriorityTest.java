@@ -55,13 +55,15 @@ public class CronAndPriorityTest {
         System.exit(0);
     }
 
-    private static void submitJob(String payload) {
+    private static void submitJob(String rawPayload) {
         try (Socket client = new Socket("localhost", 9090);
              DataOutputStream out = new DataOutputStream(client.getOutputStream());
              DataInputStream in = new DataInputStream(client.getInputStream())) {
-            TitanProtocol.send(out, payload);
-            String ack = TitanProtocol.read(in);
-            System.out.println("   [Client] Sent: " + payload + " | Ack: " + ack);
+
+            String cleanPayload = rawPayload.replace("SUBMIT ", "");
+            TitanProtocol.send(out, TitanProtocol.OP_SUBMIT_JOB, cleanPayload);
+            TitanProtocol.TitanPacket ackPacket = TitanProtocol.read(in);
+            System.out.println("   [Client] Sent: " + cleanPayload + " | Ack: " + ackPacket.payload);
         } catch (Exception e) { e.printStackTrace(); }
     }
 }

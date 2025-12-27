@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import network.TitanProtocol.TitanPacket;
 
 public class SchedulerServer {
     private final int port;
@@ -40,7 +41,7 @@ public class SchedulerServer {
             while(isRunning){
                 try{
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("Incoming connection from " + clientSocket.getInetAddress());
+                    System.out.println("Incoming connection from " + clientSocket.getInetAddress() + " Port" + clientSocket.getPort());
                     threadPool.submit(() -> clientHandler(clientSocket));
                 } catch (IOException e){
                     e.printStackTrace();
@@ -53,8 +54,10 @@ public class SchedulerServer {
 
     private String handleRegistration(Socket socket, String request){
             String[] parts = request.split("\\|\\|");
-            String capability = (parts.length > 2) ? parts[2] : "GENERAL";
-            int workerPort = Integer.parseInt(parts[1]);
+            if (parts.length < 1) return "ERROR_INVALID_REGISTRATION";
+            int workerPort = Integer.parseInt(parts[0]);
+
+            String capability = (parts.length > 1) ? parts[1] : "GENERAL";
             String host = socket.getInetAddress().getHostAddress();
 
             System.out.println("Registering Worker: " + host + " with " + capability);
@@ -69,21 +72,32 @@ public class SchedulerServer {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream())
         ){
 
-            String request = TitanProtocol.read(in);
-            if(request == null)return;
-            System.out.println("User Request: " + request);
+            TitanPacket packet = TitanProtocol.read(in);
+            String responsePayload;
+            byte responseOpCode = TitanProtocol.OP_ACK;
+            try {
+                switch (packet.opCode) {
+                    case TitanProtocol.OP_REGISTER:
+                        responsePayload = handleRegistration(socket, packet.payload);
+                        break;
+                    default:
+                        responsePayload = processCommand(packet);
+                        break;
+                }
 
-            String response;
-            if(request.startsWith("REGISTER")){
-                response = handleRegistration(socket, request);
-            } else{
-                response = processCommand(request);
+//                if (responsePayload.startsWith("ERROR") || responsePayload.startsWith("UNKNOWN")) {
+//                    responseOpCode = TitanProtocol.OP_ERROR;
+//                }
+            } catch (Throwable t) {
+                t.printStackTrace();
+                responsePayload = "SERVER_ERROR: " + t.getMessage();
+                responseOpCode = TitanProtocol.OP_ERROR;
             }
 
-            TitanProtocol.send(out, response);
+            TitanProtocol.send(out, responseOpCode, responsePayload);
 
         } catch (IOException e) {
-            System.err.println("Error handling user: " + e.getMessage());
+            System.err.println("Client Disconnected abruptly : " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -102,6 +116,10 @@ public class SchedulerServer {
             Job job = new Job("TEMP_PAYLOAD", 1, 0);
             String internalId = job.getId();
 
+            if (port == null || port.trim().isEmpty()) {
+                port = "8085"; // Default if not specified
+            }
+
             // If it's a Worker, we include the port in the ID for easy matching later
             String taggedId = (fileName.equalsIgnoreCase("Worker.jar"))
                     ? "WRK-" + port + "-" + internalId
@@ -116,7 +134,7 @@ public class SchedulerServer {
             job.setPayload(payload);
             scheduler.submitJob(job);
 
-            System.out.println("[DEPLOY] Job queued for file: " + fileName);
+            System.out.println("[INFO] DEPLOY Job queued for file: " + fileName);
             return "DEPLOY_QUEUED";
 
         } catch (IOException e) {
@@ -128,16 +146,12 @@ public class SchedulerServer {
 
     private String handleRunScript(String fileName){
         try {
-
-
             File file = new File(PERM_FILES_DIR + File.separator + fileName);
             if (!file.exists()) {
                 return "ERROR: File not found in " + PERM_FILES_DIR;
             }
-
             byte[] fileBytes = Files.readAllBytes(file.toPath());
             String base64Content = Base64.getEncoder().encodeToString(fileBytes);
-
 
             if (base64Content == null) return "ERROR: File not found";
 
@@ -155,6 +169,7 @@ public class SchedulerServer {
     private void parseAndSubmitDAG(String request){
         String [] jobs = request.split(";");
         for(String jobDef: jobs){
+            if(jobDef.trim().isEmpty()) continue;
             try {
                 Job job = Job.fromDagString(jobDef.trim());
                 System.out.println("[INFO] [PARSER] Created Job: " + job.getId());
@@ -166,74 +181,55 @@ public class SchedulerServer {
     }
 
 
-    private String processCommand(String request){
-        if (request.startsWith("DEPLOY")) {
-            String[] parts = request.split("\\|");
-            if (parts.length < 2) return "ERROR: Missing filename";
+    private String processCommand(TitanPacket packet){
+        String payload = packet.payload;
+        String[] parts;
 
-            String fileName = parts[1];
-            // Capture the port if provided, otherwise null/empty
-            String port = (parts.length > 2) ? parts[2] : "";
+        switch (packet.opCode){
+            case TitanProtocol.OP_DEPLOY:
+                parts = payload.split("\\|");
+                if (parts.length < 1) return "ERROR: Missing filename";
+                String deployFile = parts[0];
+                String deployPort = (parts.length > 1) ? parts[1] : "";
+                return handleDeployRequest(deployFile, deployPort);
 
-            return handleDeployRequest(fileName, port);
-        }
+            case TitanProtocol.OP_RUN:
+                if (payload.isEmpty()) return "ERROR: Missing filename";
+                return handleRunScript(payload);
 
-        if (request.startsWith("RUN")) {
-            // Format: EXECUTE RUN_SCRIPT|filename
-            String[] parts = request.split("\\|");
-            if (parts.length < 2) return "ERROR: Missing filename";
-            String filename = parts[1];
+            case TitanProtocol.OP_STATS_JSON:
+                System.out.println("[INFO] Generating JSON Stats...");
+                return scheduler.getSystemStatsJSON();
 
-            return handleRunScript(filename);
-        }
+            case TitanProtocol.OP_CLEAN_STATS:
+                scheduler.getLiveServiceMap().clear();
+                return "Stats Map Cleared. Run STATS again to see fresh state.";
 
-        // Add this block inside processCommand method
-        if (request.startsWith("UNREGISTER_SERVICE")) {
-            String[] parts = request.split("\\|");
-            if (parts.length > 1) {
-                String serviceId = parts[1];
-                // Remove the service from the map
+            case TitanProtocol.OP_UNREGISTER_SERVICE:
+                String serviceId = payload;
                 scheduler.getLiveServiceMap().remove(serviceId);
-                System.out.println("[INFO] Cleaned up service record for: " + serviceId);
+                System.out.println("[INFO] Cleaned up service: " + serviceId);
                 return "ACK_UNREGISTERED";
-            }
-        }
 
-        if (request.equalsIgnoreCase("STATS_JSON")) {
-            System.out.println("[INFO] Generating JSON Stats...");
-            return scheduler.getSystemStatsJSON();
-        }
+            case TitanProtocol.OP_STOP:
+                if (payload.isEmpty()) return "ERROR: Missing Service ID";
+                return scheduler.stopRemoteService(payload);
 
-        if (request.equalsIgnoreCase("CLEAN_STATS")) {
-            scheduler.getLiveServiceMap().clear();
-            return "Stats Map Cleared. Run STATS again to see fresh state.";
-        }
+            case TitanProtocol.OP_STATS:
+                return scheduler.getSystemStats();
 
-        if (request.startsWith("STOP")) {
-            String[] parts = request.split("\\|");
-            if (parts.length < 2) return "ERROR: Missing Service ID";
+            case TitanProtocol.OP_SUBMIT_DAG:
+                parseAndSubmitDAG(payload);
+                return "DAG_ACCEPTED";
 
-            // Just call the clean public API
-            return scheduler.stopRemoteService(parts[1]);
-        }
+            case TitanProtocol.OP_SUBMIT_JOB:
+                scheduler.submitJob(payload);
+                return "JOB_ACCEPTED";
 
-        if (request.equalsIgnoreCase("STATS")) {
-            return scheduler.getSystemStats();
-        }
 
-        if (request.startsWith("SUBMIT_DAG")){
-            parseAndSubmitDAG(request.substring(10).trim());
-            return "DAG_ACCEPTED";
-        }
-        else if(request.startsWith("SUBMIT")){
-            String jobPayload = request.substring(7).trim();
-            scheduler.submitJob(jobPayload);
-            return "JOB_ACCEPTED";
-        }
-        else if (request.contains("SUSPEND")) {
-            return "SUSPEND_JOB";
-        } else{
-            return "UNKNOWN_COMMAND";
+            default:
+                return "UNKNOWN_OPCODE: " + packet.opCode;
+
         }
     }
 

@@ -47,8 +47,12 @@ public class LoadBalancerTest {
         try (Socket client = new Socket("localhost", 9090);
              DataOutputStream out = new DataOutputStream(client.getOutputStream());
              DataInputStream in = new DataInputStream(client.getInputStream())) {
-            TitanProtocol.send(out, payload);
-            System.out.println("   [Client] Received Ack: " + TitanProtocol.read(in));
+
+            TitanProtocol.send(out, TitanProtocol.OP_SUBMIT_JOB, payload);
+
+            // FIX 2: Read Packet object
+            TitanProtocol.TitanPacket ack = TitanProtocol.read(in);
+            System.out.println("   [Client] Received Ack: " + ack.payload);
         } catch (Exception e) { e.printStackTrace(); }
     }
 }

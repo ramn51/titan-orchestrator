@@ -5,49 +5,107 @@ import java.nio.charset.StandardCharsets;
 
 public class TitanProtocol {
 
-    public static void send(DataOutputStream out, String payload) throws IOException {
+    // Constants for the Protocol Header
+    private static final byte CURRENT_VERSION = 1;
+
+    // OpCodes
+    public static final byte OP_HEARTBEAT         = 0x01;
+    public static final byte OP_REGISTER          = 0x02;
+    public static final byte OP_SUBMIT_JOB        = 0x03;
+    public static final byte OP_SUBMIT_DAG        = 0x04;
+    public static final byte OP_DEPLOY            = 0x05;
+    public static final byte OP_RUN               = 0x06;
+    public static final byte OP_STOP              = 0x07;
+    public static final byte OP_STATS             = 0x08;
+    public static final byte OP_STATS_JSON        = 0x09;
+    public static final byte OP_UNREGISTER_SERVICE = 0x0A;
+    public static final byte OP_CLEAN_STATS       = 0x0B;
+    public static final byte OP_STAGE             = 0x0C;
+    public static final byte OP_START_SERVICE     = 0x0D;
+
+    // --- RESPONSE OPCODES ---
+    public static final byte OP_ACK               = 0x50; // Success
+    public static final byte OP_ERROR             = 0x51; // Failure
+    public static final byte OP_DATA              = 0x52; // Generic Response String
+
+    /**
+     * SEND: Wraps the payload in our 8-byte header.
+     * [ Version(1) | OpCode(1) | Flags(1) | Spare(1) | Length(4) ] + [ Payload ]
+     */
+    public static void send(DataOutputStream out, byte opCode, String payload) throws IOException {
         byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
         int len = payloadBytes.length;
+
+        out.writeByte(CURRENT_VERSION);
+        out.writeByte(opCode);
+        out.writeByte(0x00);
+        out.writeByte(0x00);
         out.writeInt(len);
+
         out.write(payloadBytes);
         out.flush();
-        System.out.println("[TitanProtocol] Sent: " + payload);
+
+        System.out.println("[TitanProto] Sent Op:" + opCode + " Len:" + len);
     }
 
-    public static String read(DataInputStream in) throws Exception {
+    public static TitanPacket read(DataInputStream in) throws Exception {
+        byte version = in.readByte();
+        byte opCode = in.readByte();
+        byte flags = in.readByte();
+        byte spare = in.readByte();
         int len = in.readInt();
+
+        if (version != CURRENT_VERSION) {
+            throw new Exception("Version Mismatch! Server expects v" + CURRENT_VERSION);
+        }
+
         if(len > 1024 * 1024 * 10){
             throw new Exception("Packet too large: " + len);
         }
+
         byte[] buffer = new byte[len];
         in.readFully(buffer);
-        return new String(buffer, StandardCharsets.UTF_8);
+        String payload = new String(buffer, StandardCharsets.UTF_8);
+        return new TitanPacket(opCode, payload);
+    }
+
+    public static class TitanPacket {
+        public byte opCode;
+        public String payload;
+
+        public TitanPacket(byte op, String pl) { this.opCode = op; this.payload = pl;}
     }
 
     public static void main(String[] args){
         try {
-            // 1. Simulate the "Network" using a Byte Array
             ByteArrayOutputStream virtualNetwork = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(virtualNetwork);
 
-            // 2. SEND: Write a message to our fake network
+            // 2. SEND: Write a message using the NEW Protocol (OpCode + Payload)
             String originalMessage = "Hello, Titan Orchestrator!";
-            System.out.println("Sending: " + originalMessage);
-            TitanProtocol.send(out, originalMessage);
+            System.out.println("Sending: [OP_HEARTBEAT] " + originalMessage);
 
-            // 3. RECEIVE: Read it back from the byte array
-            // We convert the output stream -> input stream
+            // Change: Pass the OpCode explicitly
+            TitanProtocol.send(out, TitanProtocol.OP_HEARTBEAT, originalMessage);
+
+            // 3. RECEIVE: Read it back
             ByteArrayInputStream inputData = new ByteArrayInputStream(virtualNetwork.toByteArray());
             DataInputStream in = new DataInputStream(inputData);
 
-            String receivedMessage = TitanProtocol.read(in);
-            System.out.println("Received: " + receivedMessage);
+            // Change: Receive a Packet object, not a String
+            TitanProtocol.TitanPacket packet = TitanProtocol.read(in);
+
+            System.out.println("Received OpCode: " + packet.opCode);
+            System.out.println("Received Payload: " + packet.payload);
 
             // 4. Verify
-            if (originalMessage.equals(receivedMessage)) {
+            boolean payloadMatch = originalMessage.equals(packet.payload);
+            boolean opCodeMatch = (packet.opCode == TitanProtocol.OP_HEARTBEAT);
+
+            if (payloadMatch && opCodeMatch) {
                 System.out.println("[OK] TEST PASSED: Protocols match!");
             } else {
-                System.out.println("[FAIL] TEST FAILED: Messages differ.");
+                System.out.println("[FAIL] TEST FAILED: Data mismatch.");
             }
 
         } catch (Exception e) {

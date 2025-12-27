@@ -36,11 +36,12 @@ public class EndToEndTest {
              DataInputStream in = new DataInputStream(client.getInputStream())) {
 
             // Send Job
-            TitanProtocol.send(out, "SUBMIT PDF_CONVERT|important_report.docx");
+            String jobPayload = "PDF_CONVERT|important_report.docx";
+            TitanProtocol.send(out, TitanProtocol.OP_SUBMIT_JOB, jobPayload);
 
             // Read Acknowledgement (This just means "Added to Queue")
-            String ack = TitanProtocol.read(in);
-            System.out.println("User received ack: " + ack);
+            TitanProtocol.TitanPacket ackPacket = TitanProtocol.read(in);
+            System.out.println("User received ack: " + ackPacket.payload);
         }
 
         // 4. Wait and Watch

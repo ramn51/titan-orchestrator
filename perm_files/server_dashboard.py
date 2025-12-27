@@ -1,47 +1,57 @@
 import socket
 import struct
 import json
-import sys
+import time
 from flask import Flask, render_template_string
 
 app = Flask(__name__)
 
-# --- DYNAMIC CONFIGURATION ---
-# If running on a worker, 'localhost' won't work.
-# We should ideally use the actual IP of your Master machine.
-SCHEDULER_HOST = "127.0.0.1" # Change this to your Master's IP if deploying remotely
+# --- CONFIGURATION ---
+SCHEDULER_HOST = "127.0.0.1"
 SCHEDULER_PORT = 9090
 
-def titan_communicate(command):
-    print(f"📡 Attempting to contact Scheduler at {SCHEDULER_HOST}:{SCHEDULER_PORT}...")
+# --- TITAN PROTOCOL CONSTANTS ---
+CURRENT_VERSION = 1
+OP_STATS_JSON = 0x09
+
+# Add this helper at the top
+def recv_all(sock, n):
+    data = b''
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet: return None
+        data += packet
+    return data
+
+def titan_communicate(op_code, payload_str=""):
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(5)
-            s.connect((SCHEDULER_HOST, SCHEDULER_PORT))
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(5)
+        s.connect((SCHEDULER_HOST, SCHEDULER_PORT))
 
-            # --- SEND ---
-            payload = command.encode('utf-8')
-            header = struct.pack('>I', len(payload))
-            s.sendall(header + payload)
+        # --- SEND ---
+        body_bytes = payload_str.encode('utf-8')
+        length = len(body_bytes)
+        header = struct.pack('>BBBBI', CURRENT_VERSION, op_code, 0, 0, length)
+        s.sendall(header + body_bytes)
 
-            # --- READ ---
-            raw_len = s.recv(4)
-            if not raw_len:
-                print("⚠️ Received no data from Scheduler.")
-                return None
+        # --- READ HEADER (FIXED) ---
+        raw_header = recv_all(s, 8)
+        if not raw_header:
+            s.close()
+            return None
 
-            msg_len = struct.unpack('>I', raw_len)[0]
-            chunks = []
-            bytes_recd = 0
-            while bytes_recd < msg_len:
-                chunk = s.recv(min(msg_len - bytes_recd, 4096))
-                if not chunk: break
-                chunks.append(chunk)
-                bytes_recd += len(chunk)
+        ver, resp_op, flags, spare, resp_len = struct.unpack('>BBBBI', raw_header)
 
-            response = b"".join(chunks).decode('utf-8')
-            print(f"[OK] Successfully received {len(response)} bytes.")
-            return response
+        # --- READ BODY (FIXED) ---
+        response_payload = ""
+        if resp_len > 0:
+            raw_body = recv_all(s, resp_len)
+            if raw_body:
+                response_payload = raw_body.decode('utf-8')
+
+        s.close()
+        return response_payload
 
     except Exception as e:
         print(f"[FAIL] Communication Error: {e}")
@@ -49,65 +59,74 @@ def titan_communicate(command):
 
 @app.route('/')
 def index():
-    raw_json = titan_communicate("STATS_JSON")
+    # Fetch Data from Scheduler
+    raw_json = titan_communicate(OP_STATS_JSON, "")
     stats = None
 
     if raw_json:
         try:
-            # 1. FIND THE START OF JSON (Look for the first curly brace)
             json_start = raw_json.find('{')
-
             if json_start != -1:
-                # 2. Slice the string to get only the JSON part
-                clean_json_str = raw_json[json_start:]
-                stats = json.loads(clean_json_str)
-            else:
-                print(f"⚠️ Response contained no JSON: {raw_json}")
+                stats = json.loads(raw_json[json_start:])
+        except json.JSONDecodeError:
+            pass
 
-        except json.JSONDecodeError as e:
-            print(f"[FAIL] JSON Parse Error: {e}")
-            print(f"   Raw received: {raw_json}")
-
+    # Default Data if Offline
     if not stats:
-        # Pass a dummy object or error message so the page renders even if empty
-        return "<h1 style='color:red;'>⚠️ Dashboard Offline or Bad Data</h1><p>Check console logs for 'Raw received'</p>"
+        stats = {"active_workers": 0, "queue_size": 0, "workers": []}
+        status_color = "#f44336" # Red
+        status_text = "OFFLINE"
+    else:
+        status_color = "#00e676" # Green
+        status_text = "ONLINE"
 
+    # HTML TEMPLATE
     return render_template_string("""
-    <body style="background:#0f0f0f; color:#eee; font-family:sans-serif; padding:40px;">
-        <h1 style="color:#4CAF50; text-align:center;">🛰️ TITAN CLUSTER STATUS</h1>
-
-        <div style="text-align:center; margin-bottom:30px;">
-            <form action="/scale" method="post">
-                <button type="submit" style="background:#2e7d32; color:white; border:none; padding:12px 24px; border-radius:4px; cursor:pointer; font-weight:bold;">
-                    [INFO] SCALE UP (+3 WORKERS)
-                </button>
-            </form>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Titan Dashboard</title>
+        <meta http-equiv="refresh" content="2"> <style>
+            body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .status-dot { height: 12px; width: 12px; background-color: {{ status_color }}; border-radius: 50%; display: inline-block; }
+            .card { background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 20px; width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
+            .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+            .service-tag { background: #263238; padding: 5px 8px; margin-top: 5px; border-radius: 4px; border-left: 3px solid #0288d1; font-family: monospace; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1 style="letter-spacing: 2px;">🛰️ TITAN ORCHESTRATOR</h1>
+            <div>
+                <span class="status-dot"></span>
+                <span style="font-weight:bold; color:{{ status_color }}">{{ status_text }}</span>
+                &nbsp;|&nbsp; Workers: {{ stats.active_workers }} &nbsp;|&nbsp; Queue: {{ stats.queue_size }}
+            </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
+        <div class="grid">
             {% for w in stats.workers %}
-            <div style="background:#1a1a1a; border:1px solid #333; border-radius:8px; padding:20px; border-top: 4px solid #4CAF50;">
-                <h3 style="margin:0;">Worker Node: {{ w.port }}</h3>
-                <p style="color:#888;">Load: {{ w.load }}</p>
-                <div style="margin-top:15px;">
+            <div class="card" style="border-top: 4px solid #4CAF50;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="margin:0;">Node :{{ w.port }}</h3>
+                    <span style="background:#004d40; color:#00e676; padding:2px 8px; border-radius:4px; font-size:0.8em;">Load: {{ w.load }}</span>
+                </div>
+                <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
+                <div style="font-size:0.9em; color:#bbb;">
                     {% for svc in w.services %}
-                    <div style="background:#222; margin-top:8px; padding:8px; border-radius:4px; border-left:3px solid #2196F3; font-size:0.85em;">
-                        {{ svc[:25] }}...
-                    </div>
+                        <div class="service-tag">{{ svc }}</div>
                     {% else %}
-                    <p style="font-size:0.8em; color:#555;">No active sub-services</p>
+                        <div style="color:#666; font-style:italic;">• Idle</div>
                     {% endfor %}
                 </div>
             </div>
             {% endfor %}
         </div>
     </body>
-    """, stats=stats)
-
-@app.route('/scale', methods=['POST'])
-def scale():
-    titan_communicate("SCALE_UP")
-    return "OK", 200
+    </html>
+    """, stats=stats, status_color=status_color, status_text=status_text)
 
 if __name__ == '__main__':
+    print(f"Starting Dashboard on http://127.0.0.1:5000")
     app.run(host='0.0.0.0', port=5000)

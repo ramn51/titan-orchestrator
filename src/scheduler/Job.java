@@ -67,37 +67,43 @@ public class Job implements Comparable<Job> {
         }
     }
 
-//    public static Job fromDagString(String jobStr){
-//        // Expected: ID|SKILL|DATA|PRIO|DELAY|[DEPS]
+//    public static Job fromDagString(String jobStr) {
 //        String cleanedStr = jobStr.trim();
 //        String[] p = cleanedStr.split("\\|");
 //
+//        // 1. Basic Validation
 //        if (p.length < 6) throw new IllegalArgumentException("Invalid DAG job format");
 //
 //        String id = p[0].trim();
-//        String payload = p[1].trim() + "|" + p[2].trim();
-//        int priority = Integer.parseInt(p[3].trim());
-//        long delay = Long.parseLong(p[4].trim());
+//        String type = p[1].trim();
+//        String data = p[2].trim(); // This might be filename OR generic data (like EMAIL)
 //
-//        String depRawStr = p[5].replace("[", "").replace("]", "").trim();
-//        List<String> deps;
-//        if(depRawStr.isEmpty()){
-//            deps = null;
-//        } else{
-//            deps = Arrays.stream(depRawStr.split(","))
-//                    .map(String::trim)
-//                    .filter(s -> !s.isEmpty())
-//                    .toList();
+//        String port = "";
+//        int prioIndex = 3;
+//
+//        // Only look for a 7th column (Port) if it is a DEPLOY command
+//        if (type.equalsIgnoreCase("DEPLOY") && p.length == 7) {
+//            port = p[3].trim();
+//            prioIndex = 4; // Shift indices right
 //        }
 //
+//        // Extract remaining numeric fields
+//        int priority = Integer.parseInt(p[prioIndex].trim());
+//        long delay = Long.parseLong(p[prioIndex + 1].trim());
+//
+//        // Parse Dependencies
+//        String depRawStr = p[prioIndex + 2].replace("[", "").replace("]", "").trim();
+//        List<String> deps = (depRawStr.isEmpty()) ? null :
+//                java.util.Arrays.stream(depRawStr.split(","))
+//                        .map(String::trim).toList();
+//
+//        // Construct Payload
 //        String finalPayload;
-//        if (type.equalsIgnoreCase("RUN")) {
-//            // Map "RUN" to "RUN_PAYLOAD" so it matches the standalone behavior
-//            finalPayload = "RUN_PAYLOAD|" + data;
-//        } else if (type.equalsIgnoreCase("DEPLOY")) {
-//            // Map "DEPLOY" to "DEPLOY_PAYLOAD"
-//            finalPayload = "DEPLOY_PAYLOAD|" + data;
+//        if (type.equalsIgnoreCase("RUN") || type.equalsIgnoreCase("DEPLOY")) {
+//            // ONLY these types trigger File I/O and Base64 encoding
+//            finalPayload = constructFilePayload(type, data, port);
 //        } else {
+//            // For everything else (EMAIL, PDF_CONVERT), just pass the data as-is
 //            finalPayload = type + "|" + data;
 //        }
 //
@@ -105,46 +111,67 @@ public class Job implements Comparable<Job> {
 //    }
 
     public static Job fromDagString(String jobStr) {
-        String cleanedStr = jobStr.trim();
-        String[] p = cleanedStr.split("\\|");
+        String raw = jobStr.trim();
 
-        // 1. Basic Validation
-        if (p.length < 6) throw new IllegalArgumentException("Invalid DAG job format");
+        try {
+            // STRATEGY: Parse from the OUTSIDE IN to handle variable pipes in the payload.
 
-        String id = p[0].trim();
-        String type = p[1].trim();
-        String data = p[2].trim(); // This might be filename OR generic data (like EMAIL)
+            // --- STEP 1: RIGHT SIDE (Metadata) ---
 
-        String port = "";
-        int prioIndex = 3;
+            // 1. Extract Parents: "[JOB_A, JOB_B]" or "[]"
+            int bracketStart = raw.lastIndexOf('[');
+            if (bracketStart == -1) throw new IllegalArgumentException("Missing parent brackets []");
+            String parentsStr = raw.substring(bracketStart);
 
-        // Only look for a 7th column (Port) if it is a DEPLOY command
-        if (type.equalsIgnoreCase("DEPLOY") && p.length == 7) {
-            port = p[3].trim();
-            prioIndex = 4; // Shift indices right
+            // Remove parents from string for next step
+            // Current: ID|SKILL|PAYLOAD...|PRIORITY|DELAY|
+            String temp = raw.substring(0, bracketStart).trim();
+            if (temp.endsWith("|")) temp = temp.substring(0, temp.length() - 1); // Safety trim
+
+            // 2. Extract Delay (Last number)
+            int lastPipe = temp.lastIndexOf('|');
+            long delay = Long.parseLong(temp.substring(lastPipe + 1).trim());
+            temp = temp.substring(0, lastPipe);
+
+            // 3. Extract Priority (Next number from right)
+            lastPipe = temp.lastIndexOf('|');
+            int priority = Integer.parseInt(temp.substring(lastPipe + 1).trim());
+            temp = temp.substring(0, lastPipe);
+
+            // --- STEP 2: LEFT SIDE (Identification) ---
+
+            // 4. Extract ID (First item)
+            int firstPipe = temp.indexOf('|');
+            String id = temp.substring(0, firstPipe).trim();
+            temp = temp.substring(firstPipe + 1);
+
+            // 5. Extract Skill (Second item)
+            int secondPipe = temp.indexOf('|');
+            String skill = temp.substring(0, secondPipe).trim();
+
+            // --- STEP 3: MIDDLE (The Payload) ---
+
+            // 6. The Remainder is the Payload (e.g., "RUN_PAYLOAD|calc.py|BASE64...")
+            String finalPayload = temp.substring(secondPipe + 1).trim();
+
+            // --- STEP 4: CONSTRUCT JOB ---
+
+            // Parse dependencies string "[A,B]" -> List<String>
+            String cleanParents = parentsStr.replace("[", "").replace("]", "").trim();
+            java.util.List<String> deps = new java.util.ArrayList<>();
+            if (!cleanParents.isEmpty()) {
+                for (String p : cleanParents.split(",")) {
+                    deps.add(p.trim());
+                }
+            }
+
+            Job job = new Job(id, finalPayload, priority, delay, deps);
+//            job.setRequiredSkill(skill); // Ensure your Job class has this setter!
+            return job;
+
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to parse DAG Job: " + jobStr + " [" + e.getMessage() + "]");
         }
-
-        // Extract remaining numeric fields
-        int priority = Integer.parseInt(p[prioIndex].trim());
-        long delay = Long.parseLong(p[prioIndex + 1].trim());
-
-        // Parse Dependencies
-        String depRawStr = p[prioIndex + 2].replace("[", "").replace("]", "").trim();
-        List<String> deps = (depRawStr.isEmpty()) ? null :
-                java.util.Arrays.stream(depRawStr.split(","))
-                        .map(String::trim).toList();
-
-        // Construct Payload
-        String finalPayload;
-        if (type.equalsIgnoreCase("RUN") || type.equalsIgnoreCase("DEPLOY")) {
-            // ONLY these types trigger File I/O and Base64 encoding
-            finalPayload = constructFilePayload(type, data, port);
-        } else {
-            // For everything else (EMAIL, PDF_CONVERT), just pass the data as-is
-            finalPayload = type + "|" + data;
-        }
-
-        return new Job(id, finalPayload, priority, delay, deps);
     }
 
     // Helper method for the File I/O logic

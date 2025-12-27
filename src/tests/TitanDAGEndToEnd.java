@@ -4,6 +4,8 @@ import network.RpcWorkerServer;
 import network.TitanProtocol;
 import scheduler.Scheduler;
 import scheduler.Job;
+
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
 
@@ -83,10 +85,13 @@ public class TitanDAGEndToEnd {
         }
     }
 
-    private static void sendDag(String dag) {
+    private static void sendDag(String dagPayload) {
         try (Socket s = new Socket("localhost", 9090);
-             DataOutputStream out = new DataOutputStream(s.getOutputStream())) {
-            TitanProtocol.send(out, "SUBMIT_DAG " + dag);
+             DataOutputStream out = new DataOutputStream(s.getOutputStream());
+            DataInputStream in = new DataInputStream(s.getInputStream())
+        ) {
+            TitanProtocol.send(out, TitanProtocol.OP_SUBMIT_DAG, dagPayload);
+            TitanProtocol.read(in);
         } catch (Exception e) { e.printStackTrace(); }
     }
 }

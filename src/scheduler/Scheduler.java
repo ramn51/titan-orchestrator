@@ -3,6 +3,7 @@ package scheduler;
 
 import network.RpcClient;
 import network.SchedulerServer;
+import network.TitanProtocol;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -114,7 +115,14 @@ public class Scheduler {
     public void checkHeartBeat(){
         System.out.println("Sending Heartbeat");
         for(Worker worker: workerRegistry.getWorkers()){
-            String result = schedulerClient.sendRequest(worker.host(), worker.port(), "PING");
+
+            String result = schedulerClient.sendRequest(
+                    worker.host(),
+                    worker.port(),
+                    TitanProtocol.OP_HEARTBEAT,
+                    ""
+            );
+
             if(result  == null){
                 workerRegistry.markWorkerDead(worker.host(), worker.port());
             } else if(result.startsWith("PONG")){
@@ -139,16 +147,26 @@ public class Scheduler {
     public synchronized void registerWorker(String host, int port, String capability) {
         this.workerRegistry.addWorker(host, port, capability);
 
-        // We only remove from liveServiceMap if the ID starts with "WRK"
-        // AND matches the port that just checked in.
-        liveServiceMap.entrySet().removeIf(entry -> {
-            String id = entry.getKey();
-            boolean isWorker = id.startsWith("WRK-");
-            boolean matchesPort = id.contains("-" + port + "-");
+        System.out.println("[DEBUG] Attempting promotion for incoming worker at " + host + ":" + port);
 
-            if (isWorker && matchesPort) {
-                System.out.println("[INFO] Promoting Infrastructure: " + id + " is now a Peer Worker.");
-                return true; // Removes it from the "under some worker" list
+        liveServiceMap.entrySet().removeIf(entry -> {
+            String serviceId = entry.getKey();
+            Worker hostWorker = entry.getValue();
+
+            // Debug prints to see why it's failing
+            if (serviceId.startsWith("WRK-")) {
+                System.out.println("[DEBUG] Checking Service: " + serviceId +
+                        " | HostWorker Port: " + hostWorker.port() +
+                        " | Target Port: " + port);
+            }
+
+            // The Fix: Only check the ID string, because the 'hostWorker'
+            // in the map is the PARENT, not the new worker.
+            boolean idMatches = serviceId.startsWith("WRK-" + port + "-");
+
+            if (idMatches) {
+                System.out.println("[INFO] Promotion Success: " + serviceId + " is now a Peer.");
+                return true;
             }
             return false;
         });
@@ -208,6 +226,12 @@ public class Scheduler {
                         : rawHeader;
 
                 List<Worker> availableWorkers = workerRegistry.getWorkersByCapability(reqTaskSkill);
+
+            if (availableWorkers.isEmpty() && !reqTaskSkill.equals("GENERAL")) {
+                 System.out.println("DEBUG: No specialists for " + reqTaskSkill + ", trying GENERAL workers...");
+                availableWorkers = workerRegistry.getWorkersByCapability("GENERAL");
+            }
+
                 if(availableWorkers.isEmpty()){
                     System.out.println("No available workers");
                     job.setStatus(Job.Status.PENDING);
@@ -286,7 +310,7 @@ public class Scheduler {
     }
 
     private String executeStandardTask(Job job, Worker worker) throws Exception {
-        return sendExecuteCommand(worker, job.getPayload());
+        return sendExecuteCommand(worker, TitanProtocol.OP_RUN, job.getPayload());
     }
 
     private String executeDeploySequence(Job job, Worker worker) throws Exception {
@@ -300,14 +324,17 @@ public class Scheduler {
         String optionalPort = (parts.length > 3) ? parts[3] : "8085";
 
         // Step 1: Stage
-        String stageResp = sendExecuteCommand(worker, "STAGE_FILE|" + filename + "|" + base64Script);
+        String stagePayload = filename + "|" + base64Script;
+        String stageResp = sendExecuteCommand(worker, TitanProtocol.OP_STAGE, stagePayload);
         if (!stageResp.contains("FILE_SAVED")) {
             throw new RuntimeException("Staging failed. Expected FILE_SAVED, got: " + stageResp);
         }
         System.out.println("[OK] File Staged");
 
         // Step 2: Start
-        String startResp = sendExecuteCommand(worker, "START_SERVICE|" + filename + "|" + job.getId()+ "|" + optionalPort);
+        String startPayload = filename + "|" + job.getId() + "|" + optionalPort;
+
+        String startResp = sendExecuteCommand(worker, TitanProtocol.OP_START_SERVICE, startPayload);
         if (!startResp.contains("DEPLOYED_SUCCESS")) {
             throw new RuntimeException("Start failed. Expected DEPLOYED_SUCCESS, got: " + startResp);
         }
@@ -323,7 +350,8 @@ public class Scheduler {
         String base64Script = parts[2];
 
         // STEP 1: STAGE (Same as Deploy)
-        String stageResp = sendExecuteCommand(worker, "STAGE_FILE|" + filename + "|" + base64Script);
+//        String stageResp = sendExecuteCommand(worker, TitanProtocol.OP_DEPLOY, "STAGE_FILE|" + filename + "|" + base64Script);
+        String stageResp = sendExecuteCommand(worker, TitanProtocol.OP_STAGE, filename + "|" + base64Script);
         if (!stageResp.contains("FILE_SAVED")) {
             throw new RuntimeException("Staging failed: " + stageResp);
         }
@@ -331,7 +359,7 @@ public class Scheduler {
 
         // STEP 2: RUN AND WAIT
         // Protocol: EXECUTE RUN_SCRIPT|filename
-        String runResp = sendExecuteCommand(worker, "RUN_SCRIPT|" + filename);
+        String runResp = sendExecuteCommand(worker, TitanProtocol.OP_RUN, filename);
 
         // Worker returns: COMPLETED|0|Output...
         if (!runResp.startsWith("COMPLETED")) {
@@ -341,10 +369,8 @@ public class Scheduler {
         return "RESULT: " + runResp;
     }
 
-    private String sendExecuteCommand(Worker worker, String rawCommand) throws Exception {
-        String request = "EXECUTE " + rawCommand;
-        String response = schedulerClient.sendRequest(worker.host(), worker.port(), request);
-
+    private String sendExecuteCommand(Worker worker, byte opCode, String payload) throws Exception {
+        String response = schedulerClient.sendRequest(worker.host(), worker.port(), opCode, payload);
         if (response == null || response.startsWith("ERROR") || response.startsWith("JOB_FAILED")) {
             System.err.println("[FAIL] Job Failed on Worker " + worker.port() + ": " + response);
             throw new RuntimeException("Worker Error: " + response);
@@ -353,6 +379,10 @@ public class Scheduler {
     }
 
     public String stopRemoteService(String serviceId) {
+        if (!liveServiceMap.containsKey(serviceId)) {
+            return "ERROR: Service " + serviceId + " not found in liveServiceMap. Current keys: " + liveServiceMap.keySet();
+        }
+
         Worker targetWorker = liveServiceMap.get(serviceId);
 
         if (targetWorker == null) {
@@ -360,7 +390,7 @@ public class Scheduler {
         }
 
         try {
-            String response = sendExecuteCommand(targetWorker, "STOP_SERVICE|" + serviceId);
+            String response = sendExecuteCommand(targetWorker, TitanProtocol.OP_STOP, serviceId);
             if (response.contains("SUCCESS") || response.contains("STOPPED")) {
                 liveServiceMap.remove(serviceId);
             }
@@ -399,8 +429,10 @@ public class Scheduler {
 
     public String getSystemStats() {
         StringBuilder sb = new StringBuilder();
+//        int activeCount = workerRegistry.getWorkerMap().size();
+//        System.out.println("Active Workers: " + activeCount);
         sb.append("\n--- TITAN SYSTEM MONITOR ---\n");
-        sb.append(String.format("Active Workers:    %d\n", workerRegistry.getWorkers().size()));
+        sb.append(String.format("Active Workers:    %d\n", workerRegistry.getWorkerMap().size()));
         sb.append(String.format("Execution Queue:   %d jobs\n", taskQueue.size()));
         sb.append(String.format("Delayed (Time):    %d jobs\n", waitingRoom.size()));
         sb.append(String.format("Blocked (DAG):     %d jobs\n", dagWaitingRoom.size()));
@@ -438,7 +470,13 @@ public class Scheduler {
     public String getSystemStatsJSON() {
         StringBuilder json = new StringBuilder();
         json.append("{");
-        json.append("\"active_workers\": ").append(workerRegistry.getWorkers().size()).append(",");
+
+        List<Worker> safeWorkerList;
+        synchronized (workerRegistry.getWorkers()) {
+            safeWorkerList = new java.util.ArrayList<>(workerRegistry.getWorkers());
+        }
+
+        json.append("\"active_workers\": ").append(safeWorkerList.size()).append(",");
         json.append("\"queue_size\": ").append(taskQueue.size()).append(",");
         json.append("\"workers\": [");
 
@@ -447,7 +485,7 @@ public class Scheduler {
         int workerCount = 0;
         int totalWorkers = workers.size();
 
-        for (Worker w : workers) {
+        for (Worker w : safeWorkerList) {
             json.append("{");
             json.append("\"port\": ").append(w.port()).append(",");
             json.append("\"load\": \"").append(w.getCurrentLoad()).append("/4\",");

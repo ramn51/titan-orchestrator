@@ -43,10 +43,12 @@ public class WorkerRegistrationTest {
              DataOutputStream out = new DataOutputStream(client.getOutputStream());
              DataInputStream in = new DataInputStream(client.getInputStream())) {
 
-            TitanProtocol.send(out, "SUBMIT PDF_CONVERT|doc1.pdf");
-            String resp = TitanProtocol.read(in);
 
-            if ("JOB_ACCEPTED".equals(resp)) {
+//            TitanProtocol.send(out, "SUBMIT PDF_CONVERT|doc1.pdf");
+            TitanProtocol.send(out, TitanProtocol.OP_SUBMIT_JOB, "PDF_CONVERT|doc1.pdf");
+            TitanProtocol.TitanPacket resp = TitanProtocol.read(in);
+
+            if ("JOB_ACCEPTED".equals(resp.payload)) {
                 System.out.println("[OK] TEST 2 PASSED: Job Accepted!");
             } else {
                 System.err.println("[FAIL] TEST 2 FAILED: " + resp);
