@@ -4,12 +4,10 @@ import network.RpcClient;
 import network.SchedulerServer;
 import network.TitanProtocol;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.DelayQueue;
 
@@ -39,6 +37,13 @@ public class Scheduler {
     // Map to hold Active Job Objects for Async Retries
     private final Map<String, Job> runningJobs = new ConcurrentHashMap<>();
     private final Map<String, Job> dagWaitingRoom;
+
+    // AutoScaling declarations
+    int MAX_WORKERS = 5;
+    private volatile boolean scalingInProgress = false;
+    private final ScheduledExecutorService scalerExecutor = Executors.newSingleThreadScheduledExecutor();
+    // Remember bad ports for avoiding during scaling
+    private final Set<Integer> portBlacklist = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public Scheduler(int port){
         workerRegistry = new WorkerRegistry();
@@ -112,6 +117,97 @@ public class Scheduler {
         return workerRegistry;
     }
 
+    // AutoScale methods and helpers
+
+    public void startAutoScaler(){
+        System.out.println("[INFO] Titan Auto-Scaler active.");
+        scalerExecutor.scheduleAtFixedRate(this::reconcileClusters, 15, 15, TimeUnit.SECONDS);
+    }
+
+    private synchronized void reconcileClusters(){
+        try {
+            List<Worker> workers = new ArrayList<>(workerRegistry.getWorkers());
+            if (workers.isEmpty()) {
+                System.out.println("[SCALER] No workers found. Skipping...");
+                return;
+            }
+
+            if (scalingInProgress) return;
+
+            long busyCount = workers.stream().filter(w -> w.currentJobId != null).count();
+            boolean allSaturated = workers.stream().allMatch(Worker::isSaturated);
+            int totalCount = workers.size();
+            int totalUsedSlots = workers.stream().mapToInt(Worker::getCurrentLoad).sum();
+            int totalAvailableSlots = totalCount * 4;
+            System.out.println("[SCALER] Cluster Pressure: " + totalUsedSlots + "/" + totalAvailableSlots);
+
+            if (allSaturated && totalCount < MAX_WORKERS){
+               scalingInProgress = true;
+//               int nextPort = workers.stream().mapToInt(Worker::port).max().orElse(8080) + 1;
+                // If the next port is not available then we just dont do scale up itself.
+               int nextPort = findSafePort(workers);
+               if (nextPort == -1) {
+                    System.err.println("[SCALER] Could not find any open ports. Aborting scale-up.");
+                    scalingInProgress = false;
+                    return;
+               }
+
+               System.out.println("[SCALER] Cluster saturated (" + busyCount + "/" + totalCount + "). Scaling to port: " + nextPort);
+               String serviceId = "WRK-" + nextPort + "-" + UUID.randomUUID().toString().substring(0, 8);
+               String autoScalePayload = "DEPLOY_PAYLOAD|Worker.jar|INTERNAL_SCALE|" + nextPort;
+
+                // Mark this as High priority
+               Job scaleJob = new Job(autoScalePayload, 10, 0);
+               scaleJob.setId(serviceId);
+               // Instead of taskQueue.add(scaleJob) preferably in future its better to go for forceInception rather than queued way.
+               this.submitJob(scaleJob);
+               return;
+            }
+
+            // For scale down
+            // Only scale down if the WHOLE cluster is idle and we have more than 1 worker
+            if (!allSaturated && totalCount > 1) {
+                Worker idleTarget = workers.stream()
+                        .filter(w -> w.port() != 8080) // Never kill the root
+                        .filter(w -> w.getCurrentLoad() == 0) // Must be doing nothing
+                        .filter(w -> w.getIdleDuration() > 45000) // Idle for > 45 seconds
+                        .max(java.util.Comparator.comparingInt(Worker::port)) // Kill highest port first
+                        .orElse(null);
+
+                if (idleTarget != null) {
+                    System.out.println("[SCALER] SCALE-DOWN: Worker " + idleTarget.port() + " is excess capacity. Removing.");
+                    this.shutdownWorkerNode(idleTarget.port());
+                    // 2. Remove from local registry immediately
+                    workerRegistry.getWorkerMap().remove(idleTarget.host() + ":" + idleTarget.port());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[SCALER ERROR] " + e.getMessage());
+            this.scalingInProgress = false;
+        }
+    }
+
+    // Helper methods related to scaling. Finding the available ports for new spawning.
+    private int findSafePort(List<Worker> currentWorkers) {
+        int startPort = currentWorkers.stream().mapToInt(Worker::port).max().orElse(8080) + 1;
+        // Scan up to 20 ports to find a free one
+        for (int p = startPort; p < startPort + 20; p++) {
+            if (!isPortInUseLocally(p) && !portBlacklist.contains(p)) {
+                return p;
+            }
+            System.out.println("[SCALER] Port " + p + " is busy on OS. Skipping...");
+        }
+        return -1;
+    }
+
+    private boolean isPortInUseLocally(int port) {
+        try (Socket ignored = new Socket("localhost", port)) {
+            return true;
+        } catch (IOException e) {
+            return false; // Connection refused = Port is free
+        }
+    }
+
     public void checkHeartBeat(){
         System.out.println("Sending Heartbeat");
         for(Worker worker: workerRegistry.getWorkers()){
@@ -146,6 +242,8 @@ public class Scheduler {
 
     public synchronized void registerWorker(String host, int port, String capability) {
         this.workerRegistry.addWorker(host, port, capability);
+        this.scalingInProgress = false;
+        this.portBlacklist.remove(port);
 
         System.out.println("[DEBUG] Attempting promotion for incoming worker at " + host + ":" + port);
 
@@ -301,23 +399,6 @@ public class Scheduler {
                             selectedWorker.decrementCurrentLoad();
                         }
 
-
-//                        job.setStatus(Job.Status.COMPLETED);
-////                        history.put(job.getId(), job.getStatus());
-//                        record.complete(response);
-//
-//                        String wKey = String.valueOf(selectedWorker.port());
-//                        workerCompletionStats.merge(wKey, 1, Integer::sum);
-//                        workerRecentHistory.computeIfAbsent(wKey, k -> new java.util.concurrent.ConcurrentLinkedDeque<>()).add(job);
-//                        // per history tracking of the jobs. Keeping it to 10 for now.
-//                        if (workerRecentHistory.get(wKey).size() > 10) {
-//                            workerRecentHistory.get(wKey).removeFirst();
-//                        }
-//
-//                        // Tells the child tasks to use the same worker as the parent used.
-//                        propagateAffinity(job.getId(), wKey);
-//                        unlockChildren(job.getId());
-
                 } catch (Exception e){
                     System.err.println("[FAIL] Job " + job.getId() + " Error: " + e.getMessage());
                     record.fail(e.getMessage());
@@ -355,6 +436,13 @@ public class Scheduler {
         }
 
     private void handleJobFailure(Job job) {
+        // If the worker is autoscaled messed up then immediately fail it and not send it to the queue for retry
+        if (job.getId().startsWith("WRK-")) {
+            System.err.println("[SCALER] Auto-scale job " + job.getId() + " failed. Abandoning job so Scaler can pick a new port.");
+            job.setStatus(Job.Status.FAILED);
+            return;
+        }
+
         TaskExecution record = executionHistory.get(job.getId());
         job.incrementRetry();
         if(job.getRetryCount() > 3) {
@@ -520,64 +608,99 @@ public class Scheduler {
     }
 
     private String executeDeploySequence(Job job, Worker worker, String payload) throws Exception {
-        String[] parts = payload.split("\\|", 4);
-        String filename = parts[1];
-        String base64Script = parts[2];
+        try {
+            String[] parts = payload.split("\\|", 4);
+            String filename = parts[1];
+            String base64Script = parts[2];
 
-        System.out.println("SCHEDULER LOGS::ARGS PASSED TO DEPLOY EXEC " + parts.length);
+            System.out.println("SCHEDULER LOGS::ARGS PASSED TO DEPLOY EXEC " + parts.length);
 
-        String portString = (parts.length > 3) ? parts[3] : null;
-        int targetPort = -1;
-        if (portString != null && !portString.isEmpty()) {
-            // If User explicitly provided a port, need to verify this
-            targetPort = Integer.parseInt(portString);
-        } else if (filename.contains("Worker.jar")) {
-            // It's a Worker, but no port provided -> Default to 8085
-            targetPort = 8085;
-            portString = "8085";
-        }
-
-        if (targetPort != -1) {
-            System.out.println("[DEPLOY] Checking if port " + targetPort + " is free...");
-            if (isWorkerAlive(worker.host(), targetPort)) {
-                throw new RuntimeException("Deployment Rejected: Port " + targetPort + " is ALREADY in use by another service.");
+            if("INTERNAL_SCALE".equals(base64Script)){
+                File localJar = new File("perm_files/Worker.jar");
+                if (!localJar.exists()) {
+                    throw new RuntimeException("Scaler Error: perm_files/Worker.jar not found on Master.");
+                }
+                byte[] fileContent = java.nio.file.Files.readAllBytes(localJar.toPath());
+                base64Script = Base64.getEncoder().encodeToString(fileContent);
             }
-        }
 
-        // Step 1: Stage
-        String stagePayload = filename + "|" + base64Script;
-        String stageResp = sendExecuteCommand(worker, TitanProtocol.OP_STAGE, stagePayload);
-        if (!stageResp.contains("FILE_SAVED")) {
-            throw new RuntimeException("Staging failed. Expected FILE_SAVED, got: " + stageResp);
-        }
-        System.out.println("[OK] File Staged");
-
-        // Step 2: Start
-        String safePortArg = (portString != null) ? portString : "0";
-        String startPayload = filename + "|" + job.getId() + "|" + safePortArg;
-
-        String startResp = sendExecuteCommand(worker, TitanProtocol.OP_START_SERVICE, startPayload);
-        if (!startResp.contains("DEPLOYED_SUCCESS")) {
-            throw new RuntimeException("Start failed. Expected DEPLOYED_SUCCESS, got: " + startResp);
-        }
-
-        String pid = startResp.contains("PID:") ? startResp.split("PID:")[1].trim() : "UNKNOWN";
-
-        if (targetPort != -1) {
-            System.out.println("[DEPLOY] Verifying liveness on port " + targetPort + "...");
-            Thread.sleep(8000);
-            if (!isWorkerAlive(worker.host(), targetPort)) {
-                throw new RuntimeException("Deployment Failed: Process started (PID " + pid + ") but port " + targetPort
-                        + " is unreachable.");
+            String portString = (parts.length > 3) ? parts[3] : null;
+            int targetPort = -1;
+            if (portString != null && !portString.isEmpty()) {
+                // If User explicitly provided a port, need to verify this
+                targetPort = Integer.parseInt(portString);
+            } else if (filename.contains("Worker.jar")) {
+                // It's a Worker, but no port provided -> Default to 8085
+                targetPort = 8085;
+                portString = "8085";
             }
-        } else {
-            System.out.println("[DEPLOY] Generic service started (PID " + pid + "). Skipping network verification.");
-        }
 
-        liveServiceMap.put(job.getId(), worker);
-        // Since deploy tasks are synchronous (kind of) so we clear it off and say its completed.
-        worker.currentJobId = null;
-        return "DEPLOYED_SUCCESS PID:" + pid;
+            if (targetPort != -1) {
+                System.out.println("[DEPLOY] Checking if port " + targetPort + " is free...");
+                if (isWorkerAlive(worker.host(), targetPort)) {
+                    throw new RuntimeException("Deployment Rejected: Port " + targetPort + " is ALREADY in use by another service.");
+                }
+            }
+
+            // Step 1: Stage
+            String stagePayload = filename + "|" + base64Script;
+            String stageResp = sendExecuteCommand(worker, TitanProtocol.OP_STAGE, stagePayload);
+            if (!stageResp.contains("FILE_SAVED")) {
+                throw new RuntimeException("Staging failed. Expected FILE_SAVED, got: " + stageResp);
+            }
+            System.out.println("[OK] File Staged");
+
+            // Step 2: Start
+            String safePortArg = (portString != null) ? portString : "0";
+            String startPayload = filename + "|" + job.getId() + "|" + safePortArg;
+
+            String startResp = sendExecuteCommand(worker, TitanProtocol.OP_START_SERVICE, startPayload);
+            if (!startResp.contains("DEPLOYED_SUCCESS")) {
+                throw new RuntimeException("Start failed. Expected DEPLOYED_SUCCESS, got: " + startResp);
+            }
+
+            String pid = startResp.contains("PID:") ? startResp.split("PID:")[1].trim() : "UNKNOWN";
+
+            if (targetPort != -1) {
+                boolean alive = false;
+
+                // Try 10 times, once every 2 seconds
+                for (int i = 1; i <= 10; i++) {
+                    Thread.sleep(2000);
+                    if (isWorkerAlive(worker.host(), targetPort)) {
+                        alive = true;
+                        System.out.println("[OK] Worker port " + targetPort + " detected on attempt " + i);
+                        break;
+                    }
+                    System.out.println("[DEPLOY] Port " + targetPort + " not ready... (Attempt " + i + "/10)");
+                }
+
+                if (!alive) {
+                    // LOCK RESET:  before throwing exception
+                    if (job.getId().startsWith("WRK-")) {
+                        this.scalingInProgress = false;
+                    }
+                    throw new RuntimeException("Deployment Failed: Process started (PID " + pid + ") but port " + targetPort
+                            + " never became reachable after 20s.");
+                }
+            }
+
+            liveServiceMap.put(job.getId(), worker);
+            // Since deploy tasks are synchronous (kind of) so we clear it off and say its completed.
+            worker.currentJobId = null;
+            return "DEPLOYED_SUCCESS PID:" + pid;
+        } catch (Exception e) {
+            if (job.getId().startsWith("WRK-")) {
+                // Unlock the scaler so it can try a different port in the next cycle
+                this.scalingInProgress = false;
+                try {
+                    int failedPort = Integer.parseInt(job.getId().split("-")[1]);
+                    portBlacklist.add(failedPort);
+                    System.err.println("[SCALER] Blacklisting failed port: " + failedPort);
+                } catch (Exception ignore) {}
+            }
+            throw e;
+        }
     }
 
     private boolean isWorkerAlive(String host, int port) {

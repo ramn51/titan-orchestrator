@@ -266,6 +266,8 @@ public class RpcWorkerServer {
                 System.out.println("[ASYNC] Starting job "+ jobId + ": " + taskData);
                 TaskHandler handler = taskHanlderMap.get("RUN_SCRIPT");
                 String result = handler.execute(taskData);
+                // This allows the worker to handle PDF_CONVERT or any other key
+//                String result = processCommand(taskData);
 
                 System.out.println("[ASYNC] Finished "+ jobId);
                 sendCallback(jobId, "COMPLETED", result);

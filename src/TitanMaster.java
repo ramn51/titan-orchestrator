@@ -6,6 +6,8 @@ public class TitanMaster {
         Scheduler scheduler = new Scheduler(9090);
         scheduler.start();
 
+        scheduler.startAutoScaler();
+
         // Keep main thread alive
         try {
             Thread.currentThread().join();

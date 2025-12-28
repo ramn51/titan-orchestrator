@@ -14,6 +14,10 @@ public class Worker {
     private int currentLoad;
     private int maxCap;
     public String currentJobId = null;
+    // This will replace maxCap
+    public static final int MAX_SLOTS = 4;
+    private long idleStartTime = -1;
+
 
     public Worker(String host, int port, List<String> capabilities) {
         this.host = host;
@@ -30,6 +34,19 @@ public class Worker {
 
     public void setCurrentLoad(int load) {
         this.currentLoad = load;
+        if (load == 0) {
+            if (this.idleStartTime == -1) {
+                this.idleStartTime = System.currentTimeMillis();
+            }
+        } else {
+            // Reset this once it gets a work immediately.
+            this.idleStartTime = -1;
+        }
+    }
+
+    public long getIdleDuration() {
+        if (idleStartTime == -1) return 0;
+        return System.currentTimeMillis() - idleStartTime;
     }
 
     public int getCurrentLoad() {
