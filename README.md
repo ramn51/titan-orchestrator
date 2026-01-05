@@ -71,6 +71,8 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
 * **Smart Task Affinity:** Implements "Parent-Child Locality." If a Worker spawns a sub-task, the scheduler attempts to place it on the same node to leverage local caching. Useful for cases where training and other tasks of a model needs to happen on a specific node.
 * **Reactive Auto-Scaling:** The scheduler monitors worker load. If the cluster is saturated, it triggers **"Inception"** events where workers spawn *new* child workers to handle burst traffic.
 * **Least-Connection Routing:** Jobs are intelligently routed to the worker with the lowest active load.
+  
+> **Note on Concurrency:** To ensure stability on smaller nodes, the default Worker concurrency is currently **capped at 4 slots** per instance. To utilize more cores on a large server, simply spawn multiple Worker instances on different ports (e.g., 8081, 8082)
 
 ### 3. Enterprise Resilience (Self-Healing)
 
