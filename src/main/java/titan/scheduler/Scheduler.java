@@ -74,7 +74,7 @@ public class Scheduler {
             while (isRunning) {
                 try {
                     ScheduledJob readyJob = waitingRoom.take();
-                    System.out.println("Time's up! Moving Job " + readyJob.getJob().getId() + " to Active Queue.");
+                    System.out.println("Time is up Moving Job " + readyJob.getJob().getId() + " to Active Queue.");
                     taskQueue.add(readyJob.getJob());
 
                 } catch (InterruptedException e) {

@@ -43,3 +43,4 @@ titan_sdk/titan_sdk.egg-info/top_level.txt
 target/*
 perm_files/pytests/self_healer_agent_tests/.env
 titan_server_logs/*
+titan_tasks.db
