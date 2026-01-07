@@ -21,6 +21,7 @@ public class RpcWorkerServer {
     private final ExecutorService threadPool;
     private volatile boolean isRunning = true;
     private String capability;
+    private boolean isPermanent;
     private int schedulerPort;
     private String schedulerHost;
     private Map<String, TaskHandler> taskHanlderMap;
@@ -29,13 +30,14 @@ public class RpcWorkerServer {
     private final ExecutorService workerPool;
     private final AtomicInteger activeJobs;
 
-    public RpcWorkerServer( int myPort, String schedulerHost, int schedulerPort, String capability){
+    public RpcWorkerServer( int myPort, String schedulerHost, int schedulerPort, String capability, boolean isPermanent){
         this.port = myPort;
         this.threadPool = Executors.newCachedThreadPool();
         this.capability = capability;
         this.schedulerHost = schedulerHost;
         this.schedulerPort = schedulerPort;
         this.taskHanlderMap = new HashMap<>();
+        this.isPermanent = isPermanent;
 
         workerPool = Executors.newFixedThreadPool(MAX_THREADS);
         activeJobs =  new AtomicInteger(0);
@@ -56,14 +58,14 @@ public class RpcWorkerServer {
         taskHanlderMap.put("DEPLOY_PAYLOAD", new FileHandler());
 
         // This is for Shutting down the worker
-        taskHanlderMap.put("SHUTDOWN_WORKER", (payload) -> {
-            new Thread(() -> {
-                try { Thread.sleep(1000); } catch (Exception e) {}
-                System.out.println("Received SHUTDOWN command. Exiting...");
-                System.exit(0);
-            }).start();
-            return "ACK_SHUTTING_DOWN";
-        });
+//        taskHanlderMap.put("SHUTDOWN_WORKER", (payload) -> {
+//            new Thread(() -> {
+//                try { Thread.sleep(1000); } catch (Exception e) {}
+//                System.out.println("Received SHUTDOWN command. Exiting...");
+//                System.exit(0);
+//            }).start();
+//            return "ACK_SHUTTING_DOWN";
+//        });
     }
 
     public void start() throws Exception {
@@ -89,7 +91,7 @@ public class RpcWorkerServer {
         try(Socket socket = new Socket(schedulerHost, schedulerPort);
             DataInputStream in = new DataInputStream(socket.getInputStream());
             DataOutputStream out = new DataOutputStream(socket.getOutputStream())){
-            String requestPayload = port + "||" + capability;
+            String requestPayload = port + "||" + capability + "||" + this.isPermanent;
             TitanProtocol.send(out, TitanProtocol.OP_REGISTER, requestPayload);
             TitanProtocol.TitanPacket responsePacket = TitanProtocol.read(in);
             if ("REGISTERED".equals(responsePacket.payload)) {
@@ -142,14 +144,21 @@ public class RpcWorkerServer {
 //                        handleExecution(out, packet.payload, "STOP_SERVICE");
                         handleSyncExecution(out, packet.payload, "STOP_SERVICE");
                     } else if (packet.opCode == TitanProtocol.OP_RUN) {
-                        if (packet.payload.startsWith("SHUTDOWN_WORKER")) {
-                            System.out.println("Worker received kill signal. Shutting down...");
-                            // Send confirmation back before dying
-                            TitanProtocol.send(out, TitanProtocol.OP_RUN, "SUCCESS: Worker shutting down.");
-                            Thread.sleep(100); // add busy waiting for the OS to handle the exit
-                            System.exit(0);
-                        }
+//                        if (packet.payload.startsWith("SHUTDOWN_WORKER")) {
+//                            System.out.println("Worker received kill signal. Shutting down...");
+//                            // Send confirmation back before dying
+//                            TitanProtocol.send(out, TitanProtocol.OP_RUN, "SUCCESS: Worker shutting down.");
+//                            Thread.sleep(100); // add busy waiting for the OS to handle the exit
+//                            System.exit(0);
+//                        }
                         handleAsyncExecution(out, packet.payload);
+                    } else if (packet.opCode == TitanProtocol.OP_KILL_WORKER) {
+                        System.out.println("[INFO] Worker received Kill Signal (OP_KILL_WORKER). Shutting down...");
+                        TitanProtocol.send(out, TitanProtocol.OP_KILL_WORKER, "SUCCESS: Worker shutting down.");
+                        // add busy waiting for the OS to handle the exit
+                        try { Thread.sleep(100); } catch (InterruptedException ignored) {}
+                        // Kill the JVM
+                        System.exit(0);
                     }
                 } catch (EOFException e) {
 //                    System.out.println("Scheduler disconnected.");
@@ -397,6 +406,7 @@ public class RpcWorkerServer {
         String schedHost = "localhost";
         int schedPort = 9090;
         String capability = "GENERAL";
+        boolean isPermanent = false;
 
         // 2. Parse Arguments (Order: port, schedHost, schedPort, capability)
         if (args.length > 0) {
@@ -418,15 +428,17 @@ public class RpcWorkerServer {
         }
 
         if (args.length > 3) capability = args[3];
+        if(args.length > 4) isPermanent = Boolean.parseBoolean(args[4]);
 
         System.out.println("Starting Worker Server...");
         System.out.println("Local Port: " + myPort);
         System.out.println("Target Scheduler: " + schedHost + ":" + schedPort);
         System.out.println("Capability: " + capability);
+        System.out.println("Mode:             " + (isPermanent ? "PERMANENT (Protected)" : "EPHEMERAL (Auto-Scaleable)"));
 
         titan.tasks.ProcessRegistry.loadAndCleanUpProcesses();
 
-        RpcWorkerServer rpcWorkerServer = new RpcWorkerServer(myPort, schedHost, schedPort, capability);
+        RpcWorkerServer rpcWorkerServer = new RpcWorkerServer(myPort, schedHost, schedPort, capability, isPermanent);
         rpcWorkerServer.start();
     }
 }

@@ -1,6 +1,6 @@
 import time
 import json
-from titan_sdk.titan_sdk import TitanClient, TitanJob
+from titan_sdk import TitanClient, TitanJob
 
 
 # --- MOCK LLM (Replace with OpenAI/DeepSeek API) ---

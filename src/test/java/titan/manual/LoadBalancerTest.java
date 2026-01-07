@@ -18,8 +18,8 @@ public class LoadBalancerTest {
 
         // 2. Start TWO Workers
         System.out.println("[INFO] Starting Worker A (8080) and Worker B (8081)...");
-        RpcWorkerServer workerA = new RpcWorkerServer(8080, "localhost", 9090, "PDF_CONVERT");
-        RpcWorkerServer workerB = new RpcWorkerServer(8081, "localhost", 9090, "PDF_CONVERT");
+        RpcWorkerServer workerA = new RpcWorkerServer(8080, "localhost", 9090, "PDF_CONVERT", false);
+        RpcWorkerServer workerB = new RpcWorkerServer(8081, "localhost", 9090, "PDF_CONVERT", false);
 
         new Thread(() -> { try { workerA.start(); } catch (Exception e) {} }).start();
         new Thread(() -> { try { workerB.start(); } catch (Exception e) {} }).start();

@@ -50,7 +50,7 @@ public class DeployCommandIntegrationTest {
 
                 System.out.println("👷 [Worker Thread] Starting Worker...");
                 // Note: Worker connects to "localhost" at SCHEDULER_PORT
-                RpcWorkerServer worker = new RpcWorkerServer(WORKER_PORT, "localhost", SCHEDULER_PORT, "GENERAL");
+                RpcWorkerServer worker = new RpcWorkerServer(WORKER_PORT, "localhost", SCHEDULER_PORT, "GENERAL", false);
                 worker.start();
 
             } catch (Exception e) {

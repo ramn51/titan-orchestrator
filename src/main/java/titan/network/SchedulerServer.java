@@ -57,8 +57,13 @@ public class SchedulerServer {
             String capability = (parts.length > 1) ? parts[1] : "GENERAL";
             String host = socket.getInetAddress().getHostAddress();
 
+            boolean isPerm = false;
+            if (parts.length > 2) {
+                isPerm = Boolean.parseBoolean(parts[2]);
+            }
+
             System.out.println("Registering Worker: " + host + " with " + capability);
-            scheduler.registerWorker(host, workerPort, capability);
+            scheduler.registerWorker(host, workerPort, capability, isPerm);
 //            main.java.titan.scheduler.getWorkerRegistry().addWorker(host, workerPort, capability);
             return ("REGISTERED");
     }
@@ -245,8 +250,17 @@ public class SchedulerServer {
 
             case TitanProtocol.OP_KILL_WORKER:
                 try {
-                    int targetPort = Integer.parseInt(payload);
-                    return scheduler.shutdownWorkerNode(targetPort);
+                    // OLD: int targetPort = Integer.parseInt(payload);
+                    // NEW FORMAT: "HOST|PORT" (e.g., "192.168.1.5|8081" or "localhost|8081")
+                    String[] killParts = payload.split("\\|");
+                    if (killParts.length < 2) {
+                        return "ERROR: Payload must be HOST|PORT";
+                    }
+
+                    String targetHost = killParts[0];
+                    int targetPort = Integer.parseInt(killParts[1]);
+
+                    return scheduler.shutdownWorkerNode(targetHost, targetPort);
                 } catch (NumberFormatException e) {
                     return "ERROR: Invalid Port Format";
                 }

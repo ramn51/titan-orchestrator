@@ -20,7 +20,7 @@ public class WorkerRegistrationTest {
 
         // 2. Start a Worker (8080) and tell it to register with 9090
         // (Make sure your RpcWorkerServer main/constructor is updated as we discussed)
-        RpcWorkerServer worker = new RpcWorkerServer(8080, "localhost", 9090, "PDF_CONVERT");
+        RpcWorkerServer worker = new RpcWorkerServer(8080, "localhost", 9090, "PDF_CONVERT", false);
         new Thread(() -> {
             try { worker.start(); } catch (Exception e) { e.printStackTrace(); }
         }).start();

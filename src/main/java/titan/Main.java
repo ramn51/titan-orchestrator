@@ -29,9 +29,10 @@ public class Main {
                     String sHost = (args.length > 2) ? args[2] : "localhost";
                     int sPort = (args.length > 3) ? Integer.parseInt(args[3]) : 9090;
                     String cap = (args.length > 4) ? args[4] : "GENERAL";
+                    boolean isPermanent = args.length > 5 && Boolean.parseBoolean(args[5]);
 
                     System.out.println("[INFO] Starting Titan Worker on port " + myPort);
-                    RpcWorkerServer worker = new RpcWorkerServer(myPort, sHost, sPort, cap);
+                    RpcWorkerServer worker = new RpcWorkerServer(myPort, sHost, sPort, cap, isPermanent);
                     worker.start();
                     break;
 

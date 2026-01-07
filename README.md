@@ -17,7 +17,7 @@ Titan is designed to grow with your system's complexity:
 
 1. **Level 1: Distributed Cron (The "Scheduler")**
 
-    - _Simple:_ Run a Python script on a remote machine every hour.
+    - _Simple:_ Run a Python script on a remote machine every hour. In a specified Sequence or distributed and parallel.
 
     - **Mental Model:** Distributed `crontab` or lightweight Airflow.
 
@@ -65,7 +65,19 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
 
 > **Note on Isolation:** Titan currently uses **Process-Level Isolation** (managing PIDs and workspaces directly on the Host OS). Full Container Isolation (Docker integration) is planned for v2.0.
 
-### 2. High-Performance Engineering
+
+### 2. Advanced Resource Governance
+
+- **Infrastructure Protection (Permanent vs. Ephemeral):** Titan distinguishes between Permanent and Non-Permanent nodes.
+
+    - **Permanent Nodes:** (e.g., The Root Worker, or a specialized GPU box). These are marked as `isPermanent=true` and are **immune** to auto-scaling shutdown logic.
+
+    - **Ephemeral Nodes:** Auto-scaled workers spawned during high load. These are automatically decommissioned when idle for >45s.
+
+- **Capability-Based Routing:** Titan supports heterogeneous clusters. You can tag workers with specific skills (e.g., `GPU`, `HIGH_MEM`, `GENERAL`). The scheduler enforces strict matching, ensuring `requirement: GPU` tasks _only_ land on nodes with that hardware capability.
+
+
+### 3. High-Performance Engineering
 
 * **Custom Binary Protocol:** Uses `TITAN_PROTO`, a fragmentation-safe TCP wire format (Header + Body) designed for less than 50ms latency without JSON overhead.
 * **Smart Task Affinity:** Implements "Parent-Child Locality." If a Worker spawns a sub-task, the scheduler attempts to place it on the same node to leverage local caching. Useful for cases where training and other tasks of a model needs to happen on a specific node.
@@ -74,7 +86,7 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
   
 > **Note on Concurrency:** To ensure stability on smaller nodes, the default Worker concurrency is currently **capped at 4 slots** per instance. To utilize more cores on a large server, simply spawn multiple Worker instances on different ports (e.g., 8081, 8082)
 
-### 3. Enterprise Resilience (Self-Healing)
+### 4. Enterprise Resilience (Self-Healing)
 
 * **Automated Resource Governance:** Workers maintain a persistent PID registry. On startup, they automatically detect and terminate **"Zombie" processes** left over from previous crashes.
 * **Graceful Termination:** Supports controlled shutdown signals, ensuring nodes finish critical housekeeping before going offline.
@@ -105,7 +117,7 @@ Titan strictly separates "Source Artifacts" from "Runtime State" to ensure repro
 If you are developing Titan, simply open the project in IntelliJ IDEA and run the Main classes directly:
 
 1. **Master:** Run `titan.TitanScheduler`
-2. **Worker:** Run `titan.TitanWorker`
+2. **Worker:** Run `titan.TitanWorker` (Defaults to Port 8080, Capability: GENERAL, Permanent: False)
 3. **CLI:** Run `client.TitanCli`
 
 ### Option 1: Build & Run (Production Simulation)
@@ -168,15 +180,16 @@ java -cp perm_files/Worker.jar client.TitanCli
 
 **Supported Commands:**
 
-| Command | Description |
-| --- | --- |
-| `stats` | View cluster health, active nodes, and job queues. |
-| `run <file>` | Immediately execute a script from `perm_files`. |
-| `deploy <file>` | Deploy a long-running service (e.g., a dashboard). |
-| `deploy Worker.jar <port>` | Manually spawn a new Worker node on a specific port. |
-| `stop <service_id>` | Gracefully stop a running service or job. |
-| `shutdown <port>` | Remotely decommission a specific worker node. |
-| `dag <dag_string>` | Submit a raw DAG string (Advanced users). |
+| Command                              | Description                                                                                 |
+|--------------------------------------|---------------------------------------------------------------------------------------------|
+| `stats`                              | View cluster health, active nodes, and job queues.                                          |
+| `run <file>`                         | Immediately execute a script from `perm_files`.                                             |
+| `deploy <file> [port]`               | Deploy a single file or service. Supports capability requirements. Ex: deploy train.py 0 GPU |
+| `deploy Worker.jar <port> [capability]` | Manually spawn a new Worker node on a specific port with its capability (GPU or GENERAL)    |
+| `stop <service_id>`                  | Gracefully stop a running service or job.                                                   |
+| `shutdown <host> <port>`             | Remotely decommission a specific worker node.                                               |
+| `dag <dag_string>`                   | Submit a raw DAG string (Advanced users).                                                   |
+| `upload <local_path>`                | Upload a file to server storage (perm_files)                                                |
 
 CLI looks like this:
 
@@ -230,9 +243,31 @@ jobs:
 
 ```
 
-**To run an example try   ``python titan_sdk\titan_cli.py deploy titan_test_suite\agent.yaml``.**
+**To run an example try   ``python titan_sdk\titan_cli.py deploy titan_test_suite\examples\yaml_based_static_tests\dag_structure_test``.**
 **This runs the example inside titan_test_suite that will serve as base reference to use**
 
+**If you want to run a workflow but you want only the task to run on a GPU node**
+**gpu_run.yaml**
+```yaml
+name: "GPU_Validation_Project"
+project: true  # This Zips the folder
+
+jobs:
+  - id: "Data_Step"
+    type: "run"
+    file: "preprocess.py"
+    requirement: "GENERAL" # Runs on cheap nodes
+    priority: 1
+
+  - id: "Training_Step"
+    type: "run"
+    file: "train_model.py"
+    depends_on: ["Data_Step"]
+    requirement: "GPU"     # Routed ONLY to workers with GPU capability
+    priority: 10
+```
+
+**The test_suite has all the different examples of trying out**
 
 ### Mode 2: Programmatic & Agentic Workflows
 
@@ -293,8 +328,7 @@ if "Segfault" in logs:
 Titan includes a lightweight Python Flask dashboard to visualize cluster health.
 
 
-
-![Titan High Level Architecture](screenshots/UI_Screenshot.png)
+![UI_Dashboard](screenshots/UI_Screenshot.png)
 
 * **Real-time Stats:** Current active thread usage of every worker for assessing load (For now its threads, will use CPU/RAM usage in future).
 * **Log Streaming:** Watch stdout/stderr from distributed jobs in real-time via UDP aggregation.
@@ -319,6 +353,8 @@ The system follows a **Leader-Follower** topology with a decoupled control plane
   <img src="/screenshots/Titan_L2_Final.png" alt="Titan High Level Architecture" width="800"/>
 </p>
 
+> Network Topology: Titan currently assumes a flat network address space (LAN/VPN). While it can run on Cloud VMs (EC2/GCP), it requires direct TCP connectivity between nodes. NAT Traversal and Public/Private IP translation are planned for v2.0.
+
 ### The Protocol (`TITAN_PROTO`)
 
 Communication happens over raw TCP sockets using a fixed-header framing strategy to ensure integrity:
@@ -338,13 +374,49 @@ Communication happens over raw TCP sockets using a fixed-header framing strategy
 
 * **Inverted Worker Registration:** Unlike traditional systems that scan for nodes, Titan uses a **Push-Based Discovery** model. Workers initiate the connection to the Master, allowing dynamic scaling behind NATs or firewalls without static IP configuration.
 * **The "ClockWatcher":** Instead of inefficient polling, Titan uses a dedicated thread monitoring a `DelayQueue` to handle future tasks. This ensures `O(log n)` scheduling efficiency thereby consuming zero CPU cycles until the precise millisecond a job is ready.
-* **Reconciliation Loop:** A background `ScalerExecutor` runs every 15 seconds to compare the `ActiveJobQueue` against `WorkerCapacity`. If the delta is too high, it triggers the Auto-Scaler.
+* **Reconciliation Loop:** A background `ScalerExecutor` runs every 15 seconds to compare the `ActiveJobQueue` against `WorkerCapacity`. If the delta is too high, it triggers the Auto-Scaler. 
+> The Reconciliation Loop separates workers into pools (e.g., GENERAL vs. GPU). It calculates saturation per pool to ensure scaling only happens when the relevant resource type is exhausted.
 
 #### 2. The Failure Detector (Heartbeats)
 
 * **Active Keep-Alive:** The Master maintains a dedicated `HeartBeatExecutor`. It tracks the "Last Seen" timestamp of every worker. If a worker goes silent for >30s, it is marked **DEAD**, and its active jobs are immediately re-queued to healthy nodes (Resilience).
 
 ---
+
+## 📂 Repository Guide
+
+To help you navigate the codebase:
+
+```text
+titan_test_suite/
+├── examples/               <--  START HERE (User Manual)
+│   ├── yaml_based_static_tests/  # Reference YAML pipelines (ETL etc)
+│   └── agents/                   # Advanced Python scripts (Self-Healing AI)
+    └── dynamic_dag_custom/       # Dynamic DAG examples (logical flow based ones)
+│
+└── pytests/                <--  INTERNAL (Engine Validation)
+    ├── complex_dag_test.py       # Stress tests for the Scheduler
+    └── ...                       # Raw integration checks used during development
+    
+```
+
+---
+
+## 🧪 Testing Strategy
+
+> **⚠️ Note to Contributors:** Titan is a research prototype built to explore the "Hard Parts" of Distributed Systems. As such, the test coverage focuses on integration rather than unit purity.
+
+- **Java Tests (`src/test/java`):** These are essentially **Integration Tests** designed during the initial Proof-of-Concept phase to validate the core loop. Some of these may be outdated or flaky due to the rapid pace of architectural changes.
+
+- **Python Validation:** The primary method for validating system stability currently lies in the `titan_test_suite` folder. Scripts like `complex_dag_test.py` and the YAML examples perform end-to-end black-box testing of the cluster.
+
+- **Future Plan:** A comprehensive Engine Test Suite and proper Unit Tests are planned for the near future to improve stability.
+
+
+**Found a bug?** Please log an issue! Since this is a custom-built distributed system, edge cases are expected.
+
+---
+
 
 ## 🔮 Roadmap
 
@@ -354,5 +426,7 @@ Communication happens over raw TCP sockets using a fixed-header framing strategy
 
 ---
 
-**Author:** Ram Narayanan A S
-*Built to explore the "Hard Parts" of Distributed Systems.*
+**Created and Maintained by Ram Narayanan A S**
+© 2025 Titan Orchestrator. Open for contributions.
+
+*Engineered from first principles to deconstruct the fundamental primitives of distributed orchestration.*

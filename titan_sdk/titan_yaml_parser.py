@@ -34,6 +34,8 @@ class TitanYAMLParser:
             step_type = step.get('type', 'run').lower()
             relative_file = step.get('file')
             req = step.get('requirement', 'GENERAL')
+            if req is None:
+                req = "GENERAL"
             
             priority = int(step.get('priority', 1))
             
@@ -73,7 +75,7 @@ class TitanYAMLParser:
                 parents=step.get('depends_on', []),
                 is_archive=is_archive,
                 priority=int(step.get('priority', 1)),
-                delay=int(step.get('delay', 0)) * 1000,
+                delay=delay_ms,
                 affinity=bool(step.get('affinity', False)),
                 requirement=req
             )

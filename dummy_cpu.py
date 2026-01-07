@@ -1,1 +1,0 @@
-print('Running standard CPU task')

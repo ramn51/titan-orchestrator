@@ -19,7 +19,7 @@ public class WorkerRegistry {
         return generateKey(host, port);
     }
 
-    public void addWorker(String host, int port, String capability){
+    public void addWorker(String host, int port, String capability, boolean isPermanent){
         String key = generateKey(host, port);
         workerMap.compute(key, (k, existingWorker) -> {
            long now = System.currentTimeMillis();
@@ -31,7 +31,13 @@ public class WorkerRegistry {
            if(!newCapabilities.contains(capability)){
                newCapabilities.add(capability);
            }
-           return new Worker(host, port, newCapabilities);
+
+            boolean finalPermanentStatus = isPermanent;
+            if (existingWorker != null && existingWorker.isPermanent()) {
+                finalPermanentStatus = true; // Once permanent, stays permanent (safer)
+            }
+
+           return new Worker(host, port, newCapabilities, finalPermanentStatus);
         });
     }
 
@@ -44,10 +50,15 @@ public class WorkerRegistry {
     }
 
     public void updateLastSeen(String host, int port){
+//        String key = generateKey(host, port);
+//        Worker old = workerMap.get(key);
+//        if(old != null)
+//            workerMap.putIfAbsent(key, new Worker(host, port, old.capabilities()));
         String key = generateKey(host, port);
-        Worker old = workerMap.get(key);
-        if(old != null)
-            workerMap.putIfAbsent(key, new Worker(host, port, old.capabilities()));
+        Worker worker = workerMap.get(key);
+        if(worker != null) {
+            worker.updateLastSeen();
+        }
     }
 
     public void markWorkerDead(String host, int port){

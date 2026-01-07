@@ -36,7 +36,7 @@ public class RunScriptTest {
         new Thread(() -> {
             try {
                 // <--- REGISTRATION HAPPENS HERE (See explanation below)
-                RpcWorkerServer w = new RpcWorkerServer(WORKER_PORT, "localhost", SCHEDULER_PORT, "GENERAL");
+                RpcWorkerServer w = new RpcWorkerServer(WORKER_PORT, "localhost", SCHEDULER_PORT, "GENERAL", false);
                 w.start();
                 clusterReady.countDown();
             } catch (Exception e) { e.printStackTrace(); }

@@ -116,7 +116,7 @@ public class TitanCLI {
             if (args.length < 1 || args[0].isEmpty()) {
                 System.out.println("[FAIL] Usage: deploy <server_filename> [port] [requirement]");
                 System.out.println("       deploy Worker.jar 8085 GPU");
-                System.out.println("       deploy service.yaml");
+                System.out.println("       deploy log_viewer.py 9991");
                 return;
             }
 
@@ -127,16 +127,19 @@ public class TitanCLI {
             String requirement = (args.length > 2) ? args[2] : "";
 
             if (filename.endsWith(".yaml") || filename.endsWith(".yml")) {
-                System.out.println("[INFO] Triggering Service Stack Deployment from '" + filename + "'...");
-                // Port is usually empty for YAML, but we send what we have just in case. The entrypoint already exists in the yaml def
-            } else {
-                if (targetPort.isEmpty() && filename.equalsIgnoreCase("Worker.jar")) {
-                    System.out.println("[WARN] No port specified for Worker.jar. Server will use default.");
-                }
-                System.out.println("[INFO] Deploying '" + filename + "'...");
-                if (!requirement.isEmpty()) {
-                    System.out.println("       Constraint: " + requirement);
-                }
+                System.out.println("[FAIL] The Java CLI does not support YAML orchestration.");
+                System.out.println("       Please use the Python SDK: 'python ./titan_sdk/titan_cli.py deploy " + filename + "'");
+                return;
+            }
+
+            // 2. Warn about defaults
+            if (targetPort.isEmpty() && filename.equalsIgnoreCase("Worker.jar")) {
+                System.out.println("[WARN] No port specified for Worker.jar. Server will default to 8085.");
+            }
+
+            System.out.println("[INFO] Requesting deployment of '" + filename + "'...");
+            if (!requirement.isEmpty()) {
+                System.out.println("       Constraint: " + requirement);
             }
 
             opCode = TitanProtocol.OP_DEPLOY;
@@ -149,12 +152,14 @@ public class TitanCLI {
         }
         else if (input.startsWith("shutdown ")) {
             String[] parts = input.trim().split("\\s+");
-            if (parts.length < 2) {
-                System.out.println("[FAIL] Usage: shutdown <port>");
+            if (parts.length < 3) {
+                System.out.println("[FAIL] Usage: shutdown <host> <port>");
+                // Example: shutdown 192.168.1.5 8090
                 return;
             }
             opCode = TitanProtocol.OP_KILL_WORKER;
-            payload = parts[1];
+            // payload format: "HOST|PORT"
+            payload = parts[1] + "|" + parts[2];
         }
 
         else {

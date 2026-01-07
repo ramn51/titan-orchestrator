@@ -37,7 +37,7 @@ public class RunBatchLogTest {
         // --- THREAD 2: WORKER ---
         new Thread(() -> {
             try {
-                RpcWorkerServer w = new RpcWorkerServer(WORKER_PORT, "localhost", SCHEDULER_PORT, "GENERAL");
+                RpcWorkerServer w = new RpcWorkerServer(WORKER_PORT, "localhost", SCHEDULER_PORT, "GENERAL", false);
                 System.out.println("[TEST] Worker started on " + WORKER_PORT);
                 w.start();
             } catch (Exception e) { e.printStackTrace(); }

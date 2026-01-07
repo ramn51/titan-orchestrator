@@ -70,7 +70,7 @@ def run_healer(target_file):
         for j in plan['jobs']:
             job = TitanJob(
                 # job_id=f"HEAL-{i}-{j['file'][:4]}",
-                job_id = f"DAG-HEALER-CYCLE-{i}-{j['file'][:4]}"
+                job_id = f"DAG-HEALER-CYCLE-{i}-{j['file'][:4]}",
                 filename=j['file'],
                 job_type="RUN_PAYLOAD",
                 args=j.get('args', "") # <--- Uses your new Args feature!

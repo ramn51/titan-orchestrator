@@ -25,7 +25,7 @@ public class FaultToleranceTest {
         System.out.println("\n--- 🎬 SCENARIO 1: Worker Crash & Recovery ---");
 
         // Start Worker 1 (The Victim)
-        RpcWorkerServer worker1 = new RpcWorkerServer(8080, "localhost", 9090, "PDF_CONVERT");
+        RpcWorkerServer worker1 = new RpcWorkerServer(8080, "localhost", 9090, "PDF_CONVERT", false);
         new Thread(() -> {
             try { worker1.start(); } catch (Exception e) { e.printStackTrace(); }
         }).start();
@@ -42,7 +42,7 @@ public class FaultToleranceTest {
 
         // Start Worker 2 (The Savior)
         System.out.println("🚑 Starting Backup Worker 2 (8081)...");
-        RpcWorkerServer worker2 = new RpcWorkerServer(8081, "localhost", 9090, "PDF_CONVERT");
+        RpcWorkerServer worker2 = new RpcWorkerServer(8081, "localhost", 9090, "PDF_CONVERT", false);
         new Thread(() -> {
             try { worker2.start(); } catch (Exception e) { e.printStackTrace(); }
         }).start();

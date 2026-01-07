@@ -21,7 +21,7 @@ public class WorkerScriptIntegrationTest {
         Thread workerThread = new Thread(() -> {
             try {
                 // Initialize Worker (Mocking Scheduler Host as localhost for reg)
-                RpcWorkerServer worker = new RpcWorkerServer(TEST_PORT, "localhost", 9090, "TEST_CAPABILITY");
+                RpcWorkerServer worker = new RpcWorkerServer(TEST_PORT, "localhost", 9090, "TEST_CAPABILITY", false);
 
                 // We mock the start() method slightly to notify us when ready
                 System.out.println("👷 [Worker Thread] Starting Server...");

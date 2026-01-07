@@ -17,11 +17,11 @@ public class TitanDAGEndToEnd {
         scheduler.start();
 
         // WORKER 1 (Port 8080)
-        RpcWorkerServer worker1 = new RpcWorkerServer(8080, "localhost", 9090, "TEST");
+        RpcWorkerServer worker1 = new RpcWorkerServer(8080, "localhost", 9090, "TEST", false);
         new Thread(() -> { try { worker1.start(); } catch (Exception e) {} }).start();
 
         // WORKER 2 (Port 8081)
-        RpcWorkerServer worker2 = new RpcWorkerServer(8081, "localhost", 9090, "TEST");
+        RpcWorkerServer worker2 = new RpcWorkerServer(8081, "localhost", 9090, "TEST", false);
         new Thread(() -> { try { worker2.start(); } catch (Exception e) {} }).start();
 
         System.out.println("Waiting for workers to register...");

@@ -16,20 +16,26 @@ public class Worker {
     // This will replace maxCap
     public static final int MAX_SLOTS = 4;
     private long idleStartTime = -1;
+    private boolean isPermanent;
 
 
-    public Worker(String host, int port, List<String> capabilities) {
+    public Worker(String host, int port, List<String> capabilities, boolean isPermanent) {
         this.host = host;
         this.port = port;
         this.capabilities = (capabilities == null) ? new ArrayList<>() : capabilities;
         this.lastSeen = System.currentTimeMillis();
         this.currentLoad = 0;
         maxCap = 4;
+        this.isPermanent = isPermanent;
         this.idleStartTime = System.currentTimeMillis();
     }
 
     public synchronized void updateLastSeen() {
         this.lastSeen = System.currentTimeMillis();
+    }
+
+    public boolean isPermanent() {
+        return isPermanent;
     }
 
     public synchronized void setCurrentLoad(int load) {

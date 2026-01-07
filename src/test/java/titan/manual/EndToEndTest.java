@@ -21,7 +21,7 @@ public class EndToEndTest {
 
         // 2. Start Worker (Port 8080) with PDF Skill
         System.out.println("\n[2] Starting Worker...");
-        RpcWorkerServer worker = new RpcWorkerServer(8080, "localhost", 9090, "PDF_CONVERT");
+        RpcWorkerServer worker = new RpcWorkerServer(8080, "localhost", 9090, "PDF_CONVERT", false);
         new Thread(() -> {
             try { worker.start(); } catch (Exception e) { e.printStackTrace(); }
         }).start();

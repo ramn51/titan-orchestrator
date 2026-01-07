@@ -131,26 +131,38 @@ public class Scheduler {
 
     private synchronized void reconcileClusters(){
         try {
-            List<Worker> workers = new ArrayList<>(workerRegistry.getWorkers());
-            if (workers.isEmpty()) {
+            List<Worker> allWorkers = new ArrayList<>(workerRegistry.getWorkers());
+            if (allWorkers.isEmpty()) {
                 System.out.println("[SCALER] No workers found. Skipping...");
                 return;
             }
 
             if (scalingInProgress) return;
 
-            long busyCount = workers.stream().filter(w -> w.currentJobId != null).count();
-            boolean allSaturated = workers.stream().allMatch(Worker::isSaturated);
-            int totalCount = workers.size();
-            int totalUsedSlots = workers.stream().mapToInt(Worker::getCurrentLoad).sum();
-            int totalAvailableSlots = workers.stream().mapToInt(Worker::getMaxCap).sum();;
+            List<Worker> generalWorkers = allWorkers.stream()
+                    .filter(w -> w.capabilities().contains("GENERAL"))
+                    .toList();
+
+            boolean generalPoolSaturated;
+            if (generalWorkers.isEmpty()) {
+                generalPoolSaturated = true;
+            } else {
+                generalPoolSaturated = generalWorkers.stream().allMatch(Worker::isSaturated);
+            }
+
+            long busyCount = allWorkers.stream().filter(w -> w.currentJobId != null).count();
+            int totalCount = allWorkers.size();
+            int totalUsedSlots = allWorkers.stream().mapToInt(Worker::getCurrentLoad).sum();
+            int totalAvailableSlots = allWorkers.stream().mapToInt(Worker::getMaxCap).sum();;
             System.out.println("[SCALER] Cluster Pressure: " + totalUsedSlots + "/" + totalAvailableSlots);
 
-            if (allSaturated && totalCount < MAX_WORKERS){
+            if (generalPoolSaturated && totalCount < MAX_WORKERS){
                scalingInProgress = true;
 //               int nextPort = workers.stream().mapToInt(Worker::port).max().orElse(8080) + 1;
                 // If the next port is not available then we just dont do scale up itself.
-               int nextPort = findSafePort(workers);
+//               int nextPort = findSafePort(workers);
+                int nextPort = findSafePort(allWorkers, 8090, 8200);
+
                if (nextPort == -1) {
                     System.err.println("[SCALER] Could not find any open ports. Aborting scale-up.");
                     scalingInProgress = false;
@@ -173,8 +185,9 @@ public class Scheduler {
             // Only scale down if the WHOLE cluster is idle and we have more than 1 worker
             Set<Worker> serviceHosts = new HashSet<>(liveServiceMap.values());
 
-            if (!allSaturated && totalCount > 1) {
-                Worker idleTarget = workers.stream()
+            if (!generalPoolSaturated && totalCount > 1) {
+                Worker idleTarget = allWorkers.stream()
+                        .filter(w -> !w.isPermanent())
                         .filter(w -> w.port() != 8080) // Never kill the root
                         .filter(w -> w.getCurrentLoad() == 0) // Must be doing nothing
                         .filter(w -> !serviceHosts.contains(w)) // Don't kill if hosting a Service
@@ -184,7 +197,7 @@ public class Scheduler {
 
                 if (idleTarget != null) {
                     System.out.println("[SCALER] SCALE-DOWN: Worker " + idleTarget.port() + " is excess capacity. Removing.");
-                    this.shutdownWorkerNode(idleTarget.port());
+                    this.shutdownWorkerNode(idleTarget.host(), idleTarget.port());
                     // 2. Remove from local registry immediately
                     workerRegistry.getWorkerMap().remove(idleTarget.host() + ":" + idleTarget.port());
                 }
@@ -196,8 +209,14 @@ public class Scheduler {
     }
 
     // Helper methods related to scaling. Finding the available ports for new spawning.
-    private int findSafePort(List<Worker> currentWorkers) {
-        int startPort = currentWorkers.stream().mapToInt(Worker::port).max().orElse(8080) + 1;
+    private int findSafePort(List<Worker> currentWorkers, int minRange, int maxRange) {
+        int maxCurrentPort = currentWorkers.stream()
+                .mapToInt(Worker::port)
+                .filter(p -> p >= minRange && p <= maxRange)
+                .max()
+                .orElse(minRange - 1);
+
+        int startPort = maxCurrentPort + 1;
         // Scan up to 20 ports to find a free one
         for (int p = startPort; p < startPort + 20; p++) {
             if (!isPortInUseLocally(p) && !portBlacklist.contains(p)) {
@@ -252,12 +271,14 @@ public class Scheduler {
         return liveServiceMap;
     }
 
-    public synchronized void registerWorker(String host, int port, String capability) {
-        this.workerRegistry.addWorker(host, port, capability);
+    public synchronized void registerWorker(String host, int port, String capability, boolean isPermanent) {
+        this.workerRegistry.addWorker(host, port, capability, isPermanent);
         this.scalingInProgress = false;
         this.portBlacklist.remove(port);
 
-        System.out.println("[DEBUG] Attempting promotion for incoming worker at " + host + ":" + port);
+//        System.out.println("[DEBUG] Attempting promotion for incoming worker at " + host + ":" + port);
+        System.out.println("[INFO] New Worker Registered: " + host + ":" + port +
+                (isPermanent ? " [PERMANENT]" : " [EPHEMERAL]"));
 
         liveServiceMap.entrySet().removeIf(entry -> {
                     String serviceId = entry.getKey();
@@ -302,53 +323,6 @@ public class Scheduler {
             waitingRoom.add(new ScheduledJob(job));
         }
     }
-
-//    public void submitJob(String jobPayload) {
-//        System.out.println("** Scheduler received job: " + jobPayload);
-//
-//        if (jobPayload.startsWith("DEPLOY_PAYLOAD") || jobPayload.startsWith("RUN_PAYLOAD")) {
-//            String temp = jobPayload.trim();
-//            long delay = 0;
-//            int priority = 1;
-//            //  Trying to extract DELAY from the end
-//            int lastPipe = temp.lastIndexOf('|');
-//            if (lastPipe != -1) {
-//                String suffix = temp.substring(lastPipe + 1);
-//                try {
-//                    // If the last part is a number, it's the DELAY, on success we strip it off.
-//                    delay = Long.parseLong(suffix);
-//                    temp = temp.substring(0, lastPipe);
-//                } catch (NumberFormatException e) {
-//                    // if its not a number Then it's part of the Base64 or filename.
-//                    // Delay remains 0. No stripping further.
-//                }
-//            }
-//
-//            // Try to extract PRIORITY from the new end ---
-//            lastPipe = temp.lastIndexOf('|');
-//            if (lastPipe != -1) {
-//                String suffix = temp.substring(lastPipe + 1);
-//                try {
-//                    // If the new last part is a number, it's the PRIORITY and then on success we strip it off
-//                    priority = Integer.parseInt(suffix);
-//                    temp = temp.substring(0, lastPipe);
-//                } catch (NumberFormatException e) {
-//                    // Priority remains 1. No stripping further if its not a number
-//                }
-//            }
-//            // Submit the task 'temp' now contains just the raw payload (HEADER|FILE|BASE64)
-//            submitJob(new Job(temp, priority, delay));
-//
-//        } else {
-//
-//            String[] parts = jobPayload.split("\\|");
-//            String data = parts.length > 1 ? parts[0] + "|" + parts[1] : jobPayload;
-//            int priority = parts.length > 2 ? Integer.parseInt(parts[2]) : 1;
-//            long delay = parts.length > 3 ? Long.parseLong(parts[3]) : 0;
-//
-//            submitJob(new Job(data, priority, delay));
-//        }
-//    }
 
     public void submitJob(String jobPayload) {
         System.out.println("** Scheduler received job: " + jobPayload);
@@ -487,11 +461,6 @@ public class Scheduler {
 //                history.put(job.getId(), job.getStatus());
                 System.out.println(" Job Processing: " + job);
 
-//                String[] parts = job.getPayload().split("\\|", 2);
-//                String rawHeader = parts[0];
-//                String reqTaskSkill = (rawHeader.equals("DEPLOY_PAYLOAD") || rawHeader.equals("RUN_PAYLOAD"))
-//                        ? "GENERAL"
-//                        : rawHeader;
                 String reqTaskSkill = extractSkillRequirement(job);
 
                 System.out.println("[DISPATCH] Job " + job.getId() + " requires: [" + reqTaskSkill + "]");
@@ -511,19 +480,6 @@ public class Scheduler {
                     Thread.sleep(2000);
                     continue;
                 }
-
-//            if (availableWorkers.isEmpty() && !reqTaskSkill.equals("GENERAL")) {
-//                 System.out.println("DEBUG: No specialists for " + reqTaskSkill + ", trying GENERAL workers...");
-//                availableWorkers = workerRegistry.getWorkersByCapability("GENERAL");
-//            }
-//
-//                if(availableWorkers.isEmpty()){
-//                    System.out.println("No available workers");
-//                    job.setStatus(Job.Status.PENDING);
-//                    taskQueue.add(job);
-//                    Thread.sleep(2000);
-//                    continue;
-//                }
 
                 Worker selectedWorker = selectBestWorker(job, availableWorkers);
 
@@ -739,23 +695,6 @@ public class Scheduler {
         boolean isSystemCommand = rawPayload.startsWith("DEPLOY_PAYLOAD") ||
                 rawPayload.startsWith("RUN_PAYLOAD");
 
-//        if (!isSystemCommand && rawPayload.contains("|")) {
-//            // This handles "TEST|DataA" to "DataA"
-//            actualPayload = rawPayload.split("\\|", 2)[1];
-//        }
-
-        // This handles the case with DAG request to get the next potential command
-        // 1. STRIP THE SKILL PREFIX (e.g. "GENERAL|RUN_..." -> "RUN_...")
-        // We look for the first pipe. If the second part looks like a command, we use that.
-//        if (rawPayload.contains("|")) {
-//            String[] parts = rawPayload.split("\\|", 2);
-//            String potentialCommand = parts[1];
-//
-//            if (potentialCommand.startsWith("DEPLOY_PAYLOAD") || potentialCommand.startsWith("RUN_PAYLOAD")) {
-//                actualPayload = potentialCommand;
-//            }
-//        }
-
         if (rawPayload.contains("|")) {
             String[] parts = rawPayload.split("\\|", 2);
             String potentialCommand = parts[1];
@@ -915,21 +854,8 @@ public class Scheduler {
 
         String filename = parts[1];
         String args = "";
-        String base64Script = parts[2];
+        String base64Script = "";
 
-//        if (parts.length == 3) {
-//            // OLD FORMAT (No args)
-//            // Format: TYPE | FILENAME | BASE64
-//            filename = parts[1];
-//            base64Script = parts[2];
-//        }
-//        else if (parts.length >= 4) {
-//            // NEW FORMAT (With args)
-//            // Format: TYPE | FILENAME | ARGS | BASE64
-//            filename = parts[1];
-//            args = parts[2];
-//            base64Script = parts[3];
-//        }
         if (parts[2].length() > 50) {
             base64Script = parts[2];
             args = "";
@@ -1027,12 +953,18 @@ public class Scheduler {
         }
     }
 
-    public String shutdownWorkerNode(int targetPort){
+    public String shutdownWorkerNode(String targetHost, int targetPort){
         Worker targetWorker = null;
         for(Worker w: this.getWorkerRegistry().getWorkers()){
-            if(w.port() == targetPort){
-                targetWorker = w;
-                break;
+            if (w.port() == targetPort && w.host().equals(targetHost)) {
+                boolean exactMatch = w.host().equals(targetHost);
+                boolean localAlias = (targetHost.equals("localhost") && w.host().equals("127.0.0.1")) ||
+                        (targetHost.equals("127.0.0.1") && w.host().equals("localhost"));
+
+                if (exactMatch || localAlias) {
+                    targetWorker = w;
+                    break;
+                }
             }
         }
 
@@ -1040,8 +972,11 @@ public class Scheduler {
             return "ERROR: Worker node " + targetPort + " not found in registry.";
         }
 
-        System.out.println("[ADMIN] Initiating Graceful Shutdown for Worker " + targetPort);
+        if (targetWorker.isPermanent()) {
+            return "ERROR: Cannot auto-shutdown PERMANENT worker " + targetHost + ":" + targetPort;
+        }
 
+        System.out.println("[INFO] Initiating Graceful Shutdown for Worker " + targetPort);
         List<String> servicesToStop = new java.util.ArrayList<>();
 
         for(Map.Entry<String, Worker> entry: liveServiceMap.entrySet()){
@@ -1051,13 +986,14 @@ public class Scheduler {
         }
 
         for (String serviceId : servicesToStop) {
-            System.out.println("[ADMIN] Stopping child service: " + serviceId);
+            System.out.println("[INFO] Stopping child service: " + serviceId);
             stopRemoteService(serviceId);
         }
 
+        liveServiceMap.entrySet().removeIf(entry -> entry.getKey().contains("WRK-" + targetPort + "-"));
         // Send the Kill Command to the Worker
         try {
-            schedulerClient.sendRequest(targetWorker.host(), targetWorker.port(), TitanProtocol.OP_RUN, "SHUTDOWN_WORKER|NOW");
+            schedulerClient.sendRequest(targetWorker.host(), targetWorker.port(), TitanProtocol.OP_KILL_WORKER, "NOW");
         } catch (Exception e) {
             System.err.println("[WARN] Worker might have died before receiving ACK: " + e.getMessage());
         }

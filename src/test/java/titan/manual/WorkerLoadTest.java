@@ -32,7 +32,7 @@ public class WorkerLoadTest {
             new Thread(() -> {
                 try {
                     // Start worker (This blocks, so we run in a thread)
-                    RpcWorkerServer worker = new RpcWorkerServer(port, "localhost", 9090, capability);
+                    RpcWorkerServer worker = new RpcWorkerServer(port, "localhost", 9090, capability, false);
                     workers.add(worker); // Keep ref to stop later
 
                     // We can't easily know EXACTLY when start() finishes registration inside this thread

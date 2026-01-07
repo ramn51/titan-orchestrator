@@ -12,5 +12,5 @@ jobs:
     type: "run"
     file: "train_model.py"
     depends_on: ["Data_Step"]
-    requirement: "GPU"        # <--- TEST TARGET
+    requirement: "GPU"
     priority: 10

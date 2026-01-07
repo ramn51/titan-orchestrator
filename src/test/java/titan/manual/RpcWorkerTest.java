@@ -18,7 +18,7 @@ public class RpcWorkerTest {
         String schedulerHost = "localhost";
         int schedulerPort = 8080;
 
-        RpcWorkerServer workerServer = new RpcWorkerServer(TEST_PORT, schedulerHost, schedulerPort, TEST_CAPABILITY);
+        RpcWorkerServer workerServer = new RpcWorkerServer(TEST_PORT, schedulerHost, schedulerPort, TEST_CAPABILITY, false);
 
         Future<?> future = executorService.submit(() -> {
             try {
