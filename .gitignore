@@ -31,14 +31,8 @@ bin/
 .idea
 
 titan_workspace/*
-titan_sdk/__pycache__/titan_sdk.cpython-310.pyc
-titan_sdk/my_titan_project/helper.py
-titan_sdk/my_titan_project/main.py
-titan_sdk/titan_sdk.egg-info/dependency_links.txt
-titan_sdk/titan_sdk.egg-info/PKG-INFO
-titan_sdk/titan_sdk.egg-info/requires.txt
-titan_sdk/titan_sdk.egg-info/SOURCES.txt
-titan_sdk/titan_sdk.egg-info/top_level.txt
+/titan_sdk/__pycache__/*
+titan_sdk/titan_sdk.egg-info/
 
 target/*
 perm_files/pytests/self_healer_agent_tests/.env

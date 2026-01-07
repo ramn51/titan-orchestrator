@@ -334,6 +334,9 @@ Titan includes a lightweight Python Flask dashboard to visualize cluster health.
 * **Log Streaming:** Watch stdout/stderr from distributed jobs in real-time via UDP aggregation.
 * **Job History:** Visual timeline of all executions.
 
+**On Click of Job link (Blue link)**
+![Log Stream](screenshots/Log_Stream.png)
+
 ```bash
 # Start the Dashboard
 python3 dashboard.py
@@ -416,7 +419,6 @@ titan_test_suite/
 **Found a bug?** Please log an issue! Since this is a custom-built distributed system, edge cases are expected.
 
 ---
-
 
 ## 🔮 Roadmap
 
