@@ -3,12 +3,7 @@ import time
 import requests # pip install requests
 import shutil
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
-sys.path.insert(0, project_root)
-
-
-from titan_sdk.titan_sdk import TitanClient, TitanJob
+from titan_sdk import TitanClient, TitanJob
 
 # --- CONFIG ---
 SERVICE_NAME = "web_agent_v1"

@@ -1,6 +1,6 @@
 import time
-import os
-# Ensure imports work (Clean version)
+import os, sys
+
 from titan_sdk import TitanClient, TitanJob
 
 def run_test():
@@ -67,6 +67,7 @@ def run_test():
     
     while True:
         logs = client.fetch_logs(monitor_job)
+        print("LOGS:", logs)
         
         # DEBUG: Print the raw response length to see if we get ANY data
         if logs:

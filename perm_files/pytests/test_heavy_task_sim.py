@@ -11,10 +11,10 @@ OP_SUBMIT_JOB = 3
 def get_heavy_task_content():
     # Helper to find the file safely
     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    heavy_task_path = os.path.join(parent_dir, "heavy_task.py")
+    heavy_task_path = os.path.join(parent_dir, "pytests", "heavy_task.py")
 
     if not os.path.exists(heavy_task_path):
-        print(f"⚠️ Warning: {calc_path} not found! Using dummy content.")
+        print(f"⚠️ Warning: {heavy_task_path} not found! Using dummy content.")
         return "print('Hello from Titan')"
 
     with open(heavy_task_path, "r") as f:

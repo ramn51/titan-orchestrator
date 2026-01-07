@@ -50,6 +50,10 @@ def main():
         # 2. Submit the DAG
         jobs = parser.build_jobs()
         print(f"🔗 [CLI] Submitting {len(jobs)} jobs...")
+
+        gpu_jobs = [j.id for j in jobs if j.requirement != "GENERAL"]
+        if gpu_jobs:
+            print(f"[CLI] Specialized Hardware Request detected for: {gpu_jobs}")
         
         dag_id = f"{project_name}-{int(time.time())}"
         resp = client.submit_dag(dag_id, jobs)

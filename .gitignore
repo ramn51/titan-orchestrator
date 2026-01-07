@@ -1,7 +1,7 @@
 ### IntelliJ IDEA ###
 out/
-!**/src/main/**/out/
-!**/src/test/**/out/
+!titan_test_suite/examples/yaml_based_static_tests/dag_structure_test/src/main/**/out/
+!titan_test_suite/examples/yaml_based_static_tests/dag_structure_test/src/test/**/out/
 .kotlin
 
 ### Eclipse ###
@@ -13,8 +13,8 @@ out/
 .springBeans
 .sts4-cache
 bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
+!titan_test_suite/examples/yaml_based_static_tests/dag_structure_test/src/main/**/bin/
+!titan_test_suite/examples/yaml_based_static_tests/dag_structure_test/src/test/**/bin/
 
 ### NetBeans ###
 /nbproject/private/

@@ -1,14 +1,8 @@
 import sys
 import os
 
-# 1. Setup Imports (Keep this)
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
-# sdk_path = os.path.abspath(os.path.join(current_dir, "..", "..", "titan_sdk"))
-# if sdk_path not in sys.path:
-#     sys.path.append(sdk_path)
-
-# from titan_sdk import TitanClient, TitanJob
-
 from titan_sdk import TitanClient, TitanJob
 
 def run_test():

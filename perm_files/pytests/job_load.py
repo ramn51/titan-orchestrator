@@ -12,8 +12,12 @@ VERSION = 1
 
 def get_calc_content():
     # Go up one level from the current script to find calc.py
-    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    calc_path = os.path.join(parent_dir, "calc.py")
+#     parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # Look for calc.py in the same folder
+    calc_path = os.path.join(current_dir, "calc.py")
+#     calc_path = os.path.join(parent_dir, "calc.py")
 
     if not os.path.exists(calc_path):
         print(f"⚠️ Warning: {calc_path} not found! Using dummy content.")

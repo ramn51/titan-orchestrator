@@ -33,6 +33,7 @@ class TitanYAMLParser:
 
             step_type = step.get('type', 'run').lower()
             relative_file = step.get('file')
+            req = step.get('requirement', 'GENERAL')
             
             priority = int(step.get('priority', 1))
             
@@ -73,7 +74,8 @@ class TitanYAMLParser:
                 is_archive=is_archive,
                 priority=int(step.get('priority', 1)),
                 delay=int(step.get('delay', 0)) * 1000,
-                affinity=bool(step.get('affinity', False))
+                affinity=bool(step.get('affinity', False)),
+                requirement=req
             )
             jobs.append(job)
             

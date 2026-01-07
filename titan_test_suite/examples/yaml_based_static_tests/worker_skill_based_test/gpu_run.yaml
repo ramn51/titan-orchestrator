@@ -1,0 +1,16 @@
+name: "GPU_Validation_Project"
+project: true  # This Zips the folder
+
+jobs:
+  - id: "Data_Step"
+    type: "run"
+    file: "preprocess.py"
+    requirement: "GENERAL"
+    priority: 1
+
+  - id: "Training_Step"
+    type: "run"
+    file: "train_model.py"
+    depends_on: ["Data_Step"]
+    requirement: "GPU"        # <--- TEST TARGET
+    priority: 10

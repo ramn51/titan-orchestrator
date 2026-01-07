@@ -230,6 +230,37 @@ jobs:
 
 ```
 
+**To run an example try   ``python titan_sdk\titan_cli.py deploy titan_test_suite\agent.yaml``.**
+**This runs the example inside titan_test_suite that will serve as base reference to use**
+
+
+### Mode 2: Programmatic & Agentic Workflows
+
+*Best for: Conditional logic, Self-Healing loops, and Dynamic Infrastructure.*
+
+#### Scenario A:  The "Logic Switch" (Dynamic DAGs)
+*Decide which DAG to run based on real-time cluster stats or data properties.*
+*Infrastructure that adapts to traffic load.
+
+> **Scenario:** If traffic > 80%, run a cheap "Quick Scan". If low, run a distributed "Deep Analysis."
+
+[Link to Code](examples/dynamic_switch.py)
+
+```python
+# Full code: examples/dynamic_switch.py
+
+if traffic_load > 80:
+    print(f"⚠️ High Traffic. Switching to 'FAST' pipeline.")
+    client.submit_job(fast_job)
+else:
+    print(f"✅ Normal Traffic. Running 'DEEP' analysis.")
+    client.submit_dag("DEEP_PIPELINE", deep_dag)
+```
+
+<p align="center">
+  <img src="screenshots/Dynamic_decision_DAG.png" alt="Dynamic Logic Flow" width="300"/>
+</p>
+
 ### Mode 2: Agentic Workflows (Python SDK)
 
 *Best for: AI Agents, Self-Healing loops, and Dynamic logic.*
@@ -237,24 +268,23 @@ jobs:
 **The "Self-Healing" Loop**
 
 ```python
-from titan_sdk import TitanClient, TitanJob
+# Full code: examples/agentic_healer.py
 
-client = TitanClient()
-job = TitanJob(id="TASK", filename="risky_script.py")
+# The "Brain" Loop
+logs = client.fetch_logs(job_id)
 
-# 1. Submit initial task
-client.submit("agent_run", [job])
-
-# 2. "Think" Loop
-logs = client.fetch_logs(job.id)
-if "ERROR" in logs:
-    print("[ERR] Failure detected. Deploying Fix...")
+if "Segfault" in logs:
+    print(f"🚨 CRITICAL ERROR in {job_id}. Deploying Patch...")
     
-    # Dynamic: The Agent creates a NEW job based on the error
-    fix_job = TitanJob(id="FIX", filename="healer.py")
-    client.submit("agent_fix", [fix_job])
+    # Programmatically create a new job to fix the issue
+    fix_job = TitanJob(id=f"{job_id}_fix", filename="scripts/safe_mode.py")
+    client.submit_job(fix_job)
 
 ```
+
+<p align="center">
+  <img src="screenshots/Agentic_AI_isolated_healer.png" alt="Dynamic Logic Flow" width="700"/>
+</p>
 
 ---
 
@@ -262,15 +292,11 @@ if "ERROR" in logs:
 
 Titan includes a lightweight Python Flask dashboard to visualize cluster health.
 
-[//]: # (<p align="center">)
 
-[//]: # (<img src="screenshots/UI_Screenshot.png" alt="Titan Dashboard" width="70%"/>)
-
-[//]: # (</p>)
 
 ![Titan High Level Architecture](screenshots/UI_Screenshot.png)
 
-* **Real-time Stats:** CPU/Memory usage of every worker.
+* **Real-time Stats:** Current active thread usage of every worker for assessing load (For now its threads, will use CPU/RAM usage in future).
 * **Log Streaming:** Watch stdout/stderr from distributed jobs in real-time via UDP aggregation.
 * **Job History:** Visual timeline of all executions.
 

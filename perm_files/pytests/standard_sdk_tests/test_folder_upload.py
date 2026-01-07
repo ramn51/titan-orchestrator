@@ -1,11 +1,9 @@
-import os
+import os, sys
 import shutil
 
 
 # 1. Setup a dummy project folder
 project_name = "my_titan_project"
-script_dir = os.path.dirname(os.path.abspath(__file__))
-project_path = os.path.join(script_dir, project_name)
 
 from titan_sdk.titan_sdk import TitanClient
 

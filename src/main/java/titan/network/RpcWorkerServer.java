@@ -152,7 +152,7 @@ public class RpcWorkerServer {
                         handleAsyncExecution(out, packet.payload);
                     }
                 } catch (EOFException e) {
-                    System.out.println("Scheduler disconnected.");
+//                    System.out.println("Scheduler disconnected.");
                     break;
                 } catch (Exception e) {
                     System.err.println("Error processing packet: " + e.getMessage());

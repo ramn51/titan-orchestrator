@@ -100,7 +100,7 @@ public class SchedulerServer {
         }
     }
 
-    private String handleDeployRequest(String fileName, String port) {
+    private String handleDeployRequest(String fileName, String port, String requirement) {
         try {
             File file = new File(PERM_FILES_DIR + File.separator + fileName);
             if (!file.exists()) {
@@ -117,6 +117,8 @@ public class SchedulerServer {
                 port = "8085";
             }
 
+            String safeReq = (requirement == null || requirement.isEmpty()) ? "GENERAL" : requirement;
+
             // If it's a Worker, we include the port in the ID for easy matching later
             String taggedId = (fileName.equalsIgnoreCase("Worker.jar"))
                     ? "WRK-" + port + "-" + internalId
@@ -126,12 +128,12 @@ public class SchedulerServer {
             job.setId(taggedId);
 
             // 2. Construct a Payload that contains EVERYTHING the worker needs
-            // Format: DEPLOY_PAYLOAD|filename|base64data
-            String payload = "DEPLOY_PAYLOAD|" + fileName + "|" + base64Content + "|" + port;
+            // Format: DEPLOY_PAYLOAD|filename|base64data|port|requirement
+            String payload = "DEPLOY_PAYLOAD|" + fileName + "|" + base64Content + "|" + port + "|" + safeReq;;
             job.setPayload(payload);
             scheduler.submitJob(job);
 
-            System.out.println("[INFO] DEPLOY Job queued for file: " + fileName);
+            System.out.println("[INFO] DEPLOY Job queued for file: " + fileName + " [Req: " + safeReq + "]");
             return "DEPLOY_QUEUED";
 
         } catch (IOException e) {
@@ -141,9 +143,9 @@ public class SchedulerServer {
     }
 
 
-    private String handleRunScript(String fileName){
+    private String handleRunScript(String fileName, String requirement){
         try {
-
+            String safeReq = (requirement == null || requirement.isEmpty()) ? "GENERAL" : requirement;
             System.out.println("[INFO] Looking for '" + fileName + "' in workspace...");
             File file = findFileRecursive(fileName);
 
@@ -163,12 +165,12 @@ public class SchedulerServer {
 
             if (base64Content == null) return "ERROR: File not found";
 
-            String payload = "RUN_PAYLOAD|" + file.getName() + "|" + base64Content;
+            String payload = "RUN_PAYLOAD|" + file.getName() + "|" + base64Content + "|" + safeReq;
             // Payload: RUN_PAYLOAD|filename|base64
 //            Job job = new Job(payload, 1, 0);
             job.setPayload(payload);
             scheduler.submitJob(job);
-            return "JOB_QUEUED" + fullJobId;
+            return "JOB_QUEUED" + fullJobId + " on " + safeReq;
         } catch (IOException e) {
             e.printStackTrace();
             return "ERROR: Server File IO issue";
@@ -200,11 +202,17 @@ public class SchedulerServer {
                 if (parts.length < 1) return "ERROR: Missing filename";
                 String deployFile = parts[0];
                 String deployPort = (parts.length > 1) ? parts[1] : "";
-                return handleDeployRequest(deployFile, deployPort);
+                String deployReq = (parts.length > 2) ? parts[2] : "GENERAL";
+
+                return handleDeployRequest(deployFile, deployPort, deployReq);
 
             case TitanProtocol.OP_RUN:
                 if (payload.isEmpty()) return "ERROR: Missing filename";
-                return handleRunScript(payload);
+                // To handle skill based running based on worker capabaility (handled in Scheduler)
+                String[] runParts = payload.split("\\|");
+                String runFile = runParts[0];
+                String runReq = (runParts.length > 1) ? runParts[1] : "GENERAL";
+                return handleRunScript(runFile, runReq);
 
             case TitanProtocol.OP_STATS_JSON:
                 System.out.println("[INFO] Generating JSON Stats...");
@@ -279,7 +287,8 @@ public class SchedulerServer {
                 String jobId = payload;
                 List<String> logs = scheduler.getLogs(jobId);
                 if (logs.isEmpty()) {
-                    File logFile = new File("titan_workspace/shared/" + jobId + ".log");
+//                    File logFile = new File("titan_workspace/shared/" + jobId + ".log");
+                    File logFile = new File("titan_server_logs" + File.separator + jobId + ".log");
                     if (logFile.exists()) {
                         try {
                             return new String(Files.readAllBytes(logFile.toPath()));

@@ -1,12 +1,8 @@
 import os,sys
 import time
 
-# This walks up 3 levels: standard_sdk_tests -> pytests -> perm_files -> DistributedOrchestrator
-current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
-sys.path.insert(0, project_root)
 
-from titan_sdk.titan_sdk import TitanClient, TitanJob
+from titan_sdk import TitanClient, TitanJob
 
 # 1. Setup Dummy Project
 PROJECT_NAME = "agent_v1"

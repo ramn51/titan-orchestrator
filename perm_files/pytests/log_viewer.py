@@ -8,7 +8,7 @@ app = Flask(__name__)
 # CONFIG
 MASTER_IP = "127.0.0.1"
 MASTER_PORT = 9090
-OP_GET_LOGS = 16
+OP_GET_LOGS = 0x16
 
 def fetch_logs_from_titan(job_id):
     try:

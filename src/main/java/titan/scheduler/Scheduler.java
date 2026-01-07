@@ -303,51 +303,179 @@ public class Scheduler {
         }
     }
 
+//    public void submitJob(String jobPayload) {
+//        System.out.println("** Scheduler received job: " + jobPayload);
+//
+//        if (jobPayload.startsWith("DEPLOY_PAYLOAD") || jobPayload.startsWith("RUN_PAYLOAD")) {
+//            String temp = jobPayload.trim();
+//            long delay = 0;
+//            int priority = 1;
+//            //  Trying to extract DELAY from the end
+//            int lastPipe = temp.lastIndexOf('|');
+//            if (lastPipe != -1) {
+//                String suffix = temp.substring(lastPipe + 1);
+//                try {
+//                    // If the last part is a number, it's the DELAY, on success we strip it off.
+//                    delay = Long.parseLong(suffix);
+//                    temp = temp.substring(0, lastPipe);
+//                } catch (NumberFormatException e) {
+//                    // if its not a number Then it's part of the Base64 or filename.
+//                    // Delay remains 0. No stripping further.
+//                }
+//            }
+//
+//            // Try to extract PRIORITY from the new end ---
+//            lastPipe = temp.lastIndexOf('|');
+//            if (lastPipe != -1) {
+//                String suffix = temp.substring(lastPipe + 1);
+//                try {
+//                    // If the new last part is a number, it's the PRIORITY and then on success we strip it off
+//                    priority = Integer.parseInt(suffix);
+//                    temp = temp.substring(0, lastPipe);
+//                } catch (NumberFormatException e) {
+//                    // Priority remains 1. No stripping further if its not a number
+//                }
+//            }
+//            // Submit the task 'temp' now contains just the raw payload (HEADER|FILE|BASE64)
+//            submitJob(new Job(temp, priority, delay));
+//
+//        } else {
+//
+//            String[] parts = jobPayload.split("\\|");
+//            String data = parts.length > 1 ? parts[0] + "|" + parts[1] : jobPayload;
+//            int priority = parts.length > 2 ? Integer.parseInt(parts[2]) : 1;
+//            long delay = parts.length > 3 ? Long.parseLong(parts[3]) : 0;
+//
+//            submitJob(new Job(data, priority, delay));
+//        }
+//    }
+
     public void submitJob(String jobPayload) {
         System.out.println("** Scheduler received job: " + jobPayload);
 
-        if (jobPayload.startsWith("DEPLOY_PAYLOAD") || jobPayload.startsWith("RUN_PAYLOAD")) {
-            String temp = jobPayload.trim();
-            long delay = 0;
-            int priority = 1;
-            //  Trying to extract DELAY from the end
-            int lastPipe = temp.lastIndexOf('|');
-            if (lastPipe != -1) {
-                String suffix = temp.substring(lastPipe + 1);
-                try {
-                    // If the last part is a number, it's the DELAY, on success we strip it off.
-                    delay = Long.parseLong(suffix);
-                    temp = temp.substring(0, lastPipe);
-                } catch (NumberFormatException e) {
-                    // if its not a number Then it's part of the Base64 or filename.
-                    // Delay remains 0. No stripping further.
-                }
+        String temp = jobPayload.trim();
+        long delay = 0;
+        int priority = 1;
+
+        // Parse DELAY from the Right ---
+        // We look for the last pipe. If the text after it is a number, we take it and remove it.
+        int lastPipe = temp.lastIndexOf('|');
+        if (lastPipe != -1) {
+            String suffix = temp.substring(lastPipe + 1);
+            try {
+                delay = Long.parseLong(suffix);
+                temp = temp.substring(0, lastPipe); // Chop off the delay
+            } catch (NumberFormatException e) {
+                // It wasn't a number (e.g. it was part of base64 data). We leave the string alone.
             }
-
-            // Try to extract PRIORITY from the new end ---
-            lastPipe = temp.lastIndexOf('|');
-            if (lastPipe != -1) {
-                String suffix = temp.substring(lastPipe + 1);
-                try {
-                    // If the new last part is a number, it's the PRIORITY and then on success we strip it off
-                    priority = Integer.parseInt(suffix);
-                    temp = temp.substring(0, lastPipe);
-                } catch (NumberFormatException e) {
-                    // Priority remains 1. No stripping further if its not a number
-                }
-            }
-            // Submit the task 'temp' now contains just the raw payload (HEADER|FILE|BASE64)
-            submitJob(new Job(temp, priority, delay));
-
-        } else {
-
-            String[] parts = jobPayload.split("\\|");
-            String data = parts.length > 1 ? parts[0] + "|" + parts[1] : jobPayload;
-            int priority = parts.length > 2 ? Integer.parseInt(parts[2]) : 1;
-            long delay = parts.length > 3 ? Long.parseLong(parts[3]) : 0;
-
-            submitJob(new Job(data, priority, delay));
         }
+
+        // Extract PRIORITY from the Right
+        // Repeat the process for the next item on the right.
+        lastPipe = temp.lastIndexOf('|');
+        if (lastPipe != -1) {
+            String suffix = temp.substring(lastPipe + 1);
+            try {
+                priority = Integer.parseInt(suffix);
+                temp = temp.substring(0, lastPipe);
+            } catch (NumberFormatException e) {
+                // ignore, no action
+            }
+        }
+
+        // 'temp' contains the ID and the Payload (Data, Req, etc.)
+        // Example: "JOB-101 | RUN_PAYLOAD | script.py | data | GPU"
+        // Identify and Separate ID (From the Left) ---
+        int firstPipe = temp.indexOf('|');
+        String potentialId = null;
+        String actualPayload = temp;
+
+        if (firstPipe != -1) {
+            String prefix = temp.substring(0, firstPipe);
+
+            // If it DOES NOT start with a command keyword, it must be a custom Job ID.
+            if (!prefix.startsWith("RUN_PAYLOAD") &&
+                    !prefix.startsWith("DEPLOY_PAYLOAD") &&
+                    !prefix.startsWith("START_ARCHIVE") &&
+                    !prefix.startsWith("RUN_ARCHIVE")) {
+
+                potentialId = prefix; // "JOB-101"
+                actualPayload = temp.substring(firstPipe + 1).trim(); // "RUN_PAYLOAD | script.py | data | GPU"
+            }
+        }
+
+        Job job = new Job(actualPayload, priority, delay);
+        if (potentialId != null) {
+            job.setId(potentialId);
+        }
+
+        submitJob(job);
+    }
+
+    private String extractSkillRequirement(Job job) {
+        String payload = job.getPayload();
+        if (payload == null || payload.isEmpty()) return "GENERAL";
+
+        if (payload.contains("INTERNAL_SCALE")) {
+            return "GENERAL";
+        }
+
+        String[] parts = payload.split("\\|");
+        // 1. Trim everything
+        for (int i = 0; i < parts.length; i++) parts[i] = parts[i].trim();
+
+        // 2. FIND ANCHOR (Command Header)
+        int headerIndex = -1;
+        for (int i = 0; i < Math.min(parts.length, 3); i++) {
+            String p = parts[i];
+            if (p.equals("RUN_PAYLOAD") || p.equals("DEPLOY_PAYLOAD") ||
+                    p.equals("RUN_ARCHIVE") || p.equals("START_ARCHIVE_SERVICE")) {
+                headerIndex = i;
+                break;
+            }
+        }
+
+        if (headerIndex == -1) {
+            // Safety: If payload starts with ID, don't return ID as skill
+            if (parts.length > 0 && parts[0].equals(job.getId())) return "GENERAL";
+            return (parts.length > 0) ? parts[0] : "GENERAL";
+        }
+
+        // 3. SCAN BACKWARDS (Peel off Metadata)
+        int endIndex = parts.length - 1;
+
+        while (endIndex > headerIndex) {
+            String p = parts[endIndex];
+            boolean isMetadata = false;
+
+            // --- THE FIX: IGNORE JOB ID AT THE END ---
+            if (p.equals(job.getId())) isMetadata = true;
+
+                // Check standard metadata
+            else if (p.startsWith("[") && p.endsWith("]")) isMetadata = true; // Parents
+            else if (p.equals("AFFINITY")) isMetadata = true;            // Affinity Tag
+            else {
+                try {
+                    Long.parseLong(p); // Priority or Delay
+                    isMetadata = true;
+                } catch (NumberFormatException ignored) {}
+            }
+
+            if (isMetadata) {
+                endIndex--; // Skip this token
+            } else {
+                // We found a non-metadata string.
+                if (endIndex != headerIndex) {
+                    // Sanity Check
+                    if (p.length() < 20 && !p.isEmpty() && !p.endsWith("=")) {
+                        return p;
+                    }
+                }
+                break;
+            }
+        }
+
+        return "GENERAL";
     }
 
     private void runDispatchLoop() throws InterruptedException {
@@ -359,26 +487,43 @@ public class Scheduler {
 //                history.put(job.getId(), job.getStatus());
                 System.out.println(" Job Processing: " + job);
 
-                String[] parts = job.getPayload().split("\\|", 2);
-                String rawHeader = parts[0];
-                String reqTaskSkill = (rawHeader.equals("DEPLOY_PAYLOAD") || rawHeader.equals("RUN_PAYLOAD"))
-                        ? "GENERAL"
-                        : rawHeader;
+//                String[] parts = job.getPayload().split("\\|", 2);
+//                String rawHeader = parts[0];
+//                String reqTaskSkill = (rawHeader.equals("DEPLOY_PAYLOAD") || rawHeader.equals("RUN_PAYLOAD"))
+//                        ? "GENERAL"
+//                        : rawHeader;
+                String reqTaskSkill = extractSkillRequirement(job);
+
+                System.out.println("[DISPATCH] Job " + job.getId() + " requires: [" + reqTaskSkill + "]");
 
                 List<Worker> availableWorkers = workerRegistry.getWorkersByCapability(reqTaskSkill);
 
-            if (availableWorkers.isEmpty() && !reqTaskSkill.equals("GENERAL")) {
-                 System.out.println("DEBUG: No specialists for " + reqTaskSkill + ", trying GENERAL workers...");
-                availableWorkers = workerRegistry.getWorkersByCapability("GENERAL");
-            }
+                if (availableWorkers.isEmpty()) {
+                    if (!reqTaskSkill.equals("GENERAL")) {
+                        System.out.println("[WAIT] No active workers found with capability: " + reqTaskSkill);
+                    } else {
+                        System.out.println("[WAIT] No GENERAL workers available.");
+                    }
 
-                if(availableWorkers.isEmpty()){
-                    System.out.println("No available workers");
+                    // Re-queue the job to try again later (Backpressure)
                     job.setStatus(Job.Status.PENDING);
                     taskQueue.add(job);
                     Thread.sleep(2000);
                     continue;
                 }
+
+//            if (availableWorkers.isEmpty() && !reqTaskSkill.equals("GENERAL")) {
+//                 System.out.println("DEBUG: No specialists for " + reqTaskSkill + ", trying GENERAL workers...");
+//                availableWorkers = workerRegistry.getWorkersByCapability("GENERAL");
+//            }
+//
+//                if(availableWorkers.isEmpty()){
+//                    System.out.println("No available workers");
+//                    job.setStatus(Job.Status.PENDING);
+//                    taskQueue.add(job);
+//                    Thread.sleep(2000);
+//                    continue;
+//                }
 
                 Worker selectedWorker = selectBestWorker(job, availableWorkers);
 

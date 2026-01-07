@@ -58,8 +58,8 @@ def send_dag():
 
     # 2. File Names
     worker_jar = os.path.join(resolved_dir, "Worker.jar")
-    calc_py    = os.path.join(resolved_dir, "calc.py")
-    server_py  = os.path.join(resolved_dir, "log_viewer.py")
+    calc_py    = os.path.join(resolved_dir, "pytests", "calc.py")
+    server_py  = os.path.join(resolved_dir, "pytests", "log_viewer.py")
 
     # 3. Load Payloads
     worker_b64 = get_b64_content(worker_jar)

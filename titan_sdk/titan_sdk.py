@@ -10,11 +10,12 @@ TITAN_PORT = 9090
 VERSION = 1
 OP_SUBMIT_DAG = 4
 OP_LOG_BATCH = 0x17
+OP_GET_LOGS = 0x16
 OP_UPLOAD_ASSET = 0x53
 
 class TitanJob:
     def __init__(self, job_id, filename, job_type="RUN_PAYLOAD", args=None,
-             parents=None, port=0, is_archive=False, priority=1, delay=0, affinity=False):
+             parents=None, port=0, is_archive=False, priority=1, delay=0, affinity=False, requirement="GENERAL"):
         self.id = job_id
         self.filename = filename
         self.job_type = job_type
@@ -25,6 +26,7 @@ class TitanJob:
         self.priority = priority   # Default 1
         self.delay = delay         # Default 0 (ms or sec depends on Scheduler logic)
         self.affinity = affinity
+        self.requirement = requirement
         
 
         if not self.is_archive:
@@ -43,26 +45,13 @@ class TitanJob:
         # 2. Fail loudly if not found (No magic guessing)
         raise FileNotFoundError(f"❌ File '{filename}' not found. Please provide the correct absolute path.")
 
-    # def to_string(self):
-    #     parents_str = "[" + ",".join(self.parents) + "]"
-        
-    #     # We send only the filename (not full path) to the Master/Worker
-    #     simple_filename = os.path.basename(self.filename)
-
-    #     if self.job_type == "DEPLOY_PAYLOAD":
-    #         payload_content = f"{simple_filename}|{self.payload_b64}|{self.port}"
-    #     else:
-    #         safe_args = self.args.replace("|", " ")
-    #         payload_content = f"{simple_filename}|{safe_args}|{self.payload_b64}"
-            
-    #     return f"{self.id}|GENERAL|{self.job_type}|{payload_content}|{self.priority}|{self.delay}|{parents_str}"
-
     def to_string(self):
         parents_str = "[" + ",".join(self.parents) + "]"
         simple_filename = os.path.basename(self.filename)
         safe_args = self.args.replace("|", " ")
 
         affinity_suffix = "|AFFINITY" if self.affinity else ""
+        safe_req = self.requirement.replace("|", "") if self.requirement else "GENERAL"
 
         #  SERVICE / DEPLOYMENT ---
         # Handles: Worker.jar, Web Servers, Long-running Agents
@@ -71,15 +60,17 @@ class TitanJob:
             if self.job_type == "SERVICE" or self.job_type == "DEPLOY_PAYLOAD":
                 # [ARCHIVE SERVICE] - Project Zip based
                 # We replace the Base64 slot with 'args' since we don't send code.
-                # Format: zip_name/entry.py | args | port
+                # Format: filename | args | port | REQUIREMENT
+                # Eg: zip_name/entry.py | args | port | Req
                 header = "START_ARCHIVE_SERVICE"
-                payload_content = f"{self.filename}|{safe_args}|{self.port}"
+                payload_content = f"{self.filename}|{safe_args}|{self.port}|{safe_req}"
             
             else:
 
                 header = "RUN_ARCHIVE"
-                # Format: RUN_ARCHIVE | zip.zip/entry.py | args
-                payload_content = f"{self.filename}|{safe_args}"
+                # Format: RUN_ARCHIVE | zip.zip/entry.py | args | Req
+                # Eg: zip_name/entry.py | args | Req
+                payload_content = f"{self.filename}|{safe_args}|{safe_req}"
         #  TASK / SCRIPT ---
         # Handles: Ephemeral Python scripts, One-off calculations
         # [INLINE SERVICE] - Single File (e.g. Worker.jar or server_dashboard.py)
@@ -89,17 +80,17 @@ class TitanJob:
             simple_filename = os.path.basename(self.filename)
             if self.job_type == "SERVICE" or self.job_type == "DEPLOY_PAYLOAD":
                 header = "DEPLOY_PAYLOAD"
-                payload_content = f"{simple_filename}|{self.payload_b64}|{self.port}"
+                payload_content = f"{simple_filename}|{self.payload_b64}|{self.port}|{safe_req}"
             else:
                 header = "RUN_PAYLOAD"
-                payload_content = f"{simple_filename}|{safe_args}|{self.payload_b64}"
+                payload_content = f"{simple_filename}|{safe_args}|{self.payload_b64}|{safe_req}"
 
-        return f"{self.id}|GENERAL|{header}|{payload_content}|{self.priority}|{self.delay}|{parents_str}{affinity_suffix}"
+        return f"{self.id}|{header}|{payload_content}|{self.priority}|{self.delay}|{parents_str}{affinity_suffix}"
 
 class TitanClient:
     def submit_dag(self, name, jobs):
         """Submits a list of TitanJobs as a DAG"""
-        print(f"[TitanSDK] Submitting DAG: {name}")
+        print(f"[SDK] Submitting DAG: {name}")
         dag_payload = " ; ".join([j.to_string() for j in jobs])
         return self._send_request(OP_SUBMIT_DAG, dag_payload)
     
@@ -107,7 +98,7 @@ class TitanClient:
         return self.submit_dag(job.id, [job])
     
     def fetch_logs(self, job_id):
-        return self._send_request(OP_LOG_BATCH, job_id)
+        return self._send_request(OP_GET_LOGS, job_id)
 
     def upload_file(self, filepath):
         """Uploads a single file to Master's perm_files"""
@@ -124,6 +115,28 @@ class TitanClient:
         
         payload = f"{clean_filename}|{b64_content}"
         return self._send_request(OP_UPLOAD_ASSET, payload)
+
+    def fetch_artifact(self, filename, save_path=None):
+        """Used by a running job to download a file from Master"""
+        print(f"[SDK] Fetching artifact: {filename}...")
+
+        # OP_FETCH_ASSET = 0x54 (84)
+        # Response is the Base64 string of the file
+        b64_data = self._send_request(0x54, filename)
+
+        if not b64_data or b64_data.startswith("ERROR"):
+            print(f"[SDK] Failed to fetch: {b64_data}")
+            return False
+
+        # Decode and Save
+        file_bytes = base64.b64decode(b64_data)
+
+        target_path = save_path if save_path else filename
+        with open(target_path, "wb") as f:
+            f.write(file_bytes)
+
+        print(f"[SDK] Saved to: {os.path.abspath(target_path)}")
+        return True
 
     def upload_project_folder(self, folder_path, project_name=None):
         """Zips a folder and uploads it as project_name.zip"""
