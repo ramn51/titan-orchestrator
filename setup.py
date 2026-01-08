@@ -9,4 +9,8 @@ setup(
     install_requires=[
         'requests'
     ],
+    license="Apache-2.0",
+    classifiers=[
+        "License :: OSI Approved :: Apache Software License",
+    ],
 )

@@ -428,7 +428,13 @@ titan_test_suite/
 
 ---
 
+## License
+
+DistributedTaskOrchestrator is licensed under the Apache License 2.0.
+See the [LICENSE](LICENSE) file for details.
+
 **Created and Maintained by Ram Narayanan A S**
 © 2025 Titan Orchestrator. Open for contributions.
 
 *Engineered from first principles to deconstruct the fundamental primitives of distributed orchestration.*
+

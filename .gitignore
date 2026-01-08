@@ -34,6 +34,15 @@ titan_workspace/*
 /titan_sdk/__pycache__/*
 titan_sdk/titan_sdk.egg-info/
 
+*.egg-info/
+dist/
+build/
+__pycache__/
+
+# Virtual environments
+.venv/
+venv/
+
 target/*
 perm_files/pytests/self_healer_agent_tests/.env
 titan_server_logs/*
