@@ -99,11 +99,15 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
 
 ### 1. Control Plane: Dynamic DAG Execution
 *Watch Titan resolve dependencies and execute a multi-stage workflow where the path is decided at runtime.*
-[DRAG YOUR dynamic_dag.mp4 HERE]
+
+https://github.com/user-attachments/assets/5731c0b8-d392-4890-a3c5-f7e9cf611d65
+
 
 ### 2. Elasticity: Reactive Auto-Scaling
 *Watch the cluster detect load, spawn a new Worker process automatically, and distribute tasks.*
-[DRAG YOUR titan_load_scaling.mp4 HERE]
+
+https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172
+
 
 ---
 ### 🔽 Detailed Scenarios (Click to Expand)
@@ -112,7 +116,8 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
   <br>
   <i>Shows tasks tagged with "GPU" bypassing general nodes to land on specific hardware.</i>
   <br><br>
-  [DRAG YOUR GPU_Affinity_yaml.mp4 HERE]
+<video src="https://github.com/user-attachments/assets/9a1abc1c-d01f-4998-8c74-30409113ec85" controls="controls" style="max-width: 100%;">
+  </video>
 </details>
 
 <details>
@@ -120,7 +125,9 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
   <br>
   <i>Submitting a "Fanout" DAG to demonstrate non-blocking parallel execution across multiple workers.</i>
   <br><br>
-  [DRAG YOUR fanout_yaml_dag.mp4 HERE]
+  <video src="https://github.com/user-attachments/assets/812fd793-eab4-499e-9364-f1d3ccbbcc59" controls="controls" style="max-width: 100%;">
+  </video>
+
 </details>
 
 <details>
@@ -128,7 +135,9 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
   <br>
   <i>Deploying a simple Python agent via YAML configuration to a general node.</i>
   <br><br>
-  [DRAG YOUR titan_yaml_exec_general_node.mp4 HERE]
+  <video src="https://github.com/user-attachments/assets/94b10933-cd97-4e99-b034-4896804123fd" controls="controls" style="max-width: 100%;">
+  </video>
+
 </details>
 
 <details>
@@ -136,7 +145,11 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
   <br>
   <i>(Long Duration) A complete stress test showing the cluster scaling up under pressure and automatically decommissioning ephemeral nodes when the queue empties.</i>
   <br><br>
-  [DRAG YOUR titan_load_descaling.mp4 HERE]
+<video src="https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172" controls="controls" style="max-width: 100%;">
+  </video>
+
+<video src="https://github.com/user-attachments/assets/49afd1c6-bed3-444b-8d12-adff07832d8b" controls="controls" style="max-width: 100%;">
+  </video>
 </details>
 
 
