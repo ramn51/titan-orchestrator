@@ -11,7 +11,7 @@ Designed for small-to-medium scale environments, it acts as a **Self-Hosting, Se
 </p>
 
 ---
-## ⚡ Capability Spectrum
+## Capability Spectrum
 
 Titan is designed to grow with your system's complexity:
 
@@ -34,7 +34,7 @@ Titan is designed to grow with your system's complexity:
     - **Mental Model:** Infrastructure-aware LangChain.
 ---
 
-## ☯️ Philosophy: One Runtime, Two Patterns
+## Philosophy: One Runtime, Two Patterns
 
 Titan recognizes that Modern Infrastructure requires two distinct ways of working. You choose the interface that matches your role.
 ### 1. Static Workflows (The "DevOps" Path)
@@ -53,7 +53,7 @@ Titan recognizes that Modern Infrastructure requires two distinct ways of workin
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 ### 1. Universal Workload Support
 
@@ -95,7 +95,7 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
 ---
 
 ---
-## 🎥 Demos in Action
+## Demos in Action
 
 ### 1. Control Plane: Dynamic DAG Execution
 *Watch Titan resolve dependencies and execute a multi-stage workflow where the path is decided at runtime.*
@@ -110,7 +110,7 @@ https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172
 
 
 ---
-### 🔽 Detailed Scenarios (Click to Expand)
+### Detailed Scenarios (Click to Expand)
 <details>
   <summary><b>🎬 Scenario: GPU Affinity Routing</b> (Smart Scheduling)</summary>
   <br>
@@ -155,7 +155,7 @@ https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172
 
 ---
 
-## 📂 The Data Plane (File System)
+## The Data Plane (File System)
 
 Titan strictly separates "Source Artifacts" from "Runtime State" to ensure reproducibility.
 
@@ -165,7 +165,7 @@ Titan strictly separates "Source Artifacts" from "Runtime State" to ensure repro
 | **`titan_workspace/`** | **Execution Sandbox** | The runtime staging area.<br><br>• **`jobs/{id}/`**: Contains execution logs (`.log`) and isolated script copies for specific jobs.<br>• **`shared/`**: A "Data Bus" directory allowing dependent DAG tasks to share intermediate files. |
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -228,7 +228,7 @@ cd titan_sdk && pip install -e .
 
 ---
 
-## 💻 Operator Manual (CLI)
+##  Operator Manual (CLI)
 
 The Titan CLI connects to the cluster for real-time management.
 
@@ -278,7 +278,7 @@ Worker Status:
 
 
 
-## 🐍 Developer Manual (Two Modes)
+##  Developer Manual (Two Modes)
 
 ### Mode 1: Static Pipelines (YAML)
 
@@ -303,8 +303,10 @@ jobs:
     dependencies: ["TRANSFORM"]
 
 ```
+You need to have the yaml file in the root of the project that you want to deploy/run. The scripts and other files can be in any subfolders.
+Refer the examples folder to know the structure. Entrypoints server as the main path to execute them. Upload of asset is handled by titan_cli.py file internally.
 
-**To run an example try   ``python titan_sdk/titan_cli.py deploy titan_test_suite/examples/yaml_based_static_tests/dag_structure_test``.**
+To run an example try   ``python titan_sdk/titan_cli.py deploy titan_test_suite/examples/yaml_based_static_tests/dag_structure_test``.
 **This runs the example inside titan_test_suite that will serve as base reference to use**
 
 **If you want to run a workflow but you want only the task to run on a GPU node**
@@ -346,10 +348,10 @@ jobs:
 # Full code: examples/dynamic_switch.py
 
 if traffic_load > 80:
-    print(f"⚠️ High Traffic. Switching to 'FAST' pipeline.")
+    print(f" High Traffic. Switching to 'FAST' pipeline.")
     client.submit_job(fast_job)
 else:
-    print(f"✅ Normal Traffic. Running 'DEEP' analysis.")
+    print(f" Normal Traffic. Running 'DEEP' analysis.")
     client.submit_dag("DEEP_PIPELINE", deep_dag)
 ```
 
@@ -370,7 +372,7 @@ else:
 logs = client.fetch_logs(job_id)
 
 if "Segfault" in logs:
-    print(f"🚨 CRITICAL ERROR in {job_id}. Deploying Patch...")
+    print(f" CRITICAL ERROR in {job_id}. Deploying Patch...")
     
     # Programmatically create a new job to fix the issue
     fix_job = TitanJob(id=f"{job_id}_fix", filename="scripts/safe_mode.py")
@@ -384,7 +386,7 @@ if "Segfault" in logs:
 
 ---
 
-## 📚 SDK Reference (Python)
+##  SDK Reference (Python)
 
 The `TitanClient` is your primary gateway for programmatic control.
 
@@ -456,7 +458,7 @@ print("DAG Submitted!")
 ```
 
 
-## 🖥️ Dashboard
+##  Dashboard
 
 Titan includes a lightweight Python Flask dashboard to visualize cluster health.
 
@@ -479,7 +481,7 @@ python3 ./perm_files/server_dashboard.py
 
 ---
 
-## 🛠️ Architecture
+##  Architecture
 
 The system follows a **Leader-Follower** topology with a decoupled control plane.
 
@@ -519,7 +521,7 @@ Communication happens over raw TCP sockets using a fixed-header framing strategy
 
 ---
 
-## 📂 Repository Guide
+## Repository Guide
 
 To help you navigate the codebase:
 
@@ -538,7 +540,7 @@ titan_test_suite/
 
 ---
 
-## 🧪 Testing Strategy
+## Testing Strategy
 
 > **⚠️ Note to Contributors:** Titan is a research prototype built to explore the "Hard Parts" of Distributed Systems. As such, the test coverage focuses on integration rather than unit purity.
 
@@ -553,7 +555,7 @@ titan_test_suite/
 
 ---
 
-## 📝 Limitations & Design Constraints
+## Limitations & Design Constraints
 
 Titan is a research runtime designed to explore the **primitives of orchestration** (Scheduling, IPC, State Management) without the complexity of existing frameworks. As such, certain "Production" features are explicitly out of scope for V1:
 
@@ -575,7 +577,7 @@ Titan is a research runtime designed to explore the **primitives of orchestratio
 
 ---
 
-## 🔮 Roadmap
+## Roadmap
 
 * **Security & Auth (Planned):** Implement **mTLS (Mutual TLS)** for encrypted, authenticated communication between Master and Workers.
 * **Distributed Consensus:** Implement Raft/Paxos for Leader Election (Removing Master SPOF).
