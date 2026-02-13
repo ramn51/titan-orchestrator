@@ -4,7 +4,7 @@
 
 Designed for small-to-medium scale environments, it acts as a **Self-Hosting, Self-Healing Micro-PaaS**. It synthesizes the core primitives of orchestration—resolving dependencies, managing worker lifecycles, and handling resource governance—into a single, zero-dependency binary.
 
-> *Built from scratch in Java (Core Engine) and Python (SDK). No external databases. No frameworks. Just raw TCP sockets and systems engineering.*
+> *Core Engine built in Java with a Python SDK. Engineered with a zero-dependency architecture and a custom binary protocol to eliminate the overhead of external databases and heavy frameworks.*
 
 <p align="center">
   <img src="/screenshots/Titan_L1_diagram.png" alt="Titan High Level Architecture" width="800"/>
