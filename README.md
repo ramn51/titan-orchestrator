@@ -4,7 +4,7 @@
 
 Designed for small-to-medium scale environments, it acts as a **Self-Hosting, Self-Healing Micro-PaaS**. It synthesizes the core primitives of orchestration—resolving dependencies, managing worker lifecycles, and handling resource governance—into a single, zero-dependency binary.
 
-> *Built from scratch in Java (Core Engine) and Python (SDK). No external databases. No frameworks. Just raw TCP sockets and systems engineering.*
+> *Built from scratch in Java (Core Engine) and Python (SDK). Designs a custom binary protocol for internal signaling, creating a standalone orchestration runtime with zero external database dependencies.*
 
 <p align="center">
   <img src="/screenshots/Titan_L1_diagram.png" alt="Titan High Level Architecture" width="800"/>
@@ -98,7 +98,7 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
 - **Capability-Based Routing:** Titan supports heterogeneous clusters. You can tag workers with specific skills (e.g., `GPU`, `HIGH_MEM`, `GENERAL`). The scheduler enforces strict matching, ensuring `requirement: GPU` tasks _only_ land on nodes with that hardware capability.
 
 
-### 3. High-Performance Engineering
+### 3. Performance
 
 * **Custom Binary Protocol:** Uses `TITAN_PROTO`, a fragmentation-safe TCP wire format (Header + Body) designed for less than 50ms latency without JSON overhead.
 * **Smart Task Affinity:** Implements "Parent-Child Locality." If a Worker spawns a sub-task, the scheduler attempts to place it on the same node to leverage local caching. Useful for cases where training and other tasks of a model needs to happen on a specific node.
@@ -107,7 +107,7 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
   
 > **Note on Concurrency:** To ensure stability on smaller nodes, the default Worker concurrency is currently **capped at 4 slots** per instance. To utilize more cores on a large server, simply spawn multiple Worker instances on different ports (e.g., 8081, 8082)
 
-### 4. Enterprise Resilience (Self-Healing)
+### 4. Resilience (Self-Healing)
 
 * **Automated Resource Governance:** Workers maintain a persistent PID registry. On startup, they automatically detect and terminate **"Zombie" processes** left over from previous crashes.
 * **Graceful Termination:** Supports controlled shutdown signals, ensuring nodes finish critical housekeeping before going offline.
@@ -243,7 +243,7 @@ java -jar perm_files/Worker.jar 8081 192.168.1.50 9090
 #### 3. Install the Client
 
 ```bash
-cd titan_sdk && pip install -e .
+pip install -e .
 
 ```
 
