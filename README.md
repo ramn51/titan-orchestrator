@@ -418,7 +418,8 @@ if "Segfault" in logs:
 
 In this mode, Dagster acts as the Control Plane (managing logic/UI), while Titan acts as the Data Plane (managing physical execution and GPU routing).
 
-**For this refer the example inside ```titan_test_suite/dagster_integration```**
+**For this refer the example inside ```titan_test_suite/examples/dagster_integration```**
+- *execute it as ```dagster dev -f pipeline.py```*
 
 This is a simple snippet of how the integration happens.
 
