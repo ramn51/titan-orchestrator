@@ -146,9 +146,8 @@ Titan orchestrates a diverse mix of primitives within a single dependency graph:
 Titan utilizes TitanStore, a custom-integrated RedisJava persistence layer, to ensure cluster state survives master node crashes.
 
 - **Append-Only File (AOF):** Every job state change, worker registration, and DAG progression is logged to a persistent AOF.
-
 - **Zero-Loss Recovery:** Upon restart, the Master replays the TitanStore log to reconstruct the active job queue, dependency locks, and worker registry exactly where it left off.
-
+- **Graceful Degradation (Optional):** True to its zero-dependency philosophy, the persistence layer is entirely pluggable. If no store is configured, the Master elegantly falls back to a purely in-memory execution mode (without crash recovery or data bus features).
 ---
 
 ---
@@ -216,11 +215,11 @@ https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172
 
 Titan strictly separates "Source Artifacts" from "Runtime State" to ensure reproducibility.
 
-| Directory | Role | Description |
-| :--- | :--- | :--- |
-| **`TitanStore (Redis)`** | **Global State** | In-memory data structure store backed by an AOF. Stores job statuses, DAG locks, Task  and worker heartbeats. Can be used by tasks as a store as well. |
-| **`perm_files/`** | **Artifact Registry** | The "Source of Truth." Place your scripts (`.py`, `.sh`) and binaries (`.jar`) here.<br><br>*Note: SDK/YAML submissions automatically stage files here, but you can also manually drop files in.* |
-| **`titan_workspace/`** | **Execution Sandbox** | The runtime staging area.<br><br>• **`jobs/{id}/`**: Contains execution logs (`.log`) and isolated script copies for specific jobs.<br>• **`shared/`**: A "Data Bus" directory allowing dependent DAG tasks to share intermediate files. |
+| Directory                           | Role | Description |
+|:------------------------------------| :--- | :--- |
+| **`TitanStore (Redis) (Optional)`** | **Global State** | In-memory data structure store backed by an AOF. Stores job statuses, DAG locks, Task  and worker heartbeats. Can be used by tasks as a store as well. |
+| **`perm_files/`**                   | **Artifact Registry** | The "Source of Truth." Place your scripts (`.py`, `.sh`) and binaries (`.jar`) here.<br><br>*Note: SDK/YAML submissions automatically stage files here, but you can also manually drop files in.* |
+| **`titan_workspace/`**              | **Execution Sandbox** | The runtime staging area.<br><br>• **`jobs/{id}/`**: Contains execution logs (`.log`) and isolated script copies for specific jobs.<br>• **`shared/`**: A "Data Bus" directory allowing dependent DAG tasks to share intermediate files. |
 ---
 
 ## Getting Started
@@ -239,7 +238,24 @@ If you are developing Titan, simply open the project in IntelliJ IDEA and run th
 2. **Worker:** Run `titan.TitanWorker` (Defaults to Port 8080, Capability: GENERAL, Permanent: False)
 3. **CLI:** Run `client.TitanCli`
 
-### Option 1: Build & Run (Production Simulation)
+#### 1. Configure the Runtime (`titan.properties`)
+
+Titan uses an **Adapter Pattern** for its state management, meaning the persistence layer is entirely pluggable. To connect the Master to your Redis (TitanStore) instance, create a `titan.properties` file in the root directory where you run the JAR.
+
+**`titan.properties`**
+```properties
+# TitanStore (Redis) Connection
+titan.redis.host=localhost
+titan.redis.port=6379
+
+# Cluster Tuning
+titan.worker.heartbeat.interval=10
+titan.worker.pool.size=10
+```
+
+> Note: If this file is missing, Titan will gracefully degrade to sensible defaults (no persistence and recovery) or attempt to connect to Redis on localhost:6379.
+
+### Option 2: Build & Run (Production Simulation)
 
 #### 1. Build the Engine
 
@@ -254,7 +270,7 @@ cp target/titan-orchestrator-1.0-SNAPSHOT.jar perm_files/Worker.jar
 
 ```
 
-#### 2. Start the Cluster
+#### 3. Start the Cluster
 
 **Terminal 1: The Master (Scheduler)**
 
@@ -277,7 +293,7 @@ java -jar perm_files/Worker.jar 8081 192.168.1.50 9090
 
 ```
 
-#### 3. Install the Client
+#### 4. Install the Client
 
 ```bash
 pip install -e .
