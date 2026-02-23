@@ -412,7 +412,7 @@ jobs:
 
 #### Scenario A:  The "Logic Switch" (Dynamic DAGs)
 *Decide which DAG to run based on real-time cluster stats or data properties.*
-*Infrastructure that adapts to traffic load.
+*Infrastructure that adapts to traffic load.*
 
 > **Scenario:** If traffic > 80%, run a cheap "Quick Scan". If low, run a distributed "Deep Analysis."
 
@@ -685,8 +685,7 @@ To eliminate the Master as a single point of failure and provide a unified state
 Titan handles both **delegated** and **autonomous orchestration**.
 
 **Flow A: Delegated Orchestration (Dagster + Titan)**
-*Dagster holds the logical execution graph and delegates physical execution to Titan via a synchronous polling loop.
-*
+*Dagster holds the logical execution graph and delegates physical execution to Titan via a synchronous polling loop.*
 <p align="center">
 <img src="screenshots/Dagster_Titan_Sequence.png" alt="Dagster to Titan Sequence" width="800"/>
 </p>
@@ -769,7 +768,7 @@ Titan is a research runtime designed to explore the **primitives of orchestratio
 
 ## License
 
-DistributedTaskOrchestrator is licensed under the Apache License 2.0.
+Titan Orchestrator is licensed under the Apache License 2.0.
 See the [LICENSE](LICENSE) file for details.
 
 **Created and Maintained by Ram Narayanan A S**
