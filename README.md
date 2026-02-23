@@ -639,7 +639,7 @@ The system follows a **Leader-Follower** topology with a decoupled control plane
 **This is the L2 architectural Diagram:**
 
 <p align="center">
-  <img src="/screenshots/Titan_L2_Final.png" alt="Titan High Level Architecture" width="800"/>
+  <img src="/screenshots/Titan_L2_with_Store.png" alt="Titan High Level Architecture" width="800"/>
 </p>
 
 > Network Topology: Titan currently assumes a flat network address space (LAN/VPN). While it can run on Cloud VMs (EC2/GCP), it requires direct TCP connectivity between nodes. NAT Traversal and Public/Private IP translation are planned for v2.0.
