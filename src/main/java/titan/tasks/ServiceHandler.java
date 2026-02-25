@@ -22,18 +22,61 @@ import java.io.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ServiceHandler implements TaskHandler {
+/**
+ * {@code ServiceHandler} is an implementation of {@link TaskHandler} responsible for managing the lifecycle
+ * of services (processes) on a worker node. It supports starting and stopping various types of services,
+ * including Java JARs, Python scripts, and other executables.
+ * <p>
+ * This handler maintains a registry of currently running services and provides mechanisms for
+ * launching them in a detached manner, capturing their output, and streaming logs back to a master server.
+ * It also handles the cleanup of resources upon service termination.
+ */
+    public class ServiceHandler implements TaskHandler {
+    /**
+ * A static, thread-safe map that stores references to currently running {@link Process} objects,
+ * keyed by their unique service IDs. This allows for tracking and managing active services.
+ */
     private static final Map<String, Process> runningServices = new ConcurrentHashMap<>();
+    /**
+ * The base directory where service files are expected to be located and where service-related
+ * logs and temporary files are stored.
+ */
     private static final String WORKSPACE_DIR = "./titan_workspace/";
+    /**
+ * The specific operation this handler instance is configured to perform (e.g., "START", "STOP").
+ * This field determines which internal method ({@code startProcess} or {@code stopProcess}) will be invoked
+ * by the {@link #execute(String)} method.
+ */
     private final String operation;
 
+    /**
+ * A reference to the parent {@link RpcWorkerServer} instance. This is used to facilitate
+ * communication back to the master server, such as streaming logs or notifying about service status changes.
+ */
     private final RpcWorkerServer parentServer;
 
+    /**
+ * Constructs a new {@code ServiceHandler} with a specified operation and a reference to its parent RPC server.
+ *
+ * @param op The operation this handler will perform (e.g., "START", "STOP").
+ * @param parentServer The {@link RpcWorkerServer} instance that created this handler, used for callbacks.
+ */
     public ServiceHandler(String op, RpcWorkerServer parentServer){
         this.operation = op;
         this.parentServer = parentServer;
     }
 
+    /**
+ * Executes a service management task based on the handler's configured operation and the provided payload.
+ * The payload is expected to be a pipe-separated string containing service details.
+ * <p>
+ * If the operation is "START", it parses the payload for filename, service ID, and port, then attempts to start a new process.
+ * If the operation is anything else (implicitly "STOP"), it parses the payload for a service ID and attempts to stop the corresponding process.
+ *</p>
+ * @param payload A string containing service parameters, typically in the format "filename|serviceId|port" for START,
+ *                or "serviceId" for STOP.
+ * @return A string indicating the result of the operation, such as "DEPLOYED_SUCCESS", "STOPPED", or an "ERROR" message.
+ */
     @Override
     public String execute(String payload) {
         String [] parts = payload.split("\\|");
@@ -49,7 +92,24 @@ public class ServiceHandler implements TaskHandler {
             return stopProcess(idToKill);
         }
     }
-
+    /**
+     * Initiates the launch of a new service process.
+     * <p>
+     * This method handles different types of service files:
+     * </p>
+     * <ul>
+     * <li>If {@code fileName} is "Worker.jar", it launches it as a Java JAR using {@code java -jar} with OS-specific detachment.</li>
+     * <li>If {@code fileName} ends with ".py", it launches it using the "python" interpreter.</li>
+     * <li>For any other file, it attempts to execute it directly.</li>
+     * </ul>
+     * <p>
+     * The process is launched in a detached manner, and its output is redirected to log files.
+     * </p>
+     * * @param fileName The name or path of the script/executable file to run.
+     * @param serviceId A unique identifier for the service being started.
+     * @param port The port number to be used by the service, primarily for Java JAR workers.
+     * @return A status string indicating success or failure of the launch operation.
+     */
     private String startProcess(String fileName, String serviceId, String port){
         // Payload: "filename|service_id"
 //        File scriptFile = new File(WORKSPACE_DIR, fileName);
@@ -114,6 +174,25 @@ public class ServiceHandler implements TaskHandler {
 
     }
 
+    /**
+     * Launches a generic process in a detached mode, managing its lifecycle and log streaming.
+     * <p>
+     * This method performs the following steps:
+     * </p>
+     * <ol>
+     * <li>Checks if a service with the given {@code serviceId} is already running.</li>
+     * <li>Configures a {@link ProcessBuilder} with the provided command and redirects standard error/output to a local log file.</li>
+     * <li>Sets the working directory for the process.</li>
+     * <li>Starts the process.</li>
+     * <li>Spawns a new thread to continuously read the process's output, write it to a local log file, and batch-stream it to the master server.</li>
+     * <li>Registers the process in the {@code runningServices} map and with the {@link ProcessRegistry}.</li>
+     * <li>Registers an {@code onExit} hook to clean up resources, remove the service from registries, and notify the master when the process terminates.</li>
+     * </ol>
+     * * @param serviceId A unique identifier for the service.
+     * @param executionDir The directory in which the command should be executed. If null or non-existent, {@link #WORKSPACE_DIR} is used.
+     * @param command The command and its arguments to execute.
+     * @return A status string indicating success or failure, including the service ID and PID if successful.
+     */
     private String launchDetachedProcess(String serviceId, File executionDir, String... command) {
         if (runningServices.containsKey(serviceId)) {
             return "SERVICE_ALREADY_RUNNING: " + serviceId;
@@ -188,6 +267,15 @@ public class ServiceHandler implements TaskHandler {
         }
     }
 
+    /**
+ * Attempts to stop a running service identified by its {@code serviceId}.
+ * <p>
+ * It retrieves the {@link Process} object associated with the {@code serviceId} from {@link #runningServices},
+ * then attempts to destroy the process. If the process is found and terminated, it is removed from the map.
+ *</p>
+ * @param serviceId The unique identifier of the service to stop.
+ * @return A status string indicating whether the service was stopped or if it was unknown.
+ */
     private String stopProcess(String serviceId){
         Process p = runningServices.get(serviceId);
             if(p!=null){

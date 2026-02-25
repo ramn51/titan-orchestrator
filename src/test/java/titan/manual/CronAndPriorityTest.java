@@ -24,7 +24,7 @@ import java.net.Socket;
 
 public class CronAndPriorityTest {
     public static void main(String[] args) throws Exception {
-        System.out.println("=== ⏳ STARTING CRON & PRIORITY TEST ===");
+        System.out.println("=== [START] STARTING CRON & PRIORITY TEST ===");
 
         // 1. Start Scheduler
         Scheduler scheduler = new Scheduler(9090);
@@ -42,17 +42,17 @@ public class CronAndPriorityTest {
 
         // Job A: BLOCKER (Low Priority, Runs Now)
         // This hogs the worker immediately, forcing B and C to wait in the queue.
-        System.out.println("\n1️⃣ Submitting Blocker (Low Priority)...");
+        System.out.println("\n [TASK1] Submitting Blocker (Low Priority)...");
         submitJob("SUBMIT PDF_CONVERT|blocker.pdf|0|0");
 
         // Job B: FUTURE JOB (Normal Priority, Delay 8s)
         // Should go to Waiting Room, NOT Queue.
-        System.out.println("2️⃣ Submitting Future Job (Delay 8s)...");
+        System.out.println("[TASK2] Submitting Future Job (Delay 8s)...");
         submitJob("SUBMIT PDF_CONVERT|future_report.pdf|1|8000");
 
         // Job C: VIP JOB (High Priority, Delay 0)
         // Should jump ahead of any other pending normal jobs (if we had them).
-        System.out.println("3️⃣ Submitting VIP Job (High Priority)...");
+        System.out.println("[TASK3] Submitting VIP Job (High Priority)...");
         submitJob("SUBMIT PDF_CONVERT|vip_urgent.pdf|2|0");
 
         // EXPECTED TIMELINE:
@@ -63,7 +63,7 @@ public class CronAndPriorityTest {
 
         Thread.sleep(12000); // Wait enough time for everything to finish
 
-        System.out.println("\n=== 🛑 TEST FINISHED ===");
+        System.out.println("\n=== [END] TEST FINISHED ===");
         worker.stop();
         scheduler.stop();
         System.exit(0);

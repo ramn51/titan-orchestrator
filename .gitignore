@@ -45,5 +45,10 @@ venv/
 
 target/*
 perm_files/pytests/self_healer_agent_tests/.env
+doc_generator_agent/tools/.env
 titan_server_logs/*
 titan_tasks.db
+
+
+titan_test_suite/examples/agents_examples/doc_generator_agent/tools/.env
+/docs

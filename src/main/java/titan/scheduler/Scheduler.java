@@ -30,7 +30,12 @@ import java.util.concurrent.DelayQueue;
 import titan.TitanConfig;
 import titan.storage.TitanJRedisAdapter;
 
-public class Scheduler {
+/**
+ * The main Scheduler class responsible for managing workers, dispatching jobs, and maintaining system state.
+ * It handles job submission, scheduling, execution, and recovery, interacting with workers via RPC and
+ * persisting state using Redis.
+ */
+    public class Scheduler {
     private final WorkerRegistry workerRegistry;
     private final RpcClient schedulerClient;
 //    private final Queue<Job> taskQueue;
@@ -75,6 +80,15 @@ public class Scheduler {
     private final Map<String, List<String>> liveLogBuffer = new ConcurrentHashMap<>();
     private static final int MAX_LOG_LINES = 100;
 
+    /**
+ * Constructs a new Scheduler instance, initializing its core components.
+ * This includes the worker registry, RPC client, job queues (task, dead-letter, waiting room, DAG waiting room),
+ * and executor services for heartbeats, dispatching, and the scheduler server.
+ * It also sets up the Redis adapter for persistence and starts a clock watcher thread for delayed jobs.
+ *
+ * @param port The port on which the scheduler server will listen for incoming requests.
+ * @throws RuntimeException if the Scheduler Server fails to start due to an IOException.
+ */
     public Scheduler(int port){
         workerRegistry = new WorkerRegistry();
         schedulerClient = new RpcClient(workerRegistry);
@@ -117,6 +131,11 @@ public class Scheduler {
         clockWatcher.start();
     }
 
+    /**
+ * Initiates the scheduler's operations. This method connects to Redis, attempts to recover any orphaned jobs,
+ * starts the scheduler server in a separate thread, and schedules periodic heartbeat checks for workers.
+ * It also starts the main job dispatch loop.
+ */
     public void start(){
         System.out.println("Scheduler Core starting at port " + this.port);
         try {
@@ -158,21 +177,41 @@ public class Scheduler {
         });
     }
 
+    /**
+ * Retrieves the Redis adapter instance used by the scheduler.
+ *
+ * @return The {@link TitanJRedisAdapter} instance.
+ */
     public TitanJRedisAdapter getRedis(){
         return this.redis;
     }
 
+    /**
+ * Retrieves the worker registry instance used by the scheduler.
+ *
+ * @return The {@link WorkerRegistry} instance.
+ */
     public WorkerRegistry getWorkerRegistry(){
         return workerRegistry;
     }
 
     // AutoScale methods and helpers
 
+    /**
+ * Activates the auto-scaling mechanism for the Titan cluster.
+ * This method schedules a periodic task to reconcile the cluster size based on worker load and availability.
+ */
     public void startAutoScaler(){
         System.out.println("[INFO] Titan Auto-Scaler active.");
         scalerExecutor.scheduleAtFixedRate(this::reconcileClusters, 15, 15, TimeUnit.SECONDS);
     }
 
+    /**
+ * Periodically checks the cluster's health and load to determine if scaling actions (up or down) are needed.
+ * It identifies saturated worker pools to scale up new workers and detects idle, non-permanent workers for scale-down.
+ * Scaling up involves submitting a special 'DEPLOY_PAYLOAD' job to launch a new worker.
+ * Scaling down involves gracefully shutting down an idle worker node.
+ */
     private synchronized void reconcileClusters(){
         try {
             List<Worker> allWorkers = new ArrayList<>(workerRegistry.getWorkers());
@@ -253,6 +292,15 @@ public class Scheduler {
     }
 
     // Helper methods related to scaling. Finding the available ports for new spawning.
+    /**
+ * Finds an available port within a specified range for a new worker.
+ * It checks against currently registered workers and a blacklist of recently failed ports.
+ *
+ * @param currentWorkers A list of currently active workers.
+ * @param minRange The minimum port number to consider.
+ * @param maxRange The maximum port number to consider.
+ * @return An available port number, or -1 if no safe port is found within the scan range.
+ */
     private int findSafePort(List<Worker> currentWorkers, int minRange, int maxRange) {
         int maxCurrentPort = currentWorkers.stream()
                 .mapToInt(Worker::port)
@@ -271,6 +319,12 @@ public class Scheduler {
         return -1;
     }
 
+    /**
+ * Checks if a given port is currently in use on the local machine.
+ *
+ * @param port The port number to check.
+ * @return {@code true} if the port is in use, {@code false} otherwise.
+ */
     private boolean isPortInUseLocally(int port) {
         try (Socket ignored = new Socket("localhost", port)) {
             return true;
@@ -279,6 +333,11 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Sends heartbeat requests to all registered workers to verify their liveness and update their load status.
+ * Workers that do not respond are marked as dead. Responding workers update their last seen timestamp and load metrics.
+ * This method also updates Redis with the status of live workers.
+ */
     public void checkHeartBeat(){
         System.out.println("Sending Heartbeat");
         for(Worker worker: workerRegistry.getWorkers()){
@@ -318,10 +377,25 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Retrieves the map of currently running services (identified by job ID) to their assigned worker.
+ *
+ * @return A map where keys are service job IDs and values are the {@link Worker} instances hosting them.
+ */
     public Map<String, Worker> getLiveServiceMap(){
         return liveServiceMap;
     }
 
+    /**
+ * Registers a new worker with the scheduler. This method adds the worker to the registry,
+ * clears any `scalingInProgress` flag, and removes the port from the blacklist.
+ * It also handles the 'promotion' of auto-scaled worker deployment jobs, marking the parent worker as idle.
+ *
+ * @param host The hostname or IP address of the worker.
+ * @param port The port number the worker is listening on.
+ * @param capability A string describing the worker's capabilities (e.g., "GENERAL", "GPU").
+ * @param isPermanent {@code true} if the worker is a permanent part of the cluster and should not be scaled down, {@code false} otherwise.
+ */
     public synchronized void registerWorker(String host, int port, String capability, boolean isPermanent) {
         this.workerRegistry.addWorker(host, port, capability, isPermanent);
         this.scalingInProgress = false;
@@ -352,10 +426,22 @@ public class Scheduler {
             });
     }
 
+    /**
+ * Retrieves the map of jobs currently waiting for their DAG dependencies to be met.
+ *
+ * @return A map where keys are job IDs and values are the {@link Job} instances waiting on dependencies.
+ */
     public Map<String, Job> getDAGWaitingRoom(){
         return dagWaitingRoom;
     }
 
+    /**
+ * Submits a {@link Job} to the scheduler for processing. The job's state is persisted to Redis.
+ * If the job has dependencies, it's placed in the DAG waiting room. If it has a scheduled time in the future,
+ * it's placed in the waiting room. Otherwise, it's added directly to the active task queue.
+ *
+ * @param job The {@link Job} object to be submitted.
+ */
     public void submitJob(Job job){
         // Persist to Redis to act as WAL
         // This will be the basis for recovery
@@ -383,6 +469,15 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Submits a job to the scheduler using a raw string payload. This method parses the payload
+ * to extract job ID, priority, and delay, then constructs a {@link Job} object and delegates
+ * to {@link #submitJob(Job)}.
+ * The payload format can include optional ID, priority, and delay separated by pipes.
+ * Example: "JOB-101|RUN_PAYLOAD|script.py|data|GPU|10|1000" (ID|Payload|Priority|Delay)
+ *
+ * @param jobPayload The raw string payload representing the job.
+ */
     public void submitJob(String jobPayload) {
         System.out.println("** Scheduler received job: " + jobPayload);
 
@@ -445,6 +540,15 @@ public class Scheduler {
         submitJob(job);
     }
 
+    /**
+ * Extracts the skill requirement (capability) from a job's payload.
+ * This method parses the payload string to identify specific keywords or patterns
+ * that indicate a worker capability needed for the job (e.g., "GPU", "GENERAL").
+ * It handles various payload formats and metadata to accurately determine the skill.
+ *
+ * @param job The {@link Job} for which to extract the skill requirement.
+ * @return A string representing the required skill (e.g., "GPU", "GENERAL"), defaulting to "GENERAL" if none is found.
+ */
     private String extractSkillRequirement(Job job) {
         String payload = job.getPayload();
         if (payload == null || payload.isEmpty()) return "GENERAL";
@@ -511,14 +615,32 @@ public class Scheduler {
         return "GENERAL";
     }
 
+    /**
+ * Sets a key-value pair in Redis. This is a public wrapper around {@link #safeRedisSet(String, String)}.
+ *
+ * @param key The key to set.
+ * @param value The value to associate with the key.
+ */
     public void redisKVSet(String key, String value){
         safeRedisSet(key, value);
     }
 
+    /**
+ * Adds a member to a Redis set. This is a public wrapper around {@link #safeRedisSadd(String, String)}.
+ *
+ * @param key The key of the set.
+ * @param value The member to add to the set.
+ */
     public void redisSetAdd(String key, String value){
         safeRedisSadd(key, value);
     }
 
+    /**
+ * Retrieves the value associated with a given key from Redis.
+ *
+ * @param key The key to retrieve.
+ * @return The string value associated with the key, or {@code null} if the key does not exist or an error occurs.
+ */
     public String redisKVGet(String key){
         try {
             return redis.get(key);
@@ -528,6 +650,12 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Safely sets a key-value pair in Redis, catching and logging any IOException.
+ *
+ * @param key The key to set.
+ * @param value The value to associate with the key.
+ */
     private void safeRedisSet(String key, String value) {
         try {
             redis.set(key, value);
@@ -537,6 +665,12 @@ public class Scheduler {
     }
 
     // Methods related to Redis for persistance
+    /**
+ * Safely adds a member to a Redis set, catching and logging any IOException.
+ *
+ * @param key The key of the set.
+ * @param member The member to add to the set.
+ */
     private void safeRedisSadd(String key, String member) {
         try {
             redis.sadd(key, member);
@@ -545,6 +679,12 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Safely removes a member from a Redis set, catching and logging any exceptions.
+ *
+ * @param key The key of the set.
+ * @param member The member to remove from the set.
+ */
     private void safeRedisSrem(String key, String member) {
         try {
             redis.srem(key, member);
@@ -553,6 +693,12 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Safely retrieves all members of a Redis set, catching and logging any exceptions.
+ *
+ * @param key The key of the set.
+ * @return A {@link Set} of strings representing the members of the set, or {@code null} if an error occurs.
+ */
     public Set<String> safeRedisSMembers(String key) {
         try {
             return redis.smembers(key);
@@ -562,6 +708,12 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Recovers the scheduler's state from Redis upon startup. It scans for active jobs
+ * that were not marked as completed or dead, and re-queues them into the appropriate
+ * scheduler queues (waiting room or task queue) based on their status and scheduled time.
+ * This ensures job continuity across scheduler restarts.
+ */
     private void recoverState(){
         if(!redis.isConnected()){
             System.out.println("[INFO][WARN] Redis not connected");
@@ -627,6 +779,14 @@ public class Scheduler {
         System.out.println("[INFO][RECOVERY] Complete. Restored " + recoveredCount + " jobs.");
     }
 
+    /**
+ * The main dispatch loop of the scheduler. This loop continuously polls the task queue for new jobs.
+ * When a job is available, it determines the required skill, selects the best available worker,
+ * dispatches the job to that worker, and handles the job's execution and potential failures.
+ * If no suitable worker is found or all workers are saturated, the job is re-queued.
+ *
+ * @throws InterruptedException If the dispatch loop thread is interrupted.
+ */
     private void runDispatchLoop() throws InterruptedException {
         System.out.println("Running Dispatch Loop");
         while (isRunning) {
@@ -726,6 +886,14 @@ public class Scheduler {
             }
         }
 
+    /**
+ * Handles the failure of a job. Increments the job's retry count.
+ * If the retry count exceeds a threshold (3 retries), the job is marked as DEAD, moved to the dead-letter queue,
+ * and any dependent child jobs are cancelled. Otherwise, the job is re-queued for another attempt.
+ * Special handling is included for auto-scale jobs to prevent infinite retries on deployment issues.
+ *
+ * @param job The {@link Job} that failed.
+ */
     private void handleJobFailure(Job job) {
         // If the worker is autoscaled messed up then immediately fail it and not send it to the queue for retry
         if (job.getId().startsWith("WRK-")) {
@@ -761,6 +929,13 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Processes callbacks from workers regarding the completion or failure of asynchronous jobs.
+ * The payload typically contains the job ID, status (COMPLETED/FAILED), and an optional result message.
+ * This method updates the job's status, clears the worker's active job flag, and triggers completion or failure handling.
+ *
+ * @param payload The callback string from the worker (e.g., "JOB-123|COMPLETED|Result: 5050").
+ */
     public void handleJobCallback(String payload){
         // Payload: "JOB-123|COMPLETED|Result: 5050"
         String[] parts = payload.split("\\|", 3);
@@ -806,6 +981,15 @@ public class Scheduler {
 
     }
 
+    /**
+ * Marks a job as completed. Updates the job's status in Redis, removes it from the active jobs set,
+ * and records its completion in the execution history. It also decrements the load on the assigned worker,
+ * updates worker completion statistics and history, propagates affinity to child jobs, and unlocks any dependent jobs.
+ *
+ * @param job The {@link Job} that completed.
+ * @param result The result string returned by the worker.
+ * @param record The {@link TaskExecution} record associated with this job's execution.
+ */
     private void completeJob(Job job, String result, TaskExecution record){
         record.complete(result);
 
@@ -834,6 +1018,15 @@ public class Scheduler {
         unlockChildren(job.getId());
     }
 
+    /**
+ * Selects the most suitable worker for a given job from a list of available workers.
+ * Prioritizes workers with job affinity (sticky scheduling) if specified by the job.
+ * Otherwise, it selects the least loaded worker that is not saturated.
+ *
+ * @param job The {@link Job} to be dispatched.
+ * @param availableWorkers A list of {@link Worker} instances capable of executing the job.
+ * @return The selected {@link Worker}, or {@code null} if no suitable worker is found.
+ */
     private Worker selectBestWorker(Job job, List<Worker> availableWorkers){
         if(job.getPreferredWorkerId() != null){
             for(Worker w: availableWorkers){
@@ -860,6 +1053,14 @@ public class Scheduler {
         return bestWorker;
     }
 
+    /**
+ * Propagates worker affinity from a completed parent job to its dependent child jobs.
+ * If a child job requires affinity and its parent completed on a specific worker, the child job
+ * will be 'locked' to that same worker for execution, if that worker is still alive.
+ *
+ * @param parentId The ID of the completed parent job.
+ * @param workerPortId The port ID of the worker where the parent job was executed.
+ */
     private void propagateAffinity(String parentId, String workerPortId) {
         boolean workerAlive = workerRegistry.getWorkers().stream()
                 .anyMatch(w -> String.valueOf(w.port()).equals(workerPortId));
@@ -878,6 +1079,16 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Executes a job request on a specified worker based on the job's payload type.
+ * This method acts as a dispatcher for different types of job execution (standard, deploy, run one-off, archive).
+ * It sets the worker's current job ID before execution.
+ *
+ * @param job The {@link Job} to execute.
+ * @param worker The {@link Worker} on which to execute the job.
+ * @return The response string from the worker after executing the job.
+ * @throws Exception If an error occurs during job execution or communication with the worker.
+ */
     private String executeJobRequest(Job job, Worker worker) throws Exception {
         String rawPayload = job.getPayload();
         String actualPayload = rawPayload;
@@ -916,12 +1127,34 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Executes a standard task on a worker. This typically involves sending a simple RUN command
+ * with the job ID and the task payload.
+ *
+ * @param job The {@link Job} to execute.
+ * @param worker The {@link Worker} on which to execute the task.
+ * @param payload The raw payload for the task.
+ * @return The response from the worker.
+ * @throws Exception If an error occurs during execution.
+ */
     private String executeStandardTask(Job job, Worker worker, String payload) throws Exception {
         // NEW FORMAT: "JOB-123|calc.py"
         String payloadWithId = job.getId() + "|" + payload;
         return sendExecuteCommand(worker, TitanProtocol.OP_RUN, payloadWithId);
     }
 
+    /**
+ * Executes a deployment sequence on a worker. This involves staging a file (e.g., a JAR or script)
+ * and then starting it as a service on a specified port. It includes checks for port availability
+ * and waits for the deployed service to become reachable.
+ * Special handling is included for internal auto-scaling deployments.
+ *
+ * @param job The {@link Job} representing the deployment.
+ * @param worker The {@link Worker} on which to deploy.
+ * @param payload The deployment payload, including filename, base64 content, and optional target port.
+ * @return A success message including the PID if available.
+ * @throws Exception If staging fails, starting the service fails, or the deployed service does not become reachable.
+ */
     private String executeDeploySequence(Job job, Worker worker, String payload) throws Exception {
         try {
 //            String[] parts = payload.split("\\|", 4);
@@ -1029,6 +1262,13 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Checks if a worker is alive and reachable on a given host and port by attempting to open a socket connection.
+ *
+ * @param host The hostname or IP address of the worker.
+ *   @param port The port number of the worker.
+ * @return {@code true} if the worker is reachable, {@code false} otherwise.
+ */
     private boolean isWorkerAlive(String host, int port) {
         try (Socket s = new Socket(host, port)) {
             return true;
@@ -1038,6 +1278,16 @@ public class Scheduler {
     }
 
 
+    /**
+ * Executes a one-off script or program on a worker. This involves staging the script file
+ * (potentially with arguments) and then instructing the worker to run it asynchronously.
+ *
+ * @param job The {@link Job} representing the one-off execution.
+ * @param worker The {@link Worker} on which to run the script.
+ * @param payload The payload containing filename, optional arguments, and base64 script content.
+ * @return The response from the worker, typically indicating job acceptance.
+ * @throws Exception If staging fails or the run command fails.
+ */
     private String executeRunOneOff(Job job, Worker worker, String payload) throws Exception {
         String[] parts = payload.split("\\|");
 
@@ -1080,6 +1330,17 @@ public class Scheduler {
         return sendExecuteCommand(worker, TitanProtocol.OP_RUN, payloadWithId);
     }
 
+    /**
+ * Executes a job from an archived (ZIP) asset on a worker.
+ * This method resolves the archive pointer to get the entry point and base64 content of the archive,
+ * then sends it to the worker for execution.
+ *
+ * @param job The {@link Job} to execute from an archive.
+ * @param worker The {@link Worker} on which to run the archive job.
+ * @param payload The payload containing the archive pointer (e.g., "zip_name.zip/entry.py").
+ * @return The response from the worker.
+ * @throws Exception If resolving the archive pointer fails or the execution command fails.
+ */
     private String executeRunArchive(Job job, Worker worker, String payload) throws Exception {
         String [] parts = payload.split("\\|");
 
@@ -1096,6 +1357,17 @@ public class Scheduler {
 
     }
 
+    /**
+ * Starts a long-running service from an archived (ZIP) asset on a worker.
+ * This method resolves the archive pointer, extracts the entry point and base64 content of the archive,
+ * and instructs the worker to start it as a detached service on a specified port.
+ *
+ * @param job The {@link Job} representing the archived service.
+ * @param worker The {@link Worker} on which to start the service.
+ * @param payload The payload containing the archive pointer, optional arguments, and target port.
+ * @return The response from the worker, typically indicating deployment success.
+ * @throws Exception If resolving the archive pointer fails or the service start command fails.
+ */
     private String executeServiceArchive(Job job, Worker worker, String payload) throws Exception {
         // Payload Format: START_ARCHIVE_SERVICE | zip_name.zip/entry.py | args | port
         String[] parts = payload.split("\\|");
@@ -1120,6 +1392,16 @@ public class Scheduler {
         return response;
     }
 
+    /**
+ * Sends an RPC command to a specific worker and handles the response.
+ * This is a utility method for communicating with workers.
+ *
+ * @param worker The {@link Worker} to send the command to.
+ * @param opCode The operation code ({@link TitanProtocol} constant) for the command.
+ * @param payload The payload string for the command.
+ * @return The response string from the worker.
+ * @throws Exception If the response indicates an error or communication fails.
+ */
     private String sendExecuteCommand(Worker worker, byte opCode, String payload) throws Exception {
         String response = schedulerClient.sendRequest(worker.host(), worker.port(), opCode, payload);
         if (response == null || response.startsWith("ERROR") || response.startsWith("JOB_FAILED")) {
@@ -1129,6 +1411,14 @@ public class Scheduler {
         return response;
     }
 
+    /**
+ * Stops a remote service identified by its service ID.
+ * It looks up the worker hosting the service and sends a STOP command to that worker.
+ * If successful, the service is removed from the live service map.
+ *
+ * @param serviceId The ID of the service to stop.
+ * @return A success or error message indicating the outcome of the stop operation.
+ */
     public String stopRemoteService(String serviceId) {
         if (!liveServiceMap.containsKey(serviceId)) {
             return "ERROR: Service " + serviceId + " not found in liveServiceMap. Current keys: " + liveServiceMap.keySet();
@@ -1149,6 +1439,15 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Initiates a graceful shutdown of a specific worker node.
+ * It first stops any services hosted by the target worker, then sends a KILL_WORKER command to the worker.
+ * Permanent workers cannot be shut down via this method.
+ *
+ * @param targetHost The hostname or IP address of the worker to shut down.
+ * @param targetPort The port number of the worker to shut down.
+ * @return A success or error message indicating the outcome of the shutdown operation.
+ */
     public String shutdownWorkerNode(String targetHost, int targetPort){
         Worker targetWorker = null;
         for(Worker w: this.getWorkerRegistry().getWorkers()){
@@ -1197,6 +1496,13 @@ public class Scheduler {
         return "SUCCESS: Worker " + targetPort + " and " + servicesToStop.size() + " services shut down.";
     }
 
+    /**
+ * Unlocks child jobs that were dependent on a newly completed parent job.
+ * It iterates through jobs in the DAG waiting room, resolves the dependency for the given parent ID,
+ * and if all dependencies for a child job are met, it moves that child job to the active task queue.
+ *
+ * @param parentId The ID of the parent job that has just completed.
+ */
     private void unlockChildren(String parentId){
         for(Job waitingJob: dagWaitingRoom.values()){
             if(waitingJob.getDependenciesIds()!=null && waitingJob.getDependenciesIds().contains(parentId)){
@@ -1211,6 +1517,13 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Recursively cancels child jobs whose parent job has failed.
+ * When a parent job fails, all its direct and indirect dependent jobs are marked as DEAD
+ * and moved to the dead-letter queue.
+ *
+ * @param failedParentId The ID of the parent job that failed.
+ */
     public void cancelChildren(String failedParentId){
         for(Job job: dagWaitingRoom.values()){
             if(job.getDependenciesIds().contains(failedParentId)){
@@ -1234,6 +1547,14 @@ public class Scheduler {
     }
 
     // Methods for sending the logs to stream to the UI
+    /**
+ * Streams a log line for a specific job. The log line is added to an in-memory buffer
+ * for real-time retrieval and also appended to a persistent log file on disk.
+ * The in-memory buffer maintains a maximum number of lines to prevent excessive memory usage.
+ *
+ * @param jobId The ID of the job to which the log line belongs.
+ * @param line The log line to stream.
+ */
     public void logStream(String jobId, String line) {
         liveLogBuffer.computeIfAbsent(jobId, k -> Collections.synchronizedList(new LinkedList<>()));
         List<String> logs = liveLogBuffer.get(jobId);
@@ -1249,6 +1570,13 @@ public class Scheduler {
         appendLogToDisk(jobId, line);
     }
 
+    /**
+ * Appends a log line to a job-specific log file on disk.
+ * Log files are stored in the 'titan_server_logs' directory.
+ *
+ * @param jobId The ID of the job.
+ * @param line The log line to append.
+ */
     private void appendLogToDisk(String jobId, String line) {
         File directory = new File("titan_server_logs");
         if (!directory.exists()) {
@@ -1266,10 +1594,24 @@ public class Scheduler {
     }
 
     // Helper method for the UI to retrieve the logs
+    /**
+ * Retrieves a snapshot of the recent log lines for a given job from the in-memory buffer.
+ * This method returns a copy of the log list to prevent {@link ConcurrentModificationException}s.
+ *
+ * @param jobId The ID of the job whose logs are to be retrieved.
+ * @return A {@link List} of strings, each representing a log line for the specified job.
+ */
 //    public List<String> getLogs(String jobId) {
 //        return liveLogBuffer.getOrDefault(jobId, new ArrayList<>());
 //    }
 
+        /**
+ * Retrieves a snapshot of the recent log lines for a given job from the in-memory buffer.
+ * This method returns a copy of the log list to prevent {@link ConcurrentModificationException}s.
+ *
+ * @param jobId The ID of the job whose logs are to be retrieved.
+ * @return A {@link List} of strings, each representing a log line for the specified job.
+ */
     public List<String> getLogs(String jobId) {
         List<String> logs = liveLogBuffer.get(jobId);
 
@@ -1285,6 +1627,13 @@ public class Scheduler {
         }
     }
 
+    /**
+ * Generates a human-readable string containing various system statistics.
+ * This includes the number of active workers, job queue sizes, and detailed status for each worker
+ * (load, capabilities, and hosted services).
+ *
+ * @return A formatted string with system statistics.
+ */
     public String getSystemStats() {
         StringBuilder sb = new StringBuilder();
 //        int activeCount = workerRegistry.getWorkerMap().size();
@@ -1316,7 +1665,7 @@ public class Scheduler {
                             // and only show them as main entries:
                             // if (serviceId.contains("worker")) return;
 
-                            sb.append(String.format("    └── ⚙️ Service ID: %s\n", serviceId));
+                            sb.append(String.format("    └── [SVC] Service ID: %s\n", serviceId));
                         });
             }
         } else{
@@ -1325,6 +1674,13 @@ public class Scheduler {
         return sb.toString();
     }
 
+    /**
+ * Generates a JSON string containing various system statistics.
+ * This includes the number of active workers, job queue sizes, and detailed status for each worker
+ * (port, capabilities, load, active job, recent history, and hosted services).
+ *
+ * @return A JSON formatted string with system statistics.
+ */
     public String getSystemStatsJSON() {
         StringBuilder json = new StringBuilder();
         json.append("{");
@@ -1421,6 +1777,12 @@ public class Scheduler {
         return json.toString();
     }
 
+    /**
+ * Retrieves the current status of a job based on its ID.
+ *
+ * @param id The ID of the job.
+ * @return The {@link Job.Status} of the job, or {@link Job.Status#PENDING} if the job is not found in execution history.
+ */
     public Job.Status getJobStatus(String id) {
         if (executionHistory.containsKey(id)) {
             return executionHistory.get(id).status;
@@ -1428,6 +1790,10 @@ public class Scheduler {
         return Job.Status.PENDING;
     }
 
+    /**
+ * Shuts down the scheduler and all its associated executor services.
+ * This method gracefully stops the scheduler server, heartbeat executor, and dispatch executor.
+ */
     public void stop(){
         if(isRunning){
             isRunning = false;

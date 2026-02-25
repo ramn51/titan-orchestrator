@@ -24,7 +24,26 @@ import java.util.zip.ZipEntry;
 import java.net.Socket;
 import java.io.*;
 
-public class TaskHelper {
+/**
+ * {@code TaskHelper} provides utility methods and common functionalities related to task management
+ * and execution within the Titan system. This class is designed to encapsulate shared logic
+ * that various tasks might require, such as network communication setup, file handling,
+ * or data encoding/decoding.
+ * <p>
+ * While currently empty, this class serves as a placeholder and central point for future
+ * helper methods that will streamline the development and maintenance of different tasks
+ * executed by the Titan platform.
+ * </p>
+ * <p>
+ * It leverages various standard Java APIs for I/O, networking, and data manipulation,
+ * as indicated by its imports.
+ * </p>
+ *
+ * @since 1.0
+ * @version 1.0
+ * @author Ram Narayanan
+ */
+    public class TaskHelper {
 
 }
 

@@ -19,7 +19,37 @@ import titan.scheduler.Scheduler;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-public class Main {
+/**
+ * The main entry point for the Titan distributed system application.
+ * This class allows the application to be started in one of two primary modes:
+ * <ul>
+ *     <li><b>SCHEDULER</b>: Runs the Titan Scheduler component, responsible for coordinating tasks and resources.</li>
+ *     <li><b>WORKER</b>: Runs a Titan Worker component, which executes tasks assigned by the Scheduler.</li>
+ * </ul>
+ * The operational mode and associated parameters are determined by command-line arguments.
+ */
+    public class Main {
+    /**
+ * The main method, serving as the application's entry point.
+ * It parses command-line arguments to determine whether to start the Titan application
+ * as a Scheduler or a Worker, and initializes the respective components with the provided parameters.
+ * If no arguments are provided or an unknown mode is specified, it prints usage instructions.
+ *
+ * @param args Command-line arguments specifying the operational mode and configuration parameters.
+ *             Expected formats:
+ *             <ul>
+ *                 <li><code>SCHEDULER [port]</code>: Starts the Scheduler. `port` is optional, defaults to 9090.</li>
+ *                 <li><code>WORKER [myPort] [schedHost] [schedPort] [capability] [isPermanent]</code>: Starts a Worker.
+ *                     `myPort` is optional, defaults to 8081.
+ *                     `schedHost` is optional, defaults to "localhost".
+ *                     `schedPort` is optional, defaults to 9090.
+ *                     `capability` is optional, defaults to "GENERAL".
+ *                     `isPermanent` is optional, defaults to false, indicating if the worker should re-register on disconnect.
+ *                 </li>
+ *             </ul>
+ * Catches and prints any critical exceptions that occur during the startup
+ *                   and initialization of the Scheduler or Worker components.
+ */
     public static void main(String[] args) {
         if (args.length == 0) {
             printUsage();
@@ -61,6 +91,11 @@ public class Main {
         }
     }
 
+    /**
+ * Prints the correct command-line usage instructions for running the Titan application.
+ * This method is called when no arguments are provided or an invalid mode is specified,
+ * guiding the user on how to start the application in SCHEDULER or WORKER mode with their respective parameters.
+ */
     private static void printUsage() {
         System.out.println("Usage:");
         System.out.println("  java -jar Titan.jar SCHEDULER [port]");

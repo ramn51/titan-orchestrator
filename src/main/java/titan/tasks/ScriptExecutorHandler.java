@@ -23,13 +23,51 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import titan.network.LogBatcher;
 
-public class ScriptExecutorHandler implements TaskHandler {
+/**
+ * {@code ScriptExecutorHandler} is an implementation of {@link TaskHandler} responsible for executing scripts
+ * (Python, Shell, or standalone executables) on the worker node.
+ * It manages a dedicated workspace for script execution, handles payload parsing,
+ * process execution, real-time log streaming, and result reporting back to the master.
+ * <p>
+ * This handler supports different execution contexts:
+ * <ul>
+ *     <li><b>Isolated:</b> Each job gets its own subdirectory within the root workspace.</li>
+ *     <li><b>Shared:</b> A common 'shared' directory for DAG-related tasks.</li>
+ *     <li><b>Archive Mode:</b> Executes scripts directly within their unzipped absolute path.</li>
+ * </ul>
+ * It also provides robust parsing for job payloads, supporting both new (JOB_ID | FILENAME | ARGS)
+ * and legacy formats.
+ */
+    public class ScriptExecutorHandler implements TaskHandler {
+    /**
+     * The base directory name for all Titan worker workspaces.
+     * All job-specific and shared workspaces will be created under this directory.
+     */
     private static final String WORKSPACE_DIR = "titan_workspace";
+    /**
+     * A reference to the parent {@link RpcWorkerServer} instance.
+     * Used for interacting with the master, specifically for streaming logs.
+     */
     private final RpcWorkerServer parentServer;
 
+    /**
+     * The root {@link File} object representing the base directory for all script executions.
+     * This is typically {@code titan_workspace}.
+     */
     private final File rootWorkspace;
+    /**
+     * The {@link File} object representing the shared workspace directory.
+     * This directory is used for tasks that require shared resources, such as DAG executions.
+     * It is located at {@code titan_workspace/shared}.
+     */
     private final File sharedWorkspace;
 
+    /**
+     * Constructs a new {@code ScriptExecutorHandler}.
+     * Initializes the root and shared workspace directories, creating them if they do not exist.
+     *
+     * @param parentServer The {@link RpcWorkerServer} instance that this handler is associated with.
+     */
     public ScriptExecutorHandler(RpcWorkerServer parentServer) {
         this.parentServer = parentServer;
 
@@ -46,6 +84,20 @@ public class ScriptExecutorHandler implements TaskHandler {
         }
     }
 
+    /**
+     * Executes a script based on the provided payload.
+     * The payload is parsed to extract the job ID, script filename, and any arguments.
+     * The script is then executed in an appropriate workspace directory (isolated, shared, or archive mode).
+     * Standard output and error streams of the script are captured and streamed to the master via a {@link LogBatcher}.
+     * The method waits for the script to complete or times out after 60 seconds.
+     *
+     * <p>Payload Format (New): {@code JOB_ID | FILENAME | ARGS}
+     * <p>Payload Format (Legacy): {@code FILENAME | ... | JOB_ID} (where ARGS are not explicitly passed)
+     *
+     * @param payload The string payload containing script execution details.
+     * @return A string indicating the execution status and result. Format: {@code COMPLETED|ExitCode|OutputContent}
+     *         or {@code ERROR: [message]} if an error occurs or the script times out.
+     */
     @Override
     public String execute(String payload) {
         // ROBUST PARSING (Standardized Format: JOB_ID | FILENAME | ARGS)

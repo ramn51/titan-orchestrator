@@ -66,14 +66,14 @@ public class TitanJRedisAdapterTest {
             }
 
             if (members.contains("10.0.0.1:8080") && members.contains("10.0.0.2:9090")) {
-                System.out.println("✅ All Set Tests Passed!");
+                System.out.println("[PASS] All Set Tests Passed!");
             } else {
-                System.err.println("❌ Set Content Verification Failed!");
+                System.err.println("[ERROR]Set Content Verification Failed!");
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println("❌ Connection Failed! Is RedisJava running?");
+            System.err.println("[ERROR] Connection Failed! Is RedisJava running?");
         }
     }
 }

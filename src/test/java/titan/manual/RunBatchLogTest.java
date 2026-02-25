@@ -88,7 +88,7 @@ public class RunBatchLogTest {
                 logsFound = true;
                 // Count lines to see if batching is working
                 long lineCount = logs.lines().count();
-                System.out.println("   ✅ RECEIVED LOGS! Line count: " + lineCount);
+                System.out.println("[SUCCESS] RECEIVED LOGS! Line count: " + lineCount);
 
                 // Print the last line to see progress
                 String lastLine = logs.substring(logs.lastIndexOf("\n") + 1);
@@ -96,14 +96,14 @@ public class RunBatchLogTest {
 
                 // If we have > 50 lines, we know the Batch Flush worked!
                 if (lineCount >= 50) {
-                    System.out.println("   🎉 SUCCESS: Received full batch (>50 lines).");
+                    System.out.println("[PASS] SUCCESS: Received full batch (>50 lines).");
                     break;
                 }
             }
         }
 
         if (!logsFound) {
-            throw new RuntimeException("❌ TEST FAILED: No logs were ever received from the Scheduler.");
+            throw new RuntimeException("[FAIL] TEST FAILED: No logs were ever received from the Scheduler.");
         }
 
         System.out.println("\n[OK] Test Passed. Closing down.");

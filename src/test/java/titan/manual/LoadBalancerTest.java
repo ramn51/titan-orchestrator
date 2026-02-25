@@ -23,7 +23,7 @@ import java.net.Socket;
 
 public class LoadBalancerTest {
     public static void main(String[] args) throws Exception {
-        System.out.println("=== ⚖️ STARTING LOAD BALANCER TEST ===");
+        System.out.println("=== [START] STARTING LOAD BALANCER TEST ===");
 
         // 1. Start Scheduler
         Scheduler scheduler = new Scheduler(9090);
@@ -44,7 +44,7 @@ public class LoadBalancerTest {
         submitJob("SUBMIT PDF_CONVERT|long_task_1.pdf|1|0");
 
         // Wait for Heartbeat to sync the 'Load=1' status back to Scheduler
-        System.out.println("⏳ Waiting for Heartbeat to update load metrics (11s)...");
+        System.out.println("[WAITING] Waiting for Heartbeat to update load metrics (11s)...");
         Thread.sleep(11000);
 
         // 4. Submit Job 2

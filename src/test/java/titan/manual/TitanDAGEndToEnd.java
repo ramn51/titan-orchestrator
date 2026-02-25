@@ -48,7 +48,7 @@ public class TitanDAGEndToEnd {
         testSimpleAffinity();
         testComplexFanOutAffinity();
 
-        System.out.println("\n=== 🏁 ALL VALIDATIONS COMPLETE ===");
+        System.out.println("\n=== ALL VALIDATIONS COMPLETE ===");
         System.exit(0);
     }
 

@@ -5,13 +5,12 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
  */
-
 
 package titan.network;
 
@@ -31,20 +30,78 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Represents a worker server in the Titan distributed system. This server listens for incoming RPC
+ * requests from a scheduler, executes various tasks (e.g., file staging, script execution, service
+ * management, PDF conversion), and reports job status and logs back to the scheduler.
+ * <p>
+ * Each worker server registers itself with a central scheduler, advertising its capabilities. It uses
+ * a thread pool to handle incoming client connections and a separate worker pool to manage the
+ * execution of tasks, ensuring that the server remains responsive while processing jobs.
+ * </p>
+ */
 public class RpcWorkerServer {
+
+    // The port number on which this worker server listens for incoming connections.
     private int port;
+
+    // A thread pool used to handle incoming client connections. Each new client connection is submitted to this pool for processing.
     private final ExecutorService threadPool;
+
+    /**
+     * A volatile flag indicating whether the worker server is currently running. Set to {@code false} to initiate a graceful shutdown.
+     */
     private volatile boolean isRunning = true;
+
+    /**
+     * A string describing the capabilities of this worker, used by the scheduler to assign appropriate tasks. Examples include "GENERAL", "GPU", "PDF_CONVERT", etc.
+     */
     private String capability;
+
+    /**
+     * A flag indicating whether this worker is a permanent instance ({@code true}) or an ephemeral instance ({@code false}) that can be scaled down by the scheduler.
+     */
     private boolean isPermanent;
+
+    /**
+     * The port number of the scheduler server to which this worker registers and sends callbacks.
+     */
     private int schedulerPort;
+
+    /**
+     * The hostname or IP address of the scheduler server to which this worker registers and sends callbacks.
+     */
     private String schedulerHost;
+
+    /**
+     * A map storing various {@link titan.tasks.TaskHandler} implementations, keyed by their task type. This allows the worker to dynamically dispatch tasks based on the received command.
+     */
     private Map<String, TaskHandler> taskHanlderMap;
 
+    /**
+     * The maximum number of concurrent tasks that this worker can execute simultaneously in its worker pool.
+     */
     private static final int MAX_THREADS = 4;
+
+    /**
+     * A fixed-size thread pool dedicated to executing actual tasks (jobs). This limits the concurrent workload on the worker.
+     */
     private final ExecutorService workerPool;
+
+    /**
+     * An atomic counter tracking the number of jobs currently being processed by the {@code workerPool}. Used to manage worker saturation.
+     */
     private final AtomicInteger activeJobs;
 
+    /**
+     * Constructs a new {@code RpcWorkerServer} instance.
+     *
+     * @param myPort The port number on which this worker server will listen.
+     * @param schedulerHost The hostname or IP address of the scheduler.
+     * @param schedulerPort The port number of the scheduler.
+     * @param capability A string describing the capabilities of this worker (e.g., "GENERAL", "PDF_CONVERT").
+     * @param isPermanent A boolean indicating if this worker is a permanent instance (true) or ephemeral (false).
+     */
     public RpcWorkerServer( int myPort, String schedulerHost, int schedulerPort, String capability, boolean isPermanent){
         this.port = myPort;
         this.threadPool = Executors.newCachedThreadPool();
@@ -60,9 +117,23 @@ public class RpcWorkerServer {
         addTaskHandler();
     }
 
+    /**
+     * Retrieves the hostname of the scheduler this worker is connected to.
+     *
+     * @return The scheduler's hostname.
+     */
     public String getSchedulerHost() { return schedulerHost; }
+
+    /**
+     * Retrieves the port number of the scheduler this worker is connected to.
+     *
+     * @return The scheduler's port number.
+     */
     public int getSchedulerPort() { return schedulerPort; }
 
+    /**
+     * Initializes and registers various {@link titan.tasks.TaskHandler} implementations with the worker server. This method populates the {@code taskHanlderMap} with handlers for specific task types like PDF conversion, file staging, service management, and script execution.
+     */
     public void addTaskHandler(){
         taskHanlderMap.put("PDF_CONVERT", new PdfConversionHandler());
         taskHanlderMap.put("STAGE_FILE", new FileHandler());
@@ -83,6 +154,14 @@ public class RpcWorkerServer {
 //        });
     }
 
+    /**
+     * Starts the worker server, binding it to the specified port and beginning to listen for incoming client connections. It also registers itself with the scheduler upon startup.
+     * <p>
+     * This method enters a continuous loop, accepting new client sockets and submitting them to the internal thread pool for handling. The loop continues as long as the {@code isRunning} flag is {@code true}.
+     * </p>
+     *
+     * @throws Exception If an error occurs during server startup or socket operations.
+     */
     public void start() throws Exception {
         System.out.println("DEBUG: Attempting to bind to port: " + this.port);
         System.out.println("---- Worker Startup Check ----");
@@ -102,6 +181,11 @@ public class RpcWorkerServer {
         }
     }
 
+    /**
+     * Registers this worker server with the central scheduler. It sends its port, capabilities, and permanence status to the scheduler and waits for a registration confirmation.
+     *
+     * @throws Exception If an I/O error occurs during communication with the scheduler or if registration fails.
+     */
     private void registerWithScheduler() throws Exception {
         try(Socket socket = new Socket(schedulerHost, schedulerPort);
             DataInputStream in = new DataInputStream(socket.getInputStream());
@@ -119,6 +203,14 @@ public class RpcWorkerServer {
         }
     }
 
+    /**
+     * Handles communication with a single client socket (typically the scheduler). This method continuously reads {@link titan.network.TitanProtocol.TitanPacket}s from the client, processes them based on their operation code, and sends appropriate responses.
+     * <p>
+     * Supported operations include heartbeats, running archive jobs, starting archived services, staging files, starting/stopping services, running scripts, and worker shutdown commands.
+     * </p>
+     *
+     * @param socket The client socket connected to the worker.
+     */
     private void clientHandler(Socket socket){
         try(socket; DataInputStream in = new DataInputStream(socket.getInputStream());
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -190,6 +282,16 @@ public class RpcWorkerServer {
         }
     }
 
+    /**
+     * Handles the execution of a task, either synchronously or asynchronously depending on the worker's saturation. If the worker pool is saturated, an error is returned. Otherwise, the task is submitted to the worker pool.
+     * <p>
+     * This method is deprecated in favor of {@link #handleAsyncExecution(DataOutputStream, String)} and {@link #handleSyncExecution(DataOutputStream, String, String)} for clearer separation of concerns.
+     * </p>
+     *
+     * @param out The output stream to send responses back to the client.
+     * @param payload The task-specific data required for execution.
+     * @param forceTaskType An optional parameter to explicitly specify the task type, overriding parsing from the payload.
+     */
     private void handleExecution(DataOutputStream out, String payload, String forceTaskType) {
         if(activeJobs.get() >= MAX_THREADS){
             try {
@@ -228,6 +330,15 @@ public class RpcWorkerServer {
         }
     }
 
+    /**
+     * Handles the execution of a job that involves staging and running an archived payload. The payload is expected to contain a job ID, an entry file path, and a Base64 encoded ZIP archive.
+     * <p>
+     * This method first stages the archive using {@link titan.filesys.WorkspaceManager}, resolves the entry file path, and then delegates to {@link #handleAsyncExecution(DataOutputStream, String)} to run the job asynchronously.
+     * </p>
+     *
+     * @param out The output stream to send responses back to the client.
+     * @param payload The payload containing job ID, entry file, and Base64 ZIP data (format: "JOB_ID|ENTRY_FILE|BASE64_ZIP").
+     */
     private void handleArchiveJob(DataOutputStream out, String payload){
         // Payload: JOB_ID | ENTRY_FILE | BASE64_ZIP
         try{
@@ -246,6 +357,15 @@ public class RpcWorkerServer {
         }
     }
 
+    /**
+     * Handles the deployment and startup of a service from an archived payload. The payload is expected to contain a service ID, an entry file path, a port, and a Base64 encoded ZIP archive.
+     * <p>
+     * This method stages the archive, resolves the entry file, and then delegates to {@link #handleSyncExecution(DataOutputStream, String, String)} to start the service synchronously using the "START_SERVICE" handler.
+     * </p>
+     *
+     * @param out The output stream to send responses back to the client.
+     * @param payload The payload containing service ID, entry file, port, and Base64 ZIP data (format: "SERVICE_ID|ENTRY_FILE|PORT|BASE64_ZIP").
+     */
     private void handleArchiveService(DataOutputStream out, String payload){
         try{
             // Payload: SERVICE_ID | ENTRY_FILE | PORT | BASE64_ZIP
@@ -266,6 +386,13 @@ public class RpcWorkerServer {
         }
     }
 
+    /**
+     * Processes a command by explicitly using a provided task type and task data. This method looks up the appropriate {@link titan.tasks.TaskHandler} from the {@code taskHanlderMap} and executes it.
+     *
+     * @param taskType The explicit type of the task to execute (e.g., "PDF_CONVERT", "START_SERVICE").
+     * @param taskData The data payload for the task handler.
+     * @return A string representing the result of the task execution, or an error message if the task type is unknown or execution fails.
+     */
     private String processCommandExplicit(String taskType, String taskData) {
         TaskHandler handler = taskHanlderMap.get(taskType);
         if(handler!=null){
@@ -278,6 +405,11 @@ public class RpcWorkerServer {
         return "ERROR: Unknown TaskType " + taskType;
     }
 
+    /**
+     * Notifies the scheduler (master) that a specific service has stopped on this worker. This is typically called by a {@link titan.tasks.ServiceHandler} when a managed service terminates.
+     *
+     * @param serviceId The unique identifier of the service that has stopped.
+     */
     public void notifyMasterOfServiceStop(String serviceId) {
         // masterHost and masterPort should be variables in your RpcWorkerServer class
         try (Socket socket = new Socket(this.schedulerHost, this.schedulerPort);
@@ -291,41 +423,59 @@ public class RpcWorkerServer {
         }
     }
 
+    /**
+     * Parses a command payload to determine the task type and data, then dispatches it to the appropriate {@link titan.tasks.TaskHandler}. The payload is expected to be in the format "TASK_TYPE|ARGS...".
+     * <p>
+     * This method also includes logic for simulated test commands like "TEST" and "FAIL", and a sleep command for debugging.
+     * </p>
+     *
+     * @param payload The full command string received from the client.
+     * @return A string representing the result of the task execution, or an error message if the format is invalid, task type is unknown, or execution fails.
+     */
     private String processCommand(String payload){
-            // Payload format: "TASK_TYPE|ARGS..."
-            String[] parts = payload.split("\\|", 2);
-            if(parts.length < 2)
-                return "INVALID_JOB_FORMAT";
+        // Payload format: "TASK_TYPE|ARGS..."
+        String[] parts = payload.split("\\|", 2);
+        if(parts.length < 2)
+            return "INVALID_JOB_FORMAT";
 
-            // Ex: "START_SERVICE" or "PDF_CONVERT"
-            String taskType = parts[0];
-            // Ex: "file.jar|jobId|8085"
-            String taskData = parts[1];
+        // Ex: "START_SERVICE" or "PDF_CONVERT"
+        String taskType = parts[0];
+        // Ex: "file.jar|jobId|8085"
+        String taskData = parts[1];
 
-            if (payload.contains("SLEEP")) {
-                try { Thread.sleep(5000); } catch (Exception e) {}
+        if (payload.contains("SLEEP")) {
+            try { Thread.sleep(5000); } catch (Exception e) {}
+        }
+
+        if (taskType.equals("TEST")) {
+            return "SUCCESS_PROCESSED_" + payload;
+        }
+
+        if (payload.contains("FAIL")) {
+            return "JOB_FAILED_SIMULATED_ERROR";
+        }
+
+        TaskHandler handler = taskHanlderMap.get(taskType);
+        if(handler!=null){
+            try{
+                return handler.execute(taskData);
+            } catch (Exception e){
+                return "JOB_FAILED" + e.getMessage();
             }
-
-            if (taskType.equals("TEST")) {
-                return "SUCCESS_PROCESSED_" + payload;
-            }
-
-            if (payload.contains("FAIL")) {
-                return "JOB_FAILED_SIMULATED_ERROR";
-            }
-
-            TaskHandler handler = taskHanlderMap.get(taskType);
-            if(handler!=null){
-                try{
-                   return handler.execute(taskData);
-                } catch (Exception e){
-                    return "JOB_FAILED" + e.getMessage();
-                }
-            } else{
-                return "ERROR: Task doesnt exist so I dont know how to do " + taskType;
-            }
+        } else{
+            return "ERROR: Task doesnt exist so I dont know how to do " + taskType;
+        }
     }
 
+    /**
+     * Handles the asynchronous execution of a task. If the worker pool is saturated, an error is immediately sent back. Otherwise, the task is submitted to the {@code workerPool} and an "JOB_ACCEPTED" acknowledgment is sent.
+     * <p>
+     * The actual task execution happens in a separate thread. Upon completion (success or failure), a callback is sent to the scheduler using {@link #sendCallback(String, String, String)}.
+     * </p>
+     *
+     * @param out The output stream to send the immediate acknowledgment back to the client.
+     * @param payload The task-specific data, potentially including a job ID (format: "JOB_ID|TASK_DATA" or just "TASK_DATA").
+     */
     private void handleAsyncExecution(DataOutputStream out, String payload){
         if(activeJobs.get() >= MAX_THREADS){
             try{
@@ -376,6 +526,16 @@ public class RpcWorkerServer {
 
     }
 
+    /**
+     * Sends a job completion or failure callback to the scheduler. This method establishes a new socket connection to the scheduler to report the job's final status and result.
+     * <p>
+     * Callbacks are not sent for "UNKNOWN" or "TEST-JOB" job IDs.
+     * </p>
+     *
+     * @param jobId The unique identifier of the job.
+     * @param status The final status of the job (e.g., "COMPLETED", "FAILED").
+     * @param result A string containing the output or error message from the job execution.
+     */
     private void sendCallback(String jobId, String status, String result) {
         if(jobId.equals("UNKNOWN") || jobId.equals("TEST-JOB")) return;
 
@@ -392,6 +552,13 @@ public class RpcWorkerServer {
         }
     }
 
+    /**
+     * Handles the synchronous execution of a task. The task is processed immediately using {@link #processCommandExplicit(String, String)}, and the result (ACK or ERROR) is sent back to the client before the method returns.
+     *
+     * @param out The output stream to send the response back to the client.
+     * @param payload The task-specific data for execution.
+     * @param forceTaskType The explicit type of the task to execute.
+     */
     private void handleSyncExecution(DataOutputStream out, String payload, String forceTaskType){
         try{
             String response = processCommandExplicit(forceTaskType, payload);
@@ -404,6 +571,15 @@ public class RpcWorkerServer {
         }
     }
 
+    /**
+     * Streams a single log line for a given job to the scheduler (master). This method establishes a new socket connection to send the log data.
+     * <p>
+     * Errors during log streaming are silently ignored to prevent disrupting the main worker flow.
+     * </p>
+     *
+     * @param jobId The unique identifier of the job to which the log line belongs.
+     * @param line The log message to stream.
+     */
     public void streamLogToMaster(String jobId, String line){
         try (Socket socket = new Socket(this.schedulerHost, this.schedulerPort);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
@@ -411,11 +587,23 @@ public class RpcWorkerServer {
         } catch (Exception e) { /* ignore */ }
     }
 
+    /**
+     * Initiates a graceful shutdown of the worker server. It sets the {@code isRunning} flag to {@code false} to stop the main server loop and then shuts down the internal thread pool, preventing new tasks from being accepted.
+     */
     public void stop(){
         isRunning = false;
         threadPool.shutdown();
     }
 
+    /**
+     * The main entry point for the RpcWorkerServer application. This method parses command-line arguments to configure the worker's port, scheduler host/port, capabilities, and permanence status.
+     * <p>
+     * It then initializes and starts an {@code RpcWorkerServer} instance.
+     * </p>
+     *
+     * @param args Command-line arguments: [myPort] [schedulerHost] [schedulerPort] [capability] [isPermanent].
+     * @throws Exception If an error occurs during server initialization or startup.
+     */
     public static void main(String[] args) throws Exception {
         int myPort = 8080;
         String schedHost = "localhost";

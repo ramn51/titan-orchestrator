@@ -17,7 +17,25 @@ package titan;
 
 import titan.scheduler.Scheduler;
 
-public class TitanMaster {
+/**
+ * The main entry point for the Titan distributed system. This class is responsible
+ * for initializing and orchestrating core components such as the scheduler and
+ * autoscaler, and for managing the overall lifecycle of the Titan master node.
+ * It sets up the necessary services and keeps the application running.
+ */
+    public class TitanMaster {
+    /**
+ * The main method and entry point for the TitanMaster application.
+ * This method initializes and starts the core services required for the Titan
+ * master node, including the scheduler and the autoscaler. It also retrieves
+ * critical configuration parameters from {@link TitanConfig} for services like Redis
+ * and worker heartbeat intervals.
+ * <p>
+ * The main thread is kept alive indefinitely to ensure the application continues
+ * to run and manage its services.
+ *
+ * @param args Command line arguments (not currently used).
+ */
     public static void main(String[] args) {
         // Start Scheduler on port 9090
         Scheduler scheduler = new Scheduler(9090);

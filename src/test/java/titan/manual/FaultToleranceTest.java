@@ -112,7 +112,7 @@ public class FaultToleranceTest {
         submitJob("PDF_CONVERT|poison_pill.pdf");
 
         // Wait for 3 retries to happen
-        System.out.println("⏳ Waiting for 3 retries + DLQ move (approx 5s)...");
+        System.out.println("[WAITING] Waiting for 3 retries + DLQ move (approx 5s)...");
         Thread.sleep(6000);
 
         System.out.println("\n=== 🛑 TEST FINISHED ===");

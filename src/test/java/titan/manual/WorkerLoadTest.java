@@ -61,7 +61,7 @@ public class WorkerLoadTest {
         }
 
         // 3. Wait for registrations to complete
-        System.out.println("⏳ Waiting for " + WORKER_COUNT + " workers to register...");
+        System.out.println("[WAITING] Waiting for " + WORKER_COUNT + " workers to register...");
         Thread.sleep(3000); // Give them 3 seconds to finish handshakes
 
         // 4. Verify Registry Size

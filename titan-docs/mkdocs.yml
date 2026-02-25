@@ -1,0 +1,46 @@
+site_name: Titan Orchestrator
+site_description: A lightweight distributed execution runtime for DAGs, Agents, and Services.
+theme:
+  name: material
+  palette:
+    scheme: slate # Sleek dark mode
+    primary: light green
+    accent: teal
+  features:
+    - navigation.tabs # Puts top-level items in a top navbar
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - attr_list
+  - md_in_html
+  - pymdownx.blocks.caption
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - 🏠 Home: index.md
+  - 🚀 Getting Started: getting-started.md
+  - 💡 Examples:
+      - Static Pipelines (YAML): examples/yaml.md
+      - Agentic Workflows (Python): examples/agentic.md
+      - Dagster Integration: examples/dagster.md
+  - 📚 API and SDK Reference: 
+      - Titan SDK: reference/sdk.md
+      - Java Engine API: javadocs/docs/index.html
+      - Titan CLI: reference/cli.md
+
+  - 🧠 Architecture Deep Dive:
+      - System Design: architecture/design.md
+      - TitanStore & IPC: architecture/internals.md
+  - 🤝 Contributing: contributing.md
+
+copyright: 'Copyright &copy; 2026 Ram Narayanan A S. Released under the <a href="https://github.com/ramn51/titan-orchestrator/blob/main/LICENSE" target="_blank">Apache 2.0 License</a>.'

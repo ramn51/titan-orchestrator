@@ -49,7 +49,7 @@ public class TitanTestSuite {
 
         for (Class<?> testClass : TEST_CLASSES) {
             System.out.println("\n------------------------------------------");
-            System.out.println("🏃 RUNNING: " + testClass.getSimpleName());
+            System.out.println(" RUNNING: " + testClass.getSimpleName());
             System.out.println("------------------------------------------");
 
             boolean success = runTestInSeparateJvm(testClass);
@@ -69,7 +69,7 @@ public class TitanTestSuite {
         long duration = System.currentTimeMillis() - startTime;
 
         System.out.println("\n==========================================");
-        System.out.println("📊 SUITE SUMMARY");
+        System.out.println("SUITE SUMMARY");
         System.out.println("==========================================");
         System.out.println("Total Tests: " + TEST_CLASSES.length);
         System.out.println("Passed:      " + passed);

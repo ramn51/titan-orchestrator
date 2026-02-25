@@ -31,7 +31,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import titan.network.TitanProtocol.TitanPacket;
 
-public class SchedulerServer {
+/**
+ * The {@code SchedulerServer} class acts as the central network endpoint for the Titan distributed scheduling system.
+ * It listens for incoming client connections, processes various commands from workers and clients (e.g., registration,
+ * job submission, asset management, statistics requests), and delegates core scheduling logic to an associated {@link titan.scheduler.Scheduler} instance.
+ * <p>
+ * This server operates in a multithreaded manner, using an {@link java.util.concurrent.ExecutorService} to handle each client connection concurrently,
+ * ensuring responsiveness and scalability.
+ */
+    public class SchedulerServer {
     private final int port;
     private boolean isRunning = true;
     private final ExecutorService threadPool;
@@ -40,6 +48,15 @@ public class SchedulerServer {
 
     private static final String PERM_FILES_DIR = "perm_files";
 
+    /**
+ * Constructs a new {@code SchedulerServer} instance.
+ * Initializes the server to listen on the specified port and associates it with the provided {@link titan.scheduler.Scheduler}.
+ * A cached thread pool is created to manage client connections.
+ *
+ * @param port The port number on which the server will listen for incoming client connections.
+ * @param scheduler The {@link titan.scheduler.Scheduler} instance responsible for managing workers, jobs, and system state.
+ * @throws IOException If an I/O error occurs when attempting to open the server socket on the specified port.
+ */
     public SchedulerServer(int port, Scheduler scheduler) throws IOException {
         this.port = port;
         threadPool = Executors.newCachedThreadPool();
@@ -47,6 +64,13 @@ public class SchedulerServer {
         this.serverSocket = new ServerSocket(this.port);
     }
 
+    /**
+ * Starts the {@code SchedulerServer}, making it listen for incoming client connections.
+ * This method enters a continuous loop, accepting new client sockets and submitting them to the internal thread pool
+ * for asynchronous handling by the {@link #clientHandler(Socket)} method.
+ * The server will continue to run until the {@link #stop()} method is called or a critical error occurs.
+ * System messages are printed to indicate the server's listening status.
+ */
     public void start(){
         try(serverSocket){
             System.out.println("[OK] SchedulerServer Listening on port " + port);
@@ -64,6 +88,15 @@ public class SchedulerServer {
         }
     }
 
+    /**
+ * Handles a worker registration request from a client.
+ * This method parses the registration payload, extracts the worker's port, capabilities, and permanence status,
+ * and then registers the worker with the central {@link titan.scheduler.Scheduler}.
+ *
+ * @param socket The {@link Socket} object representing the client connection, used to determine the worker's host address.
+ * @param request The payload string containing registration details, typically in the format "workerPort||capability||isPerm".
+ * @return A string indicating the outcome of the registration, e.g., "REGISTERED" on success or "ERROR_INVALID_REGISTRATION" on failure.
+ */
     private String handleRegistration(Socket socket, String request){
             String[] parts = request.split("\\|\\|");
             if (parts.length < 1) return "ERROR_INVALID_REGISTRATION";
@@ -83,6 +116,15 @@ public class SchedulerServer {
             return ("REGISTERED");
     }
 
+    /**
+ * Handles a single client connection from end-to-end.
+ * This method reads an incoming {@link titan.network.TitanProtocol.TitanPacket}, dispatches it to the appropriate command processing method
+ * based on its operation code, and then sends a response {@link titan.network.TitanProtocol.TitanPacket} back to the client.
+ * It uses {@link java.io.DataInputStream} and {@link java.io.DataOutputStream} for binary protocol communication.
+ * Errors during processing are caught, logged, and an error response is sent to the client.
+ *
+ * @param socket The {@link Socket} object representing the client connection to be handled.
+ */
     public void clientHandler(Socket socket){
         try(socket;
             DataInputStream in = new DataInputStream(socket.getInputStream());
@@ -120,6 +162,17 @@ public class SchedulerServer {
         }
     }
 
+    /**
+ * Processes a request to deploy a file (e.g., a JAR or script) to a worker.
+ * It reads the specified file from the server's {@code perm_files} directory, encodes its content in Base64,
+ * and constructs a {@code DEPLOY_PAYLOAD} job. This job is then submitted to the {@link titan.scheduler.Scheduler}
+ * for execution on a suitable worker.
+ *
+ * @param fileName The name of the file to be deployed. This file must exist in the {@code perm_files} directory.
+ * @param port The port number to associate with the deployed worker, primarily used when deploying a 'Worker.jar'. Can be {@code null} or empty.
+ * @param requirement The capability requirement (e.g., "GPU", "GENERAL") for the worker that should execute this deployment job.
+ * @return A string indicating the status of the deployment job, such as "DEPLOY_QUEUED" or an error message if the file is not found or an I/O issue occurs.
+ */
     private String handleDeployRequest(String fileName, String port, String requirement) {
         try {
             File file = new File(PERM_FILES_DIR + File.separator + fileName);
@@ -163,6 +216,16 @@ public class SchedulerServer {
     }
 
 
+    /**
+ * Handles a request to execute a script or an executable file on a worker.
+ * This method searches for the specified file recursively within the {@code perm_files} directory,
+ * encodes its content in Base64, and creates a {@code RUN_PAYLOAD} job. The job is then submitted
+ * to the {@link titan.scheduler.Scheduler} for execution on a worker matching the specified requirements.
+ *
+ * @param fileName The name of the script or executable file to be run.
+ * @param requirement The capability requirement (e.g., "PYTHON", "GENERAL") for the worker that should execute this run job.
+ * @return A string indicating the status of the job, such as "JOB_QUEUED" along with the job ID, or an error message if the file is not found or an I/O issue occurs.
+ */
     private String handleRunScript(String fileName, String requirement){
         try {
             String safeReq = (requirement == null || requirement.isEmpty()) ? "GENERAL" : requirement;
@@ -197,6 +260,14 @@ public class SchedulerServer {
         }
     }
 
+    /**
+ * Parses a string containing multiple job definitions for a Directed Acyclic Graph (DAG) and submits each job to the {@link titan.scheduler.Scheduler}.
+ * Each job definition within the request string is expected to be separated by a semicolon ({@code ;}).
+ * Jobs are parsed using {@link titan.scheduler.Job#fromDagString(String)}.
+ *
+ * @param request A string containing one or more job definitions, typically in a format like "job1_def;job2_def;..."
+ *                where each definition can be parsed into a {@link titan.scheduler.Job} object.
+ */
     private void parseAndSubmitDAG(String request){
         String [] jobs = request.split(";");
         for(String jobDef: jobs){
@@ -212,6 +283,15 @@ public class SchedulerServer {
     }
 
 
+    /**
+ * Dispatches incoming {@link titan.network.TitanProtocol.TitanPacket}s to the appropriate handler method based on their {@code opCode}.
+ * This method acts as the central command router for all operations received from clients, excluding initial worker registration.
+ * It supports a wide range of operations including deployment, script execution, system statistics, service management,
+ * job submission (single and DAG), worker control, logging, asset transfer, and key-value store interactions.
+ *
+ * @param packet The {@link titan.network.TitanProtocol.TitanPacket} received from the client, containing the operation code and its payload.
+ * @return A response string to be sent back to the client, indicating the result of the command execution or an error message.
+ */
     private String processCommand(TitanPacket packet){
         String payload = packet.payload;
         String[] parts;
@@ -408,6 +488,14 @@ public class SchedulerServer {
         }
     }
 
+    /**
+ * Searches for a specified file within the {@code PERM_FILES_DIR} and its subdirectories.
+ * This method first checks for a direct match in the root of {@code PERM_FILES_DIR} and then performs a recursive walk.
+ *
+ * @param fileName The name of the file to search for.
+ * @return A {@link File} object representing the found file, or {@code null} if the file is not found
+ *         or an {@link IOException} occurs during the directory traversal.
+ */
     private File findFileRecursive(String fileName) {
         File root = new File(PERM_FILES_DIR);
         if (!root.exists()) return null;
@@ -429,6 +517,12 @@ public class SchedulerServer {
         }
     }
 
+    /**
+ * Shuts down the {@code SchedulerServer} gracefully.
+ * This method sets a flag to terminate the main server listening loop, shuts down the internal thread pool,
+ * and attempts to close the {@link java.net.ServerSocket} to release the bound port.
+ * Any {@link IOException} encountered during socket closure is caught and printed to the error stream.
+ */
     public void stop(){
         isRunning = false;
         threadPool.shutdown();
