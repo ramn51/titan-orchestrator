@@ -1,778 +1,101 @@
 # 🛰️ Titan: The Hybrid Distributed Runtime
 
-**Titan** is a lightweight distributed execution runtime designed to bridge the gap between:
+**Self-Hosting, Self-Healing Execution Substrate for DAGs, Agents, and Services.**
 
-* Logical DAG Orchestrators (e.g. Airflow / Dagster)  
-* Dynamic Agent Runtimes (LLM-driven systems)
-* Service Schedulers (Micro-PaaS for long-running APIs)
+[![Documentation](https://img.shields.io/badge/docs-live-1de9b6.svg)](https://ramn51.github.io/titan-orchestrator/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Traditional workflow engines are responsible for deciding task order.
+Titan is a zero-dependency distributed runtime built from first principles to solve the **"Physical Execution"** problem. It bridges the gap between static orchestrators (Airflow), dynamic AI agents, and long-running micro-services.
 
-Titan is responsible for deciding:
+**Titan handles the heavy lifting of distributed systems:**
+*  **Parallelism:** Executing massive fan-out workloads across the cluster with non-blocking task distribution.
+*  **Locality:** Enforcing strict data-to-node affinity.
+*  **Elasticity:** Reactive auto-scaling with autonomous "Inception" events.
+*  **Resilience:** Zero-loss state recovery via the integrated TitanStore AOF.
+*  **Capability:** Hardware-aware routing (Strict GPU vs. CPU matching).
 
-- **Where it runs** _(Enforcing data locality and node affinity)_  
-- **How it dynamically scales** _(Real-time load detection for auto-scaling up and graceful descale)_
-- **How execution survives failure** _(Zero-loss state recovery via TitanStore AOF)_
-- **Which hardware executes which task** _(Capability-based GPU vs. CPU routing)_
-- **When infrastructure self-replicates** _(Autonomous spawning of ephemeral workers)_
+### 📖 [Explore the Full Documentation and Quickstart](https://ramn51.github.io/titan-orchestrator/getting-started/)
 
-Designed for small-to-medium scale environments, Titan acts as a
-**Self-Hosting, Self-Healing Execution Substrate** capable of running:
-
-• Static pipelines  
-• Long-running services  
-• Runtime-defined DAGs  
-• Agent-generated execution graphs
-
-All within a single zero-dependency binary.
-
-> *Built from scratch in Java (Core Engine) and Python (SDK). Features a custom binary protocol for internal signaling and an append-only execution log via a native Redis-like persistence layer ([TitanStore](https://github.com/ramn51/RedisJava)), enabling replayable DAG execution without requiring an external database.*
-
- 
 <p align="center">
-  <img src="/screenshots/Titan_L1_diagram.png" alt="Titan High Level Architecture" width="800"/>
+  <img src="./screenshots/Titan_L1_diagram.png" alt="Titan High Level Architecture" width="800"/>
 </p>
 
 ---
 
-## Table of Contents
-- [Capability Spectrum](#capability-spectrum)
-- [Philosophy: One Runtime, Two Patterns](#philosophy-one-runtime-two-patterns)
-- [Key Features](#key-features)
-- [Demos in Action](#demos-in-action)
-- [The Data Plane (File System)](#the-data-plane-file-system)
-- [Getting Started](#getting-started)
-- [Operator Manual (CLI)](#operator-manual-cli)
-- [Developer Manual](#developer-manual-two-modes)
-- [SDK Reference](#sdk-reference-python)
-- [Dashboard](#dashboard)
-- [Architecture](#architecture)
-- [Repository Guide](#repository-guide)
-- [Testing Strategy](#testing-strategy)
-- [Limitations & Design Constraints](#limitations--design-constraints)
-- [Roadmap](#roadmap)
+## 📈 The Capability Spectrum
+
+Titan scales with your complexity, from a simple script runner to an autonomous agent host:
+
+1. **Level 1: Distributed Cron (The Scheduler)**
+   * Distributed `crontab` for Python/Shell scripts. Run tasks in sequence or parallel across a cluster.
+2. **Level 2: Service Orchestrator (The Platform)**
+   * Self-hosted Micro-PaaS (like Nomad or PM2). Deploy APIs and keep them alive with auto-restarts on crash.
+3. **Level 3: Agentic Execution Runtime (Autonomous Mode)**
+   * Infrastructure-aware substrate where software agents programmatically spawn compute tasks based on LLM decisions.
 
 ---
 
+## 🧠 One Runtime, Two Patterns
 
-## Capability Spectrum
-
-Titan is designed to grow with your system's complexity:
-
-1. **Level 1: Distributed Cron (The "Scheduler")**
-
-    - _Simple:_ Run a Python script on a remote machine every hour. In a specified Sequence or distributed and parallel.
-
-    - **Mental Model:** Distributed `crontab` or lightweight Airflow.
-
-2. **Level 2: Service Orchestrator (The "Platform")**
-
-    - _Intermediate:_ Deploy long-running API servers and keep them alive (restart on crash).
-
-    - **Mental Model:** A self-hosted PM2 or HashiCorp Nomad.
-
-3. **Level 3: Agentic Execution Runtime (The "Autonomous Mode")**
-
-    - _Advanced:_ Programmatically construct execution graphs at runtime
-      where software agents spawn downstream compute tasks conditionally.
-
-    - **Mental Model:** Infrastructure-aware execution substrate for
-      runtime-defined workflows.
----
-
-## Philosophy: One Runtime, Two Patterns
-
-Titan recognizes that Modern Infrastructure requires two distinct ways of working. You choose the interface that matches your role.
-### 1. Static Workflows (The "DevOps" Path)
-
-* **Requirement:** Just the Titan Binary (Java) + A YAML definition.
-* **Definition:** Deterministic DAGs defined *before* execution.
-* **Use Case:** Nightly ETL, Database Backups, Periodic Reports.
-* **Workflow:** Define your infrastructure in a declarative `pipeline.yaml` and submit it.
-
-### 2. Runtime-Defined Workflows (Agentic Mode)
-
-* **Requirement:** The **Titan Python SDK**.
-* **Definition:** The execution graph is constructed *at runtime* based on logic or LLM decisions.
-* **Use Case:** AI Agents, Self-Healing Loops, Recursive Web Scraping.
-* **Workflow:** Programmatically construct graphs where the "Next Step" depends on the "Previous Output" (e.g., *Run  Error  Generate Fix  Retry*).
-
-> This allows Titan to function as an execution backend for agentic
-systems where task graphs are generated dynamically based on
-intermediate outputs (e.g., model inference or system telemetry).
+| Feature | Static Workflows (DevOps) | Runtime-Defined (Agentic) |
+| :--- | :--- | :--- |
+| **Requirement** | YAML Definition + Java Binary | Titan Python SDK |
+| **Definition** | Deterministic DAGs defined beforehand | Graphs constructed at runtime |
+| **Use Case** | Nightly ETL, Backups, Reporting | AI Agents, Self-Healing Loops |
 
 ---
 
-## Key Features
+## 🛠️ Key Features
 
 ### 1. Universal Workload Support
+Orchestrate ephemeral scripts, long-running services, and hybrid DAGs (e.g., Python script → Java Service → Shell cleanup) in a single zero-dependency binary.
 
-Titan orchestrates a diverse mix of primitives within a single dependency graph:
+### 2. Smart Resource Governance
+* **Permanent vs. Ephemeral Nodes:** Protect core infrastructure while allowing burst workers to decommission automatically after 45s of idle time.
+* **Capability Routing:** Tag workers with skills (e.g., `GPU`). Titan ensures hardware-heavy tasks land only on capable nodes.
 
-* **Ephemeral Scripts:** Fire-and-forget Python or Shell scripts.
-* **Long-Running Services:** Titan acts as a hosting solution (like PM2), keeping Web Servers and APIs alive.
-* **Hybrid DAGs:** A single workflow can chain a Python script  into a Java Service  into a Shell cleanup task.
+### 3. High-Performance Internals
+* **TITAN_PROTO:** Custom binary TCP wire format for <50ms latency without JSON overhead.
+* **Inception Scaling:** Saturated workers can autonomously spawn "child" worker processes to handle traffic spikes.
+* **Least-Connection Routing:** Master intelligently routes jobs to the node with the lowest active thread load.
 
-> **Note on Isolation:** Titan currently uses **Process-Level Isolation** (managing PIDs and workspaces directly on the Host OS). Full Container Isolation (Docker integration) is planned for v2.0.
-
-
-### 2. Advanced Resource Governance
-
-- **Infrastructure Protection (Permanent vs. Ephemeral):** Titan distinguishes between Permanent and Non-Permanent nodes.
-
-    - **Permanent Nodes:** (e.g., The Root Worker, or a specialized GPU box). These are marked as `isPermanent=true` and are **immune** to auto-scaling shutdown logic.
-
-    - **Ephemeral Nodes:** Auto-scaled workers spawned during high load. These are automatically decommissioned when idle for >45s.
-
-- **Capability-Based Routing:** Titan supports heterogeneous clusters. You can tag workers with specific skills (e.g., `GPU`, `HIGH_MEM`, `GENERAL`). The scheduler enforces strict matching, ensuring `requirement: GPU` tasks _only_ land on nodes with that hardware capability.
-
-
-### 3. Performance
-
-* **Custom Binary Protocol:** Uses `TITAN_PROTO`, a fragmentation-safe TCP wire format (Header + Body) designed for less than 50ms latency without JSON overhead.
-* **Smart Task Affinity:** Implements "Parent-Child Locality." If a Worker spawns a sub-task, the scheduler attempts to place it on the same node to leverage local caching. Useful for cases where training and other tasks of a model needs to happen on a specific node.
-* **Reactive Auto-Scaling:** The scheduler monitors worker load. If the cluster is saturated, it triggers **"Inception"** events where workers spawn *new* child workers to handle burst traffic.
-* **Least-Connection Routing:** Jobs are intelligently routed to the worker with the lowest active load.
-  
-> **Note on Concurrency:** To ensure stability on smaller nodes, the default Worker concurrency is currently **capped at 4 slots** per instance. To utilize more cores on a large server, simply spawn multiple Worker instances on different ports (e.g., 8081, 8082)
-
-### 4. Resilience (Self-Healing)
-
-* **Automated Resource Governance:** Workers maintain a persistent PID registry. On startup, they automatically detect and terminate **"Zombie" processes** left over from previous crashes.
-* **Graceful Termination:** Supports controlled shutdown signals, ensuring nodes finish critical housekeeping before going offline.
-* **Workspace Hydration:** Automatically packages, zips, transfers, and executes code in isolated sandboxes.
-
-### 5. Persistence & State Recovery ([TitanStore](https://github.com/ramn51/RedisJava))
-Titan utilizes TitanStore, a custom-integrated RedisJava persistence layer, to ensure cluster state survives master node crashes.
-
-- **Append-Only File (AOF):** Every job state change, worker registration, and DAG progression is logged to a persistent AOF.
-- **Zero-Loss Recovery:** Upon restart, the Master replays the TitanStore log to reconstruct the active job queue, dependency locks, and worker registry exactly where it left off.
-- **Graceful Degradation (Optional):** True to its zero-dependency philosophy, the persistence layer is entirely pluggable. If no store is configured, the Master elegantly falls back to a purely in-memory execution mode (without crash recovery or data bus features).
----
+### 4. Self-Healing Resilience
+* **Zombie Process Reaping:** Workers automatically clean up orphaned PIDs from previous crashes upon startup.
+* **TitanStore (AOF):** Built-in Redis-like persistence. If the Master dies, it replays the Append-Only File to reconstruct the cluster state perfectly.
 
 ---
-## Demos in Action
+
+## 🎬 Demos in Action
 
 ### 1. Control Plane: Dynamic DAG Execution
 *Watch Titan resolve dependencies and execute a multi-stage workflow where the path is decided at runtime.*
 
 https://github.com/user-attachments/assets/5731c0b8-d392-4890-a3c5-f7e9cf611d65
 
-
 ### 2. Elasticity: Reactive Auto-Scaling
 *Watch the cluster detect load, spawn a new Worker process automatically, and distribute tasks.*
 
 https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172
 
-
----
-### Detailed Scenarios (Click to Expand)
 <details>
-  <summary><b>🎬 Scenario: GPU Affinity Routing</b> (Smart Scheduling)</summary>
+  <summary><b>🎬 View More Scenarios (GPU Routing, Fanout, Full Scale Cycle)</b></summary>
   <br>
-  <i>Shows tasks tagged with "GPU" bypassing general nodes to land on specific hardware.</i>
-  <br><br>
-<video src="https://github.com/user-attachments/assets/9a1abc1c-d01f-4998-8c74-30409113ec85" controls="controls" style="max-width: 100%;">
-  </video>
-</details>
-
-<details>
-  <summary><b>🎬 Scenario: Parallel Execution (Fanout)</b></summary>
-  <br>
-  <i>Submitting a "Fanout" DAG to demonstrate non-blocking parallel execution across multiple workers.</i>
-  <br><br>
-  <video src="https://github.com/user-attachments/assets/812fd793-eab4-499e-9364-f1d3ccbbcc59" controls="controls" style="max-width: 100%;">
-  </video>
-
-</details>
-
-<details>
-  <summary><b>🎬 Scenario: Basic Agent Deployment</b> (Hello World)</summary>
-  <br>
-  <i>Deploying a simple Python agent via YAML configuration to a general node.</i>
-  <br><br>
-  <video src="https://github.com/user-attachments/assets/94b10933-cd97-4e99-b034-4896804123fd" controls="controls" style="max-width: 100%;">
-  </video>
-
-</details>
-
-<details>
-  <summary><b>🎬 Scenario: Full Load Cycle (Scale Up & Descale)</b></summary>
-  <br>
-  <i>(Long Duration) A complete stress test showing the cluster scaling up under pressure and automatically decommissioning ephemeral nodes when the queue empties.</i>
-  <br><br>
-<video src="https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172" controls="controls" style="max-width: 100%;">
-  </video>
-
-<video src="https://github.com/user-attachments/assets/49afd1c6-bed3-444b-8d12-adff07832d8b" controls="controls" style="max-width: 100%;">
-  </video>
-</details>
-
-
----
-
-## The Data Plane (File System)
-
-Titan strictly separates "Source Artifacts" from "Runtime State" to ensure reproducibility.
-
-| Directory                           | Role | Description |
-|:------------------------------------| :--- | :--- |
-| **`TitanStore (Redis) (Optional)`** | **Global State** | In-memory data structure store backed by an AOF. Stores job statuses, DAG locks, Task  and worker heartbeats. Can be used by tasks as a store as well. |
-| **`perm_files/`**                   | **Artifact Registry** | The "Source of Truth." Place your scripts (`.py`, `.sh`) and binaries (`.jar`) here.<br><br>*Note: SDK/YAML submissions automatically stage files here, but you can also manually drop files in.* |
-| **`titan_workspace/`**              | **Execution Sandbox** | The runtime staging area.<br><br>• **`jobs/{id}/`**: Contains execution logs (`.log`) and isolated script copies for specific jobs.<br>• **`shared/`**: A "Data Bus" directory allowing dependent DAG tasks to share intermediate files. |
----
-
-## Getting Started
-
-### Prerequisites
-
-* **Java 17+** (Required for Core Engine)
-* **Python 3.10+** (Required for SDK/CLI)
-* **Maven** (For building the project)
-
-### Option 0: Run via IntelliJ (Recommended for Dev)
-
-If you are developing Titan, simply open the project in IntelliJ IDEA and run the Main classes directly:
-
-1. **Master:** Run `titan.TitanScheduler`
-2. **Worker:** Run `titan.TitanWorker` (Defaults to Port 8080, Capability: GENERAL, Permanent: False)
-3. **CLI:** Run `client.TitanCli`
-
-#### 1. Configure the Runtime (`titan.properties`)
-
-Titan uses an **Adapter Pattern** for its state management, meaning the persistence layer is entirely pluggable. To connect the Master to your Redis (TitanStore) instance, create a `titan.properties` file in the root directory where you run the JAR.
-
-**`titan.properties`**
-```properties
-# TitanStore (Redis) Connection
-titan.redis.host=localhost
-titan.redis.port=6379
-
-# Cluster Tuning
-titan.worker.heartbeat.interval=10
-titan.worker.pool.size=10
-```
-
-> Note: If this file is missing, Titan will gracefully degrade to sensible defaults (no persistence and recovery) or attempt to connect to Redis on localhost:6379.
-
-### Option 2: Build & Run (Production Simulation)
-
-#### 1. Build the Engine
-
-Titan is built as a single "Uber-JAR".
-
-```bash
-# Build the project
-mvn clean package
-
-# Setup the artifacts (perm_files comes with the repo)
-cp target/titan-orchestrator-1.0-SNAPSHOT.jar perm_files/Worker.jar
-
-```
-
-#### 3. Start the Cluster
-
-**Terminal 1: The Master (Scheduler)**
-
-```bash
-# Starts the Master Scheduler on Port 9090
-java -cp perm_files/Worker.jar titan.TitanMaster
-
-```
-
-**Terminal 2: The Worker (Infrastructure)**
-
-```bash
-# Starts a Worker Node. 
-# DEFAULT: Connects to localhost:9090 on Port 8080
-java -jar perm_files/Worker.jar
-
-# CUSTOM: To run on a different port or connect to a remote master:
-# Usage: java -jar Worker.jar <MyPort> <MasterIP> <MasterPort>
-java -jar perm_files/Worker.jar 8081 192.168.1.50 9090
-
-```
-
-#### 4. Install the Client
-
-```bash
-pip install -e .
-
-```
-
----
-
-##  Operator Manual (CLI)
-
-The Titan CLI connects to the cluster for real-time management.
-
-**Connect:**
-
-```bash
-java -cp perm_files/Worker.jar client.TitanCli
-
-```
-
-**Supported Commands:**
-
-| Command                              | Description                                                                                 |
-|--------------------------------------|---------------------------------------------------------------------------------------------|
-| `stats`                              | View cluster health, active nodes, and job queues.                                          |
-| `run <file>`                         | Immediately execute a script from `perm_files`.                                             |
-| `deploy <file> [port]`               | Deploy a single file or service. Supports capability requirements. Ex: deploy train.py 0 GPU |
-| `deploy Worker.jar <port> [capability]` | Manually spawn a new Worker node on a specific port with its capability (GPU or GENERAL)    |
-| `stop <service_id>`                  | Gracefully stop a running service or job.                                                   |
-| `shutdown <host> <port>`             | Remotely decommission a specific worker node.                                               |
-| `dag <dag_string>`                   | Submit a raw DAG string (Advanced users).                                                   |
-| `upload <local_path>`                | Upload a file to server storage (perm_files)                                                |
-
-CLI looks like this:
-
-```
-==========================================
-    [INFO] TITAN DISTRIBUTED ORCHESTRATOR    
-==========================================
-Connected to: localhost:9090
-Commands: stats, json, submit <skill> <data>, dag <raw_dag>, exit
-
-titan> stats
---- TITAN SYSTEM MONITOR ---
-Active Workers:    3
-Execution Queue:   0 jobs
-Blocked (DAG):     1 jobs
--------------------------------
-Worker Status:
- • [8080] Load: 2/4 (50%)    | Skills: [GENERAL]
-    └── ⚙️ Service ID: DAG-JOB_SPAWN
-    └── ⚙️ Service ID: DAG-step-4-server
- • [8081] Load: 0/4 (0%)     | Skills: [GENERAL]
-```
-
----
-
-
-
-##  Developer Manual (Three Modes)
-
-### Mode 1: Static Pipelines (YAML)
-
-*Best for: Scheduled tasks and known dependencies.*
-
-**`daily_etl.yaml`**
-
-```yaml
-name: "Nightly-Data-Pipeline"
-jobs:
-  - id: "EXTRACT"
-    script: "scripts/pull_data.py"
   
-  - id: "TRANSFORM"
-    script: "scripts/clean_data.py"
-    dependencies: ["EXTRACT"]
-    
-  - id: "DEPLOY_API"
-    type: "SERVICE"  # Long running task
-    script: "scripts/server.py"
-    port: 8080
-    dependencies: ["TRANSFORM"]
+  **GPU Affinity Routing**
+  <video src="https://github.com/user-attachments/assets/9a1abc1c-d01f-4998-8c74-30409113ec85" controls="controls" style="max-width: 100%;"></video>
 
-```
-You need to have the yaml file in the root of the project that you want to deploy/run. The scripts and other files can be in any subfolders.
-Refer the examples folder to know the structure. Entrypoints server as the main path to execute them. Upload of asset is handled by titan_cli.py file internally.
+  **Parallel Execution (Fanout)**
+  <video src="https://github.com/user-attachments/assets/812fd793-eab4-499e-9364-f1d3ccbbcc59" controls="controls" style="max-width: 100%;"></video>
 
-To run an example try   ``python titan_sdk/titan_cli.py deploy titan_test_suite/examples/yaml_based_static_tests/dag_structure_test``.
-**This runs the example inside titan_test_suite that will serve as base reference to use**
-
-**If you want to run a workflow but you want only the task to run on a GPU node**
-**gpu_run.yaml**
-```yaml
-name: "GPU_Validation_Project"
-project: true  # This Zips the folder
-
-jobs:
-  - id: "Data_Step"
-    type: "run"
-    file: "preprocess.py"
-    requirement: "GENERAL" # Runs on cheap nodes
-    priority: 1
-
-  - id: "Training_Step"
-    type: "run"
-    file: "train_model.py"
-    depends_on: ["Data_Step"]
-    requirement: "GPU"     # Routed ONLY to workers with GPU capability
-    priority: 10
-```
-
-**The test_suite has all the different examples of trying out**
-
-### Mode 1.5: Programmatic & Dynamic Logic (Python SDK)
-
-*Best for: Conditional logic, Self-Healing loops, and Dynamic Infrastructure.*
-
-#### Scenario A:  The "Logic Switch" (Dynamic DAGs)
-*Decide which DAG to run based on real-time cluster stats or data properties.*
-*Infrastructure that adapts to traffic load.*
-
-> **Scenario:** If traffic > 80%, run a cheap "Quick Scan". If low, run a distributed "Deep Analysis."
-
-[Link to Code](examples/dynamic_switch.py)
-
-```python
-# Full code: examples/dynamic_switch.py
-
-if traffic_load > 80:
-    print(f" High Traffic. Switching to 'FAST' pipeline.")
-    client.submit_job(fast_job)
-else:
-    print(f" Normal Traffic. Running 'DEEP' analysis.")
-    client.submit_dag("DEEP_PIPELINE", deep_dag)
-```
-
-<p align="center">
-  <img src="screenshots/Dynamic_decision_DAG.png" alt="Dynamic Logic Flow" width="300"/>
-</p>
-
-### Mode 2: Agentic Workflows (Python SDK)
-
-In this mode, Titan allows software agents to construct and submit
-execution graphs at runtime based on intermediate outputs (e.g.,
-LLM inference), enabling infrastructure-aware workflows where the
-task graph itself is generated dynamically during execution.
-
-*Best for: AI Agents, Self-Healing loops, and Dynamic logic.*
-
-**The "Self-Healing" Loop**
-
-```python
-# Full code: examples/agentic_healer.py
-
-# The Core Loop
-logs = client.fetch_logs(job_id)
-
-if "Segfault" in logs:
-    print(f" CRITICAL ERROR in {job_id}. Deploying Patch...")
-    
-    # Programmatically create a new job to fix the issue
-    fix_job = TitanJob(id=f"{job_id}_fix", filename="scripts/safe_mode.py")
-    client.submit_job(fix_job)
-
-```
-
-<p align="center">
-  <img src="screenshots/Agentic_AI_isolated_healer.png" alt="Dynamic Logic Flow" width="700"/>
-</p>
-
-### Mode 3: Hybrid Orchestration (Dagster Integration)
-*Best for: Enterprise environments that want Dagster's UI and data lineage, but Titan's hardware-aware compute.*
-
-In this mode, Dagster acts as the Control Plane (managing logic/UI), while Titan acts as the Data Plane (managing physical execution and GPU routing).
-
-In this configuration, Dagster becomes the logical DAG layer while
-Titan assumes responsibility for physical execution turning a
-control-plane-only scheduler into a hardware-aware distributed runtime.
-
-**For this refer the example inside ```titan_test_suite/examples/dagster_integration```**
-- *execute it as ```dagster dev -f pipeline.py```*
-
-This is a simple snippet of how the integration happens.
-
-
-```python
-import dagster as dg
-from titan_sdk import TitanEngine
-
-# The TitanEngine resource acts as a TCP bridge to the cluster
-defs = dg.Definitions(
-    assets=[...],
-    resources={"titan": TitanEngine()} 
-)
-
-@dg.asset
-def trained_model(context: dg.AssetExecutionContext, titan: TitanEngine, raw_data):
-    """Heavy GPU task. Routed dynamically by Titan."""
-    # Intent: Target GPU nodes with strict node affinity for data locality
-    titan.run_task(
-        context, 
-        script_path="train.py", 
-        requirement="GPU", 
-        affinity=True 
-    )
-```
-
-Titan streams remote execution logs directly back into the Dagster UI, giving you a single pane of glass for your distributed pipeline.
-
-Notice how Dagster waits for Titan to find a GPU node and then streams the Java worker logs back to the Python UI.
-
-<p align="center">
-<img src="screenshots/Dagster_titan_dash_gpu.png" alt="Dagster Lineage" width="800"/>
-</p>
-
+  **Full Load Cycle (Scale Up & Descale)**
+  <video src="https://github.com/user-attachments/assets/49afd1c6-bed3-444b-8d12-adff07832d8b" controls="controls" style="max-width: 100%;"></video>
+</details>
 
 ---
 
-##  SDK Reference (Python)
-
-The `TitanClient` is your primary gateway for programmatic control.
-
-### 1. Core Classes
-
-#### `TitanClient`
-The main entry point for connecting to the cluster.
-
-```python
-from titan import TitanClient
-
-# Initialize
-client = TitanClient(host="localhost", port=9090)
-```
-
-|**Method**| **Description** |
-|---|--------------------------------------------------------------------------------------------|
-|`client.submit_job(job: TitanJob)`| Dispatches a single job to the cluster.                                                    |
-|`client.submit_dag(name: str, jobs: list)`| Submits a list of linked `TitanJob` objects as a single DAG.                               |
-|`client.get_job_status(job_id: str)`| Securely queries the Master for a job's internal system status.                            |
-|`client.fetch_logs(job_id: str)`| Retrieves the stdout/stderr logs for a specific job ID.                                    |
-|`client.upload_project_folder(path, name)`| Zips and uploads a local folder to the Master's artifact registry in perm_files directory. |
-|`client.upload_file(filepath)`| Uploads a single file to the Master's artifact registry in perm_files dir.                 |
-|`client.store_put(key, value)`| Saves a string value to the distributed TitanStore (Data Bus).                             |
-|`client.store_get(key)`| Retrieves a string value from the distributed TitanStore.                                  |
-|`client.store_sadd(key, member)`| Adds a member to a distributed Set. Returns 1 if new, 0 if exists.                         |
-|`client.store_smembers(key)`| Returns a Python list of all members in the specified Set.                                 |
-
-#### `TitanJob`
-
-Represents a unit of work.
-```python
-from titan_sdk import TitanJob
-
-job = TitanJob(
-    job_id="train_v1",
-    filename="scripts/train.py",
-    requirement="GPU",     # Optional: "GPU" or "GENERAL"
-    priority=10,           # Optional: Higher numbers schedule first
-    parents=["data_prep"], # Optional: List of parent Job IDs
-    is_archive=False       # Set True if deploying a ZIP/Service
-)
-```
-
-#### 2. defining DAGs Programmatically
-
-You can build dependency graphs using the SDK's API instead of YAML.
-Python
-
-```python
-from titan_sdk import TitanClient, TitanJob
-
-client = TitanClient()
-
-# Step 1: Define the Jobs
-# "Extract" has no parents (Root node)
-task_a = TitanJob(
-    job_id="extract_data",
-    filename="etl/extract.py",
-    priority=5
-)
-
-# "Train" depends on "Extract"
-task_b = TitanJob(
-    job_id="train_model",
-    filename="ml/train.py",
-    requirement="GPU",
-    parents=["extract_data"] # <--- Defines the dependency
-)
-
-# Step 2: Submit them as a list
-client.submit_dag("nightly_pipeline", [task_a, task_b])
-print("DAG Submitted!")
-```
-
-#### 3. Using the Distributed Data Bus (TitanStore)
-
-Tasks running on completely different physical nodes can share state, pass intermediate variables, or track metrics using Titan's built-in Redis layer.
-
-```python
-from titan_sdk import TitanClient
-
-client = TitanClient()
-
-# --- Inside Worker A (Node 1) ---
-# Save a result or metadata globally
-client.store_put("task_123_accuracy", "98.5")
-client.store_sadd("processed_files", "batch_A.csv")
-
-# --- Inside Worker B (Node 2) ---
-# Retrieve the data passed from Worker A
-accuracy = client.store_get("task_123_accuracy")
-completed_files = client.store_smembers("processed_files")
-
-print(f"Downstream task received accuracy: {accuracy}")
-```
-
-##  Dashboard
-
-Titan includes a lightweight Python Flask dashboard to visualize cluster health.
-
-
-![UI_Dashboard](screenshots/UI_Screenshot.png)
-
-* **Real-time Stats:** Current active thread usage of every worker for assessing load (For now its threads, will use CPU/RAM usage in future).
-* **Log Streaming:** Watch stdout/stderr from distributed jobs in real-time via UDP aggregation.
-* **Job History:** Visual timeline of all executions.
-
-**On Click of Job link (Blue link)**
-![Log Stream](screenshots/Log_Stream.png)
-
-```bash
-# Start the Dashboard
-python3 ./perm_files/server_dashboard.py
-# Running on http://localhost:5000
-
-```
-
----
-
-##  Architecture
-
-The system follows a **Leader-Follower** topology with a decoupled control plane.
-
-**This is the L2 architectural Diagram:**
-
-<p align="center">
-  <img src="/screenshots/Titan_L2_with_Store.png" alt="Titan High Level Architecture" width="800"/>
-</p>
-
-> Network Topology: Titan currently assumes a flat network address space (LAN/VPN). While it can run on Cloud VMs (EC2/GCP), it requires direct TCP connectivity between nodes. NAT Traversal and Public/Private IP translation are planned for v2.0.
-
-### The Protocol (`TITAN_PROTO`)
-
-Communication happens over raw TCP sockets using a fixed-header framing strategy to ensure integrity:
-
-```text
-[ HEADER (8 Bytes) ]
-| Version (1B) | OpCode (1B) | Flags (1B) | Spare (1B) | Payload Length (4B) |
-
-[ BODY ]
-| Binary Payload (Variable) ... |
-
-```
-
-### Deep Dive: Internal Mechanics
-
-#### 1. The Scheduler (Master)
-
-* **Inverted Worker Registration:** Unlike traditional systems that scan for nodes, Titan uses a **Push-Based Discovery** model. Workers initiate the connection to the Master, allowing dynamic scaling behind NATs or firewalls without static IP configuration.
-* **The "ClockWatcher":** Instead of inefficient polling, Titan uses a dedicated thread monitoring a `DelayQueue` to handle future tasks. This ensures `O(log n)` scheduling efficiency thereby consuming zero CPU cycles until the precise millisecond a job is ready.
-* **Reconciliation Loop:** A background `ScalerExecutor` runs every 15 seconds to compare the `ActiveJobQueue` against `WorkerCapacity`. If the delta is too high, it triggers the Auto-Scaler. 
-> The Reconciliation Loop separates workers into pools (e.g., GENERAL vs. GPU). It calculates saturation per pool to ensure scaling only happens when the relevant resource type is exhausted.
-
-#### 2. The Failure Detector (Heartbeats)
-
-* **Active Keep-Alive:** The Master maintains a dedicated `HeartBeatExecutor`. It tracks the "Last Seen" timestamp of every worker. If a worker goes silent for >30s, it is marked **DEAD**, and its active jobs are immediately re-queued to healthy nodes (Resilience).
-
-#### 3. State Persistence & Data Bus (TitanStore / RedisJava)
-To eliminate the Master as a single point of failure and provide a unified state layer, Titan implements a custom in-memory data store backed by Redis primitives.
-
-* **The AOF (Append-Only File):** Every critical system transition (e.g., Node Locked, Job Dispatched, Worker Registered) is written to a persistent log on disk.
-
-* **Crash Recovery:** If the Master process is killed abruptly, it does not lose the cluster state. Upon restart, it reads the AOF, reconstructs the ActiveJobQueue, and resumes the DAG exactly where it left off.
-* **Distributed Data Passing:** TitanStore acts as a centralized key-value data bus for the cluster. Tasks can write intermediate results, metadata, or JSON payloads to the store, allowing downstream dependent tasks to fetch them seamlessly, even if they execute on entirely different physical nodes.
-
-* **Dynamic State Tracking:** Individual tasks can update their own custom progress metrics, flags, or statuses during execution. This allows the Python SDK or the UI Dashboard to query the real-time progress of a remote script while it is still running.
-
-
-#### 4. Orchestration Flows
-Titan handles both **delegated** and **autonomous orchestration**.
-
-**Flow A: Delegated Orchestration (Dagster + Titan)**
-*Dagster holds the logical execution graph and delegates physical execution to Titan via a synchronous polling loop.*
-<p align="center">
-<img src="screenshots/Dagster_Titan_Sequence.png" alt="Dagster to Titan Sequence" width="800"/>
-</p>
-
-**Flow B: Autonomous Orchestration (Native Titan)**
-*The Python SDK submits the entire DAG in one atomic binary payload. The Titan Master handles the complete state machine (Wait -> Unlock -> Dispatch) internally.*
-
-<p align="center">
-<img src="screenshots/Titan_only_Sequence.png" alt="Native Titan Sequence" width="800"/>
-</p>
-
----
-
-
-
-## Repository Guide
-
-To help you navigate the codebase:
-
-```text
-titan_test_suite/
-├── examples/               <--  START HERE (User Manual)
-│   ├── yaml_based_static_tests/  # Reference YAML pipelines (ETL etc)
-│   └── agents/                   # Advanced Python scripts (Self-Healing AI)
-    └── dynamic_dag_custom/       # Dynamic DAG examples (logical flow based ones)
-│
-└── pytests/                <--  INTERNAL (Engine Validation)
-    ├── complex_dag_test.py       # Stress tests for the Scheduler
-    └── ...                       # Raw integration checks used during development
-    
-```
-
----
-
-## Testing Strategy
-
-> **⚠️ Note to Contributors:** Titan is a research prototype built to explore the "Hard Parts" of Distributed Systems. As such, the test coverage focuses on integration rather than unit purity.
-
-- **Java Tests (`src/test/java`):** These are essentially **Integration Tests** designed during the initial Proof-of-Concept phase to validate the core loop. Some of these may be outdated or flaky due to the rapid pace of architectural changes.
-
-- **Python Validation:** The primary method for validating system stability currently lies in the `titan_test_suite` folder. Scripts like `complex_dag_test.py` and the YAML examples perform end-to-end black-box testing of the cluster.
-
-- **Future Plan:** A comprehensive Engine Test Suite and proper Unit Tests are planned for the near future to improve stability.
-
-
-**Found a bug?** Please log an issue! Since this is a custom-built distributed system, edge cases are expected.
-
----
-
-## Limitations & Design Constraints
-
-Titan is a research runtime designed to explore the **primitives of orchestration** (Scheduling, IPC, State Management) without the complexity of existing frameworks. As such, certain "Production" features are explicitly out of scope for V1:
-
-1.  **Security (Open TCP):**
-    * The current implementation uses raw, unencrypted TCP sockets.
-    * *Constraint:* Do not run Titan on public networks (WAN) without a VPN or SSH Tunnel. Use strictly within a trusted VPC/LAN.
-
-2.  **~~State Loss:~~** Solved in v1.5. The Master node now utilizes TitanStore (RedisJava) for state persistence. If the Master process dies, the cluster state is fully recovered from the AOF upon restart.
-
-3. **Process Failover:**
-    * While data is safe, the Master is currently a singleton process. If it crashes, workers cannot receive new instructions until it reboots. High Availability (HA) via Raft Consensus (Leader Election) is planned for the v2.0 Roadmap to achieve true zero-downtime failover.
-
-4.  **Network Topology:**
-    * Titan assumes a flat address space (all nodes can ping each other via IP). It does not currently handle NAT Traversal or complex Subnet routing.
-    
-5.  **Scaling Boundary (Process vs. Infrastructure):**
-    * Titan implements **Application-Level Scaling** (spawning new JVM worker processes on existing hardware).
-    * **Infrastructure Provisioning** is currently delegated to external tools.
-    * *Roadmap Item:* A "Cluster Autoscaler Interface" (Webhooks) is planned for v2.0, allowing Titan to trigger external APIs (e.g., Azure VM Scale Sets) when the cluster runs out of capacity.
-
----
-
-## Roadmap
-
-* **Security & Auth (Planned):** Implement **mTLS (Mutual TLS)** for encrypted, authenticated communication between Master and Workers.
-* **Distributed Consensus:** Implement Raft/Paxos for Leader Election (Removing Master SPOF).
-* **~~Crash Recovery:~~** ~~Implement Write-Ahead-Logging (WAL)...~~ (Implemented via TitanStore AOF in v1.5)
-* **Containerization:** Support for Docker/Firecracker execution drivers for true filesystem isolation.
----
-
-## License
+## ⚖️ License & Attribution
 
 Titan Orchestrator is licensed under the Apache License 2.0.
-See the [LICENSE](LICENSE) file for details.
-
-**Created and Maintained by Ram Narayanan A S**
-© 2025 Titan Orchestrator. Open for contributions.
+© 2026 **Ram Narayanan A S**. Open for contributions.
 
 *Engineered from first principles to deconstruct the fundamental primitives of distributed orchestration.*
-
