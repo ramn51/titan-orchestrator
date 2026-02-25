@@ -1,0 +1,7 @@
+titan-docs/** linguist-documentation
+
+titan-docs/site/** linguist-documentation
+
+*.html linguist-documentation
+*.css linguist-documentation
+*.js linguist-documentation
