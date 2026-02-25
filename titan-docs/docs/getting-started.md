@@ -43,7 +43,7 @@ cp target/titan-orchestrator-1.0-SNAPSHOT.jar perm_files/Worker.jar
 
 Titan uses an Adapter Pattern for its state management, meaning the persistence layer is entirely pluggable. To connect the Master to your Redis (TitanStore) instance for state recovery and data-bus features, create a titan.properties file in the root directory where you run the JAR.
 
-Create `titan.properties`:
+#### A.Create `titan.properties`:
 
 Properties
 ```properties
@@ -57,6 +57,28 @@ titan.worker.pool.size=10
 ```
 > Note: If this file is missing, Titan will gracefully degrade to sensible defaults (purely in-memory execution with no persistence or recovery) or attempt to connect to Redis on localhost:6379.
 
+#### B. Start TitanStore
+
+Open a terminal and launch the persistence engine. It comes pre-bundled in the perm_files directory.
+
+```bash
+java -jar perm_files/TitanStore.jar
+```
+**Expected Output Logs**:
+
+```bash
+STARTING as MASTER
+>>> AOF FILE IS HERE: <PROJECT_DIR>/database6379.aof
+Recovering data...
+Performing data recovery with aof file
+DEBUG STORAGE: Putting k1 with ttl -1
+DEBUG MATH: No Expiry set (-1)
+.......
+Received: [SMEMBERS, system:active_jobs]
+Received: [SADD, system:live_workers, 127.0.0.1:8080]
+Received: [SET, worker:127.0.0.1:8080:load, 0]
+DEBUG STORAGE: Putting worker:127.0.0.1:8080:load with ttl -1
+```
 
 ## Start the Cluster
 
@@ -71,6 +93,32 @@ java -cp target/titan-orchestrator-1.0-SNAPSHOT.jar titan.TitanMaster
 
 ```
 
+**Expected Output Logs**
+
+```bash
+Clock Watcher Started...
+Scheduler Core starting at port 9090
+[INFO][SUCCESS] Connected to Redis for Persistence.
+[INFO] Redis Persistence Layer Active
+[INFO][RECOVERY] Scanning for orphaned jobs...
+[INFO][RECOVERY] No stranded jobs found.
+[OK] SchedulerServer Listening on port 9090
+[INFO] Titan Auto-Scaler active.
+Running Dispatch Loop
+Incoming connection from /127.0.0.1 Port53797
+Registering Worker: 127.0.0.1 with GENERAL
+[INFO] New Worker Registered: 127.0.0.1:8080 [EPHEMERAL]
+[TitanProto] Sent Op:80 Len:10
+Sending Heartbeat
+[TitanProto] Sent Op:1 Len:0
+Sending Heartbeat
+[TitanProto] Sent Op:1 Len:0
+[SCALER] Cluster Pressure: 0/4
+Sending Heartbeat
+....
+```
+
+
 **Terminal 2 (The Default Worker Node):**
 This starts a general-purpose hardware node. By default, it connects to the local Master on port `9090` and opens itself for task execution on port `8080`.
 
@@ -78,6 +126,26 @@ This starts a general-purpose hardware node. By default, it connects to the loca
 java -cp target/titan-orchestrator-1.0-SNAPSHOT.jar titan.TitanWorker
 
 ```
+
+**Expected Output Logs**
+
+```bash
+   ** Starting Titan Worker Node**
+   Local Port:  8080
+   Master:      localhost:9090
+   Capability:  GENERAL
+   Mode:        EPHEMERAL (Auto-Scaleable)
+DEBUG: Attempting to bind to port: 8080
+---- Worker Startup Check ----
+[INFO] [ZOMBIE KILLER] Checking for leftover processes...
+Worker Server started on port 8080
+[TitanProto] Sent Op:2 Len:20
+[OK] Successfully registered with Scheduler!
+[TitanProto] Sent Op:80 Len:8
+[TitanProto] Sent Op:80 Len:8
+[TitanProto] Sent Op:80 Len:8
+```
+
 
 *(You should immediately see a "Worker Registered" log appear in Terminal 1).*
 
@@ -90,6 +158,23 @@ java -cp target/titan-orchestrator-1.0-SNAPSHOT.jar titan.TitanWorker 8081 local
 ```
 > 
 > 
+
+**Expected Output:**
+
+```bash
+** Starting Titan Worker Node**
+   Local Port:  8081
+   Master:      localhost:9090
+   Capability:  GPU
+   Mode:        PERMANENT (Protected)
+DEBUG: Attempting to bind to port: 8081
+---- Worker Startup Check ----
+[INFO] [ZOMBIE KILLER] Checking for leftover processes...
+Worker Server started on port 8081
+[TitanProto] Sent Op:2 Len:15
+[OK] Successfully registered with Scheduler!
+[TitanProto] Sent Op:80 Len:8
+```
 
 ---
 
@@ -131,4 +216,8 @@ python3 ./perm_files/server_dashboard.py
 ```
 
 Navigate to **`http://localhost:5000`** in your browser to see your Worker node's live CPU/Thread load and the history of the DAG you just ran.
+
+
+> This is an external dependency and you will need to install Flask alone for this to work. This is not part of the engine and is an extension so its an external dependency.
+
 

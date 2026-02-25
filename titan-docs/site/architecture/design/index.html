@@ -1,0 +1,1433 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A lightweight distributed execution runtime for DAGs, Agents, and Services.">
+      
+      
+      
+      
+        <link rel="prev" href="../../reference/cli/">
+      
+      
+        <link rel="next" href="../internals/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>System Design - Titan Orchestrator</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="light-green" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#architecture-system-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Titan Orchestrator" class="md-header__button md-logo" aria-label="Titan Orchestrator" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Titan Orchestrator
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              System Design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  🏠 Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  🚀 Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../examples/yaml/" class="md-tabs__link">
+          
+  
+  
+  💡 Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/sdk/" class="md-tabs__link">
+          
+  
+  
+  📚 API and SDK Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  🧠 Architecture Deep Dive
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  🤝 Contributing
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Titan Orchestrator" class="md-nav__button md-logo" aria-label="Titan Orchestrator" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Titan Orchestrator
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🏠 Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚀 Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    💡 Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    💡 Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/yaml/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Static Pipelines (YAML)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/agentic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agentic Workflows (Python)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📚 API and SDK Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    📚 API and SDK Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/sdk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Titan SDK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../javadocs/docs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Java Engine API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Titan CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🧠 Architecture Deep Dive
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🧠 Architecture Deep Dive
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#deep-dive-l2-diagram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deep Dive L2 Diagram
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-the-protocol-titan_proto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. The Protocol (TITAN_PROTO)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-internal-mechanics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Internal Mechanics:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-state-persistence-data-bus-titanstore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. State Persistence &amp; Data Bus (TitanStore)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-the-data-plane-file-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. The Data Plane (File System)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-orchestration-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Orchestration Flows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Orchestration Flows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#flow-a-delegated-orchestration-dagster-titan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow A: Delegated Orchestration (Dagster + Titan)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-b-autonomous-orchestration-native-titan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow B: Autonomous Orchestration (Native Titan)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-limitations-design-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Limitations &amp; Design Constraints
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Limitations &amp; Design Constraints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#current-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-roadmap-to-v20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Roadmap to v2.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../internals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TitanStore & IPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🤝 Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#deep-dive-l2-diagram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deep Dive L2 Diagram
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-the-protocol-titan_proto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. The Protocol (TITAN_PROTO)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-internal-mechanics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Internal Mechanics:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-state-persistence-data-bus-titanstore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. State Persistence &amp; Data Bus (TitanStore)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-the-data-plane-file-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. The Data Plane (File System)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-orchestration-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Orchestration Flows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Orchestration Flows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#flow-a-delegated-orchestration-dagster-titan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow A: Delegated Orchestration (Dagster + Titan)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-b-autonomous-orchestration-native-titan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow B: Autonomous Orchestration (Native Titan)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-limitations-design-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Limitations &amp; Design Constraints
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Limitations &amp; Design Constraints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#current-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-roadmap-to-v20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Roadmap to v2.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="architecture-system-design">🏛️ Architecture &amp; System Design</h1>
+<p>Titan follows a <strong>Leader-Follower</strong> topology with a decoupled control plane. It is engineered from first principles to deconstruct the fundamental primitives of distributed orchestration without relying on heavy external frameworks.</p>
+<p><strong>This is the L1 Diagram with highest level of abstraction.</strong></p>
+<p>There will be a single Master, Master is the single point of contact for the user, worker and the titan store.</p>
+<ul>
+<li>
+<p>Users can submit jobs either as a YAML or a Python script through TitanSDK.</p>
+</li>
+<li>
+<p>Scheduler routes to the Worker node (either based on load or capability as per definition). </p>
+</li>
+<li>
+<p>Workers are spawned independently and gets registered to the Scheduler. Scheduler will not have predefined information about the workers. (gets updated only on registration).</p>
+</li>
+<li>
+<p>Scheduler uses TitanStore to trace the state of the system and for recovery replay. Tasks will communicate through Scheduler to use the Titan Store. </p>
+</li>
+<li>
+<p>Titan Store is accessed only by Scheduler instance and is single point of communication.</p>
+</li>
+</ul>
+<blockquote>
+<p>Scheduler for now is SPOF (Single point of failure).</p>
+</blockquote>
+<pre class="mermaid"><code>flowchart LR
+    subgraph Clients["User / Clients"]
+        direction TB
+        SDK["Python SDK Agent"]
+        YAML["YAML Pipeline"]
+        Dash["Web Dashboard"]
+    end
+
+    subgraph ControlPlane["Titan Control Plane"]
+        Master["Titan Master"]
+    end
+
+    subgraph DataLayer["State &amp; Persistence"]
+        Store[("Titan Store&lt;br&gt;(Optional)")]
+    end
+
+    subgraph Grid["Compute Grid"]
+        direction TB
+        W1["Worker Node"]
+        W2["Worker Node"]
+        W3["Worker Node"]
+    end
+
+    SDK -- "Submit Job" --&gt; Master
+    YAML -- "Submit Job" --&gt; Master
+
+    Master -- "Distribute" --&gt; W1
+    Master -- "Distribute" --&gt; W2
+    Master -- "Distribute" --&gt; W3
+
+    W1 -. "Data Bus (IPC)" .-&gt; Master
+    W2 -. "Data Bus (IPC)" .-&gt; Master
+    W3 -. "Data Bus (IPC)" .-&gt; Master
+
+    Master -. "Stream Stats" .-&gt; Dash
+    W1 -. "Live Logs" .-&gt; Master
+
+    Master &lt;--&gt;|"AOF / State / Data Bus"| Store
+
+    classDef optional fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5;
+    class Store optional;</code></pre>
+<h2 id="deep-dive-l2-diagram">Deep Dive L2 Diagram</h2>
+<p><img alt="Titan High Level Architecture" src="../../screenshots/Titan_L2_with_Store.png" /></p>
+<blockquote>
+<p><strong>Network Topology:</strong> Titan currently assumes a flat network address space (LAN/VPC). While it can run on Cloud VMs (EC2/GCP), it requires direct TCP connectivity between nodes. </p>
+</blockquote>
+<hr />
+<h2 id="1-the-protocol-titan_proto">1. The Protocol (<code>TITAN_PROTO</code>)</h2>
+<p>Titan does not rely on HTTP/REST or heavy gRPC layers. Communication happens over raw TCP sockets using a fixed-header framing strategy to ensure integrity and prevent packet fragmentation. </p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>[ HEADER (8 Bytes) ]
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>| Version (1B) | OpCode (1B) | Flags (1B) | Spare (1B) | Payload Length (4B) |
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>[ BODY ]
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>| Binary Payload (Variable) ... |
+</span></code></pre></div>
+<p>This ensures lightning-fast IPC (Inter-Process Communication) with very less latency and zero JSON-serialization overhead for the core execution loops.</p>
+<h2 id="2-internal-mechanics">2. Internal Mechanics:</h2>
+<p>The Master NodeThe Master acts as the Scheduler and Control Plane. It utilizes specialized threads to manage the cluster efficiently.</p>
+<ul>
+<li>
+<p><strong>Inverted Worker Registration (Push-Based Discovery)</strong></p>
+<p>Unlike traditional systems that scan for nodes, Titan uses a Push-Based Discovery model. Workers initiate the connection to the Master, allowing dynamic scaling behind NATs or firewalls without static IP configuration.</p>
+</li>
+<li>
+<p><strong>Queue Segregation (Waiting vs. Active)</strong></p>
+<p>To process complex DAGs efficiently, Titan separates tasks by readiness. Jobs with unresolved parent dependencies are never placed in the active loop; instead, they sit in a blocked Waiting Queue. Once a parent task succeeds, a state-transition event instantly unlocks the dependent children, moving them into the ActiveJobQueue for immediate execution.</p>
+</li>
+<li>
+<p><strong>Smart Dispatching: Capability &amp; Affinity Routing</strong></p>
+<p>When popping a job from the ActiveJobQueue, the Master executes a two-phase routing algorithm before dispatching the payload:</p>
+<blockquote>
+<p><strong>Capability-Based Routing:</strong> The scheduler checks the job's requirement tag (e.g., GPU, HIGH_MEM) and strictly matches it against the registered hardware tags of the current worker pool. A GPU task will bypass idle GENERAL nodes until a capable node is free.</p>
+<p><strong>Affinity-Based Routing:</strong> If a task requires strict data locality (flagged with affinity: true), the Master queries TitanStore to find the exact physical node that executed the parent task. The child task is then routed exclusively to that node to leverage local filesystem caches and avoid network data transfers.</p>
+</blockquote>
+</li>
+<li>
+<p><strong>The "ClockWatcher"</strong></p>
+<p>Instead of inefficient polling, Titan uses a dedicated thread monitoring a DelayQueue to handle future tasks. This ensures $O(\log n)$ scheduling efficiency, consuming zero CPU cycles until the precise millisecond a job is ready.</p>
+</li>
+<li>
+<p><strong>Reconciliation Loop</strong></p>
+<p>A background ScalerExecutor runs every 15 seconds to compare the ActiveJobQueue against WorkerCapacity. If the delta is too high, it triggers the Auto-Scaler. It calculates saturation per capability pool (e.g., GENERAL vs. GPU) to ensure scaling only happens when a specific resource type is exhausted.</p>
+</li>
+<li>
+<p><strong>The Failure Detector (Heartbeats)</strong></p>
+<p>The Master maintains a dedicated HeartBeatExecutor. It tracks the "Last Seen" timestamp of every worker. If a worker goes silent for &gt;30s, it is marked DEAD, and its active jobs are immediately re-queued to healthy nodes to guarantee execution resilience.</p>
+</li>
+<li>
+<p><strong>Dead Letter Queue (DLQ) &amp; Poison Pills</strong></p>
+<p>If a task repeatedly crashes a worker or fails beyond its maximum retry threshold (e.g., due to a syntax error or a missing system library), it is safely removed from the execution loop to prevent infinite crash-looping. The Master quarantines these "poison pill" tasks in a Dead Letter Queue (DLQ), preserving their logs and state for operator inspection without stalling the rest of the cluster.</p>
+</li>
+</ul>
+<hr />
+<h2 id="3-state-persistence-data-bus-titanstore">3. State Persistence &amp; Data Bus (TitanStore)</h2>
+<p>To eliminate the Master as a single point of failure and provide a unified state layer, Titan implements a custom in-memory data store backed by Redis primitives (RedisJava).</p>
+<p><strong>Append-Only File (AOF):</strong> </p>
+<p>Every critical system transition (e.g., Node Locked, Job Dispatched, Worker Registered) is written to a persistent log on disk.</p>
+<p><strong>Crash Recovery:</strong> </p>
+<p>If the Master process is killed abruptly, it does not lose the cluster state. Upon restart, it reads the AOF, reconstructs the ActiveJobQueue, and resumes the DAG exactly where it left off.</p>
+<p><strong>Distributed Data Passing:</strong> </p>
+<p>Tasks can write intermediate results or metadata to the store, allowing downstream tasks to fetch them seamlessly across completely different physical nodes.</p>
+<p><strong>Dynamic State Tracking:</strong> </p>
+<p>Individual tasks can update their own custom progress metrics, flags, or statuses during execution. This allows the Python SDK or the UI Dashboard to query the real-time progress of a remote script while it is still running.</p>
+<h2 id="4-the-data-plane-file-system">4. The Data Plane (File System)</h2>
+<p>Titan strictly separates "Source Artifacts" from "Runtime State" to ensure reproducibility.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Directory</th>
+<th style="text-align: left;">Role</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong><code>TitanStore (Redis) (Optional)</code></strong></td>
+<td style="text-align: left;"><strong>Global State</strong></td>
+<td style="text-align: left;">In-memory data structure store backed by an AOF. Stores job statuses, DAG locks, Task  and worker heartbeats. Can be used by tasks as a store as well.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><code>perm_files/</code></strong></td>
+<td style="text-align: left;"><strong>Artifact Registry</strong></td>
+<td style="text-align: left;">The "Source of Truth." Place your scripts (<code>.py</code>, <code>.sh</code>) and binaries (<code>.jar</code>) here.<br><br><em>Note: SDK/YAML submissions automatically stage files here, but you can also manually drop files in.</em></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><code>titan_workspace/</code></strong></td>
+<td style="text-align: left;"><strong>Execution Sandbox</strong></td>
+<td style="text-align: left;">The runtime staging area.<br><br>• <strong><code>jobs/{id}/</code></strong>: Contains execution logs (<code>.log</code>) and isolated script copies for specific jobs.<br>• <strong><code>shared/</code></strong>: A "Data Bus" directory allowing dependent DAG tasks to share intermediate files.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-orchestration-flows">5. Orchestration Flows</h2>
+<p>Titan handles both delegated and autonomous orchestration.</p>
+<h3 id="flow-a-delegated-orchestration-dagster-titan"><strong>Flow A: Delegated Orchestration (Dagster + Titan)</strong></h3>
+<p>Dagster holds the logical execution graph and delegates physical execution to Titan via a synchronous polling loop.</p>
+<p><img alt="Dagster to Titan Sequence" src="../../screenshots/Dagster_Titan_Sequence.png" /></p>
+<h3 id="flow-b-autonomous-orchestration-native-titan"><strong>Flow B: Autonomous Orchestration (Native Titan)</strong></h3>
+<p>The Python SDK submits the entire DAG in one atomic binary payload. The Titan Master handles the complete state machine (Wait -&gt; Unlock -&gt; Dispatch) internally.</p>
+<p><img alt="Titan Only Sequence" src="../../screenshots/Titan_only_Sequence.png" /></p>
+<h2 id="6-limitations-design-constraints">6. Limitations &amp; Design Constraints</h2>
+<p>Titan is a research runtime designed to explore the <strong>primitives of orchestration</strong> (Scheduling, IPC, State Management) without the complexity of existing frameworks. As such, certain "Production" features are explicitly out of scope for V1:</p>
+<h3 id="current-constraints">Current Constraints</h3>
+<ol>
+<li>
+<p><strong>Security (Open TCP):</strong></p>
+<ul>
+<li>The current implementation uses raw, unencrypted TCP sockets.</li>
+<li><em>Constraint:</em> Do not run Titan on public networks (WAN) without a VPN or SSH Tunnel. Use strictly within a trusted VPC/LAN.</li>
+<li><strong>State Loss (Solved in v1.5):</strong> </li>
+</ul>
+</li>
+<li>
+<p>The Master node now utilizes TitanStore (RedisJava) for state persistence. If the Master process dies, the cluster state is fully recovered from the AOF upon restart.</p>
+</li>
+<li>
+<p><strong>Process Failover:</strong></p>
+<ul>
+<li>While data is safe, the Master is currently a singleton process. If it crashes, workers cannot receive new instructions until it reboots. High Availability (HA) via Raft Consensus (Leader Election) is planned for the v2.0 Roadmap to achieve true zero-downtime failover.</li>
+</ul>
+</li>
+<li>
+<p><strong>Network Topology:</strong></p>
+<ul>
+<li>Titan assumes a flat address space (all nodes can ping each other via IP). It does not currently handle NAT Traversal or complex Subnet routing.</li>
+</ul>
+</li>
+<li>
+<p><strong>Scaling Boundary (Process vs. Infrastructure):</strong></p>
+<ul>
+<li>Titan implements <strong>Application-Level Scaling</strong> (spawning new JVM worker processes on existing hardware).</li>
+<li><strong>Infrastructure Provisioning</strong> is currently delegated to external tools.</li>
+<li><em>Roadmap Item:</em> A "Cluster Autoscaler Interface" (Webhooks) is planned for v2.0, allowing Titan to trigger external APIs (e.g., Azure VM Scale Sets) when the cluster runs out of capacity.</li>
+</ul>
+</li>
+</ol>
+<h2 id="7-roadmap-to-v20">7. Roadmap to v2.0</h2>
+<p><strong>Security &amp; Auth:</strong> Implement mTLS (Mutual TLS) for encrypted, authenticated communication.</p>
+<p><strong>Distributed Consensus:</strong> Implement Raft/Paxos for Leader Election (Removing Master SPOF).</p>
+<p><strong>Containerization:</strong> Support for Docker execution drivers for true filesystem isolation (currently uses Process-Level isolation).</p>
+<p><strong>Cluster Autoscaler Webhooks:</strong> Allow Titan to trigger external APIs (e.g., Azure VM Scale Sets) to provision bare metal automatically.</p>
+<p><strong>Human-in-the-loop Webhooks:</strong> Allow Titan to trigger a HIL hooks to proceed in the DAG further, this should pause the DAG and its execution states and resume based on approval.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Ram Narayanan A S. Released under the <a href="https://github.com/ramn51/titan-orchestrator/blob/main/LICENSE" target="_blank">Apache 2.0 License</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

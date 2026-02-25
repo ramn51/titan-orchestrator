@@ -2,12 +2,38 @@ site_name: Titan Orchestrator
 site_description: A lightweight distributed execution runtime for DAGs, Agents, and Services.
 theme:
   name: material
+  font:
+    text: Roboto
+    code: Roboto Mono
   palette:
-    scheme: slate # Sleek dark mode
-    primary: light green
-    accent: teal
+    # High-contrast Slate/Dark Mode
+    - scheme: slate
+      primary: light green          
+      accent: light green
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
   features:
-    - navigation.tabs # Puts top-level items in a top navbar
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top        
+    - content.code.copy     
+    - content.code.annotate
+# theme:
+#   name: material
+#   palette:
+#     scheme: slate # Sleek dark mode
+#     primary: light green
+#     accent: teal
+#   features:
+#     - navigation.tabs # Puts top-level items in a top navbar
 
 markdown_extensions:
   - pymdownx.highlight:
