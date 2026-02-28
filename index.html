@@ -18,7 +18,7 @@
         
       
       
-      <link rel="icon" href="assets/images/favicon.png">
+      <link rel="icon" href="screenshots/logo.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
     
     
@@ -90,8 +90,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="." title="Titan Orchestrator" class="md-header__button md-logo" aria-label="Titan Orchestrator" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="screenshots/logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -344,8 +343,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="." title="Titan Orchestrator" class="md-nav__button md-logo" aria-label="Titan Orchestrator" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="screenshots/logo.png" alt="logo">
 
     </a>
     Titan Orchestrator
@@ -1341,7 +1339,11 @@
 
 
 
-<h1 id="titan-orchestrator">🛰️ Titan Orchestrator</h1>
+<p align="center">
+  <img src="screenshots/logo.png" alt="Titan Orchestrator Logo" width="350">
+</p>
+
+<h1 id="titan-orchestrator">Titan Orchestrator</h1>
 <p><img alt="Status: Experimental" src="https://img.shields.io/badge/Status-Experimental_Research-blue" /> <img alt="Built by: 1 Developer" src="https://img.shields.io/badge/Solo_Project-Ram_Narayanan-brightgreen" /></p>
 <p><strong>Titan is a lightweight distributed execution runtime with execution control as a first-class concern.</strong></p>
 <p>It allows you to deploy standalone services, execute individual batch jobs, or dynamically mutate complex task graphs across heterogeneous compute nodes all while handling routing, scaling, and failure recovery at runtime.</p>
@@ -1359,7 +1361,7 @@
 <li><strong>Long-running services:</strong> Host a web server or API with automatic port management.</li>
 <li><strong>Static DAGs:</strong> Run traditional YAML-defined or programmatically defined dependency graphs.</li>
 </ul>
-<p>This provides the simplicity of a basic remote task runner, with the ability to scale up to traditional workflow orchestration (similar to Apache Airflow) when needed without requiring heavy external infrastructure.</p>
+<p>Titan starts as a simple remote execution runtime and scales into a distributed, dependency-aware compute substrate capable of static, dynamic, and reactive execution graphs without requiring heavy external orchestration layers.</p>
 <h3 id="2-dynamic-dag-mutation">2. Dynamic DAG Mutation</h3>
 <p>Titan supports runtime graph modification.</p>
 <p>Tasks can:</p>
