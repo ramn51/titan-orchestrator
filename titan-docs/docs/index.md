@@ -1,4 +1,8 @@
-# 🛰️ Titan Orchestrator
+<p align="center">
+  <img src="screenshots/logo.png" alt="Titan Orchestrator Logo" width="350">
+</p>
+
+# Titan Orchestrator
 
 ![Status: Experimental](https://img.shields.io/badge/Status-Experimental_Research-blue) ![Built by: 1 Developer](https://img.shields.io/badge/Solo_Project-Ram_Narayanan-brightgreen)
 
@@ -24,8 +28,7 @@ You don't need a complex pipeline to use Titan. Using the CLI or the Python SDK,
 - **Long-running services:** Host a web server or API with automatic port management.
 - **Static DAGs:** Run traditional YAML-defined or programmatically defined dependency graphs.
 
-This provides the simplicity of a basic remote task runner, with the ability to scale up to traditional workflow orchestration (similar to Apache Airflow) when needed without requiring heavy external infrastructure.
-
+Titan starts as a simple remote execution runtime and scales into a distributed, dependency-aware compute substrate capable of static, dynamic, and reactive execution graphs without requiring heavy external orchestration layers.
 
 ### 2. Dynamic DAG Mutation
 

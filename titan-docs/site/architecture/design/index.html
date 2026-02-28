@@ -1307,7 +1307,7 @@
 </span></code></pre></div>
 <p>This ensures lightning-fast IPC (Inter-Process Communication) with very less latency and zero JSON-serialization overhead for the core execution loops.</p>
 <h2 id="2-internal-mechanics">2. Internal Mechanics:</h2>
-<p>The Master NodeThe Master acts as the Scheduler and Control Plane. It utilizes specialized threads to manage the cluster efficiently.</p>
+<p>The Master Node: The Master acts as the Scheduler and Control Plane. It utilizes specialized threads to manage the cluster efficiently.</p>
 <ul>
 <li>
 <p><strong>Inverted Worker Registration (Push-Based Discovery)</strong></p>
@@ -1399,11 +1399,7 @@
 <ul>
 <li>The current implementation uses raw, unencrypted TCP sockets.</li>
 <li><em>Constraint:</em> Do not run Titan on public networks (WAN) without a VPN or SSH Tunnel. Use strictly within a trusted VPC/LAN.</li>
-<li><strong>State Loss (Solved in v1.5):</strong> </li>
 </ul>
-</li>
-<li>
-<p>The Master node now utilizes TitanStore (RedisJava) for state persistence. If the Master process dies, the cluster state is fully recovered from the AOF upon restart.</p>
 </li>
 <li>
 <p><strong>Process Failover:</strong></p>

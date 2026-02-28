@@ -875,10 +875,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-the-wire-protocol-titan_proto" class="md-nav__link">
+  <a href="#1-the-titan-protocol-titan_proto" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. The Wire Protocol (TITAN_PROTO)
+        1. The Titan Protocol (TITAN_PROTO)
       
     </span>
   </a>
@@ -1016,10 +1016,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-the-wire-protocol-titan_proto" class="md-nav__link">
+  <a href="#1-the-titan-protocol-titan_proto" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. The Wire Protocol (TITAN_PROTO)
+        1. The Titan Protocol (TITAN_PROTO)
       
     </span>
   </a>
@@ -1107,7 +1107,7 @@
 <h1 id="internals-protocol-titanstore">⚙️ Internals: Protocol &amp; TitanStore</h1>
 <p>Titan achieves its zero-dependency architecture by implementing its own network communication and state management layers from scratch. This page covers how nodes talk to each other and how cluster state survives failure.</p>
 <hr />
-<h2 id="1-the-wire-protocol-titan_proto">1. The Wire Protocol (<code>TITAN_PROTO</code>)</h2>
+<h2 id="1-the-titan-protocol-titan_proto">1. The Titan Protocol (<code>TITAN_PROTO</code>)</h2>
 <p>Titan does not rely on HTTP/REST or heavy gRPC layers for internal orchestration. To maximize performance and minimize the memory footprint of the core engine, node-to-node communication happens over simple TCP sockets using a custom binary protocol.</p>
 <p>Every message sent across the cluster uses a fixed-header framing strategy. This ensures payload integrity and prevents the fragmentation issues inherent to plain TCP streams.</p>
 <table>

@@ -5,7 +5,7 @@
 ## How to Contribute
 We are thrilled to accept community contributions. To get started:
 
-**Check the Roadmap:** Looking for a major feature to build? Check out our [Roadmap to v2.0](#roadmap-to-v20) for high-priority architectural goals.
+**Check the Roadmap:** Looking for a major feature to build? Check out our [Roadmap to v2.0](index.md#roadmap-to-v20) for high-priority architectural goals.
 
 **Find an Issue:** Look for issues tagged with good first issue or help wanted in the GitHub tracker.
 

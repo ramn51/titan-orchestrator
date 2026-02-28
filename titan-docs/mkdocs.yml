@@ -2,6 +2,8 @@ site_name: Titan Orchestrator
 site_description: A lightweight distributed execution runtime for DAGs, Agents, and Services.
 theme:
   name: material
+  logo: screenshots/logo.png
+  favicon: screenshots/logo.png
   font:
     text: Roboto
     code: Roboto Mono
