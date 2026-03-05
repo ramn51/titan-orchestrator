@@ -31,6 +31,34 @@ chmod +x titan-dev
 ./titan-dev up
 ```
 
+**LOGS OF RUNNING (Started and Stopped)**
+
+```bash
+[INFO] Booting Titan Development Environment...
+
+[OK] Engine JAR found.
+[SETUP] Verifying Python SDK...
+^CERROR: Operation cancelled by user
+[OK] Python SDK ready.
+[START] Starting TitanStore (Port 6379)...
+[START] Starting Titan Master (Port 9090)...
+[START] Starting General Worker (Port 8080)...
+[START] Starting UI Dashboard (Port 5000)...
+
+====================================================
+               TITAN CLUSTER IS LIVE
+====================================================
+[+] Master Node:     localhost:9090 (PID: 5952)
+[+] Worker Node:     localhost:8080 (PID: 5991)
+[+] TitanStore:      localhost:6379 (PID: 5944)
+[UI] Dashboard:      http://localhost:5000
+[+] View Logs:       Open a new terminal and run: ./titan-dev logs
+====================================================
+[INFO] Cluster is running. Press [Ctrl+C] right here to safely shut down everything.
+^C
+[STOP] Caught exit signal! Commencing graceful teardown...
+```
+
 **What this does in the background:**
 
 - Compiles the Java core using Maven.
