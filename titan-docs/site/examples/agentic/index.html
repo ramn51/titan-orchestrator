@@ -188,6 +188,18 @@
       
     
     
+      <div class="md-header__source">
+        <a href="https://github.com/ramn51/titan-orchestrator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ramn51/titan-orchestrator
+  </div>
+</a>
+      </div>
+    
   </nav>
   
 </header>
@@ -350,6 +362,18 @@
     </a>
     Titan Orchestrator
   </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ramn51/titan-orchestrator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ramn51/titan-orchestrator
+  </div>
+</a>
+    </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
     
@@ -1079,6 +1103,9 @@
                   
 
 
+  
+  
+
 
 <h1 id="programmatic-agentic-workflows">🐍 Programmatic &amp; Agentic Workflows</h1>
 <p>While YAML is excellent for static, predictable pipelines, modern infrastructure often requires dynamic decision-making. </p>
@@ -1117,12 +1144,16 @@
 </span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;nightly_pipeline&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">task_a</span><span class="p">,</span> <span class="n">task_b</span><span class="p">])</span>
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DAG Submitted Successfully!&quot;</span><span class="p">)</span>
 </span></code></pre></div>
+<pre class="mermaid"><code>flowchart LR
+    A[extract_data: extract.py&lt;br&gt; Priority: 5] --&gt; B[train_model: train.py&lt;br&gt; Requirement: GPU]
+
+    style A fill:#1e293b,stroke:#f9a826,stroke-width:2px,color:#ffffff
+    style B fill:#1e293b,stroke:#bf360c,stroke-width:2px,color:#ffffff</code></pre>
 <h2 id="2-dynamic-logic-mode-15">2. Dynamic Logic (Mode 1.5)</h2>
 <p><em>Best for</em>: <strong>Conditional logic, real-time load balancing, and dynamic infrastructure.</strong></p>
 <p>Because you are using pure Python, you can use standard if/else logic to decide which execution graph to build based on real-time cluster stats, database queries, or external API calls.</p>
 <p>The "Logic Switch"
 In this scenario, our script checks the current traffic load. If traffic is high, it submits a single, lightweight task. If traffic is low, it dynamically generates a massive parallel "Deep Analysis" DAG.</p>
-<p><img alt="Dynamic Logic Flow" src="../../screenshots/Dynamic_decision_DAG.png" /></p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span><span class="p">,</span> <span class="n">TitanJob</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
@@ -1141,6 +1172,26 @@ In this scenario, our script checks the current traffic load. If traffic is high
 </span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="p">]</span>
 </span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;DEEP_PIPELINE&quot;</span><span class="p">,</span> <span class="n">deep_tasks</span><span class="p">)</span>
 </span></code></pre></div>
+<pre class="mermaid"><code>flowchart LR
+    Traffic{"Traffic &gt; 80?"}
+
+    %% The Fast Path
+    Traffic --&gt;|Yes: High Traffic| Fast["fast_scan: fast_path.py&lt;br&gt;⚡ Fast"]
+
+    %% The Deep Path
+    Traffic --&gt;|No: Normal Traffic| DAG["DEEP_PIPELINE&lt;br&gt;📦 submit_dag()"]
+
+    %% The Fan-out of the Deep Path
+    DAG --&gt; D0["deep_0"]
+    DAG --&gt; D1["deep_1"]
+    DAG --&gt; D9["... up to deep_9"]
+
+    style Traffic fill:#1e293b,stroke:#f9a826,stroke-width:2px,color:#ffffff
+    style Fast fill:#1e293b,stroke:#ef4444,stroke-width:2px,color:#ffffff
+    style DAG fill:#1e293b,stroke:#1de9b6,stroke-width:2px,color:#ffffff
+    style D0 fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#ffffff
+    style D1 fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#ffffff
+    style D9 fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#ffffff</code></pre>
 <h2 id="3-agentic-workflows-llms-mode-2">3. Agentic Workflows &amp; LLMs (Mode 2)</h2>
 <p><em>Best for</em>: <strong>AI Agents, Self-Healing loops, and recursive execution.</strong></p>
 <p>In this mode, Titan acts as the physical execution substrate for Software Agents. Because Titan is completely decoupled, an LLM (like GPT-4 or Gemini) can evaluate the output of a previous task and dynamically formulate a brand new TitanJob to execute.</p>
@@ -1175,6 +1226,19 @@ Imagine an agent that monitors a distributed job. It fetches the remote executio
 </span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="k">else</span><span class="p">:</span>
 </span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[AGENT] Run healthy or failure is non-critical. Sequence complete.&quot;</span><span class="p">)</span>
 </span></code></pre></div>
+<pre class="mermaid"><code>flowchart LR
+    Logs["fetch_logs('flaky_run')&lt;br&gt; Get Execution Logs"] --&gt; LLM["llm_agent.analyze(logs)&lt;br&gt; AI Evaluation"]
+
+    LLM --&gt; Decision{"Action ==&lt;br&gt;'DEPLOY_PATCH'?"}
+
+    Decision --&gt;|Yes: Root Cause Found| Patch["TitanJob(req='HIGH_MEMORY')&lt;br&gt; client.submit_job()"]
+    Decision --&gt;|No: Non-Critical| Done["Run Healthy&lt;br&gt; Sequence Complete"]
+
+    style Logs fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#ffffff
+    style LLM fill:#1e293b,stroke:#d946ef,stroke-width:2px,color:#ffffff
+    style Decision fill:#1e293b,stroke:#f9a826,stroke-width:2px,color:#ffffff
+    style Patch fill:#1e293b,stroke:#ef4444,stroke-width:2px,color:#ffffff
+    style Done fill:#1e293b,stroke:#1de9b6,stroke-width:2px,color:#ffffff</code></pre>
 <h2 id="4-stateful-agents-using-titanstore-for-memory">4. Stateful Agents (Using TitanStore for Memory)</h2>
 <p><em>Best for: Recursive agents, distributed web scrapers, and global state tracking.</em></p>
 <p>When an autonomous agent decides to respawn itself or dispatch sub-agents across different physical nodes, it loses its local Python variables. To maintain a "train of thought" across the cluster, agents can use Titan's built-in <code>TitanStore</code> as a shared global memory.</p>
@@ -1216,6 +1280,40 @@ Imagine an agent that monitors a distributed job. It fetches the remote executio
 </span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>    <span class="p">)</span>
 </span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="n">retry_job</span><span class="p">)</span>
 </span></code></pre></div></p>
+<pre class="mermaid"><code>flowchart LR
+    %% State Load
+    StateGet["1. agent_retry_count&lt;br&gt; client.store_get()"] --&gt; DecisionRetry{"Attempt &gt;= 3?"}
+
+    %% Escalation Path
+    DecisionRetry --&gt;|Yes: Halting| ResetEsc["client.store_put(0)&lt;br&gt;🧹 Reset State"]
+    ResetEsc --&gt; Escalate["[ESCALATION]&lt;br&gt;Alert Human"]
+
+    %% Execution Path
+    DecisionRetry --&gt;|No: Try Again| FragileTask{"2. fragile_api()&lt;br&gt; try/except"}
+
+    %% Success Path
+    FragileTask --&gt;|Success| ResetDone["client.store_put(0)&lt;br&gt; Reset State"]
+    ResetDone --&gt; Terminate["[TERMINATE]&lt;br&gt;Sequence Done"]
+
+    %% Failure Path
+    FragileTask --&gt;|Failure| StatePut["3. Increment Count&lt;br&gt; client.store_put( Attempts + 1 )"]
+
+    %% The Spawning Action
+    StatePut --&gt; SubmitJob["4. submit_job()&lt;br&gt; Dynamic Spawn"]
+
+    %% The Loop back
+    SubmitJob -.-&gt;|"New Clone Wakes Up"| StateGet
+
+    %% Dark-Mode Styling
+    style StateGet fill:#1e293b,stroke:#1de9b6,stroke-width:2px,color:#ffffff
+    style StatePut fill:#1e293b,stroke:#1de9b6,stroke-width:2px,color:#ffffff
+    style ResetEsc fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#ffffff
+    style ResetDone fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#ffffff
+    style DecisionRetry fill:#1e293b,stroke:#f9a826,stroke-width:2px,color:#ffffff
+    style FragileTask fill:#1e293b,stroke:#f9a826,stroke-width:2px,color:#ffffff
+    style Terminate fill:#1e293b,stroke:#22c55e,stroke-width:3px,color:#ffffff
+    style Escalate fill:#1e293b,stroke:#ef4444,stroke-width:3px,color:#ffffff
+    style SubmitJob fill:#1e293b,stroke:#bf360c,stroke-width:3px,color:#ffffff,stroke-dasharray: 5 5</code></pre>
 <p><strong>Why this is powerful:</strong>
 You only need to submit autonomous_agent.py to the cluster once. From that point on, the agent manages its own lifecycle, hops between available hardware nodes using Titan's scheduler, and uses the distributed store to remember its past failures until the job succeeds.</p>
 

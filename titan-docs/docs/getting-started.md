@@ -21,7 +21,72 @@ git clone https://github.com/ramn51/titan-orchestrator.git
 cd titan-orchestrator
 ```
 
-### Option 1.1: Run via IntelliJ (Recommended for Dev)
+## 2. The Fast Track (Recommended)
+We have included a unified bootstrap script that handles building the Java binaries, installing the Python SDK, and launching all background services automatically.
+
+Make the script executable and launch the cluster:
+
+```bash
+chmod +x titan-dev
+./titan-dev up
+```
+
+**What this does in the background:**
+
+- Compiles the Java core using Maven.
+
+- Installs the titan_sdk Python package in editable mode.
+
+- Starts TitanStore (Port 6379) for persistence.
+
+- Starts the Titan Master (Port 9090) control plane.
+
+- Starts a GENERAL Worker Node (Port 8080).
+
+- Starts the Flask UI Dashboard (Port 5000) if Flask is installed.
+
+_To safely shut down the entire cluster and free up your ports, simply press Ctrl+C in the terminal where the script is running._
+
+#### Viewing Live Logs
+
+Because the cluster runs cleanly in the background, you can stream the logs at any time. Open a new terminal tab and use the built-in log viewer:
+
+```bash
+# Watch all cluster traffic:
+./titan-dev logs
+
+# Or filter by specific components:
+./titan-dev logs master
+./titan-dev logs worker
+```
+
+## 3. Run Your First Task
+Now that your local cluster is live, let's deploy a pre-configured YAML DAG using the Titan CLI.
+
+Open a new terminal window (while your cluster is running) and execute:
+
+```bash
+python titan_sdk/titan_cli.py deploy titan_test_suite/examples/yaml_based_static_tests/dag_structure_test/agent.yaml
+```
+
+#### What just happened?
+
+1. The CLI parsed the YAML definition and zipped the required Python scripts.
+
+2. It dispatched the payload to the Master node via Titan's custom binary protocol.
+
+3. The Master resolved the dependency graph and routed the tasks to your idle Worker node.
+
+4. The Worker executed the code in an isolated workspace!
+
+## 4. Open the Dashboard
+If you have flask installed (pip install flask), the titan-dev script automatically started the UI.
+
+Navigate to http://localhost:5000 in your browser to see your Worker node's live CPU/Thread load and the execution history of the DAG you just ran.
+
+## 5. Advanced: Manual & IDE Setup
+
+### Option 5: Run via IntelliJ (Recommended for Dev)
 
 If you are developing Titan, simply open the project in IntelliJ IDEA and run the Main classes directly:
 
@@ -29,21 +94,21 @@ If you are developing Titan, simply open the project in IntelliJ IDEA and run th
 2. **Worker:** Run `titan.TitanWorker` (Defaults to Port 8080, Capability: GENERAL, Permanent: False)
 3. **CLI:** Run `titan.TitanCli`
 
-### Option 1.2. Build the core engine
+### Option 5.1. Build the core engine
 ```bash
 mvn clean package
 ```
 
-### 2. Stage the binary for execution (Optional, there will be a Worker.jar already there)
+### 5.2 Stage the binary for execution (Optional, there will be a Worker.jar already there)
 ```bash
 cp target/titan-orchestrator-1.0-SNAPSHOT.jar perm_files/Worker.jar
 ```
 
-### 3. Configure the Runtime (titan.properties)
+### 5.3 Configure the Runtime (titan.properties)
 
 Titan uses an Adapter Pattern for its state management, meaning the persistence layer is entirely pluggable. To connect the Master to your Redis (TitanStore) instance for state recovery and data-bus features, create a titan.properties file in the root directory where you run the JAR.
 
-#### A.Create `titan.properties`:
+#### A. Create `titan.properties`:
 
 Properties
 ```properties
@@ -80,9 +145,9 @@ Received: [SET, worker:127.0.0.1:8080:load, 0]
 DEBUG STORAGE: Putting worker:127.0.0.1:8080:load with ttl -1
 ```
 
-## Start the Cluster
+### Start the Cluster
 
-### 5. Start TitanMaster and TitanWorker
+### 5.4 Start TitanMaster and TitanWorker
 
 
 **Terminal 1 (The Master Scheduler):**
@@ -178,7 +243,7 @@ Worker Server started on port 8081
 
 ---
 
-### 5. Install the Python SDK
+### 5.6 Install the Python SDK
 
 The Titan Python SDK allows you to submit jobs, define DAGs, and interact with the cluster programmatically.
 
@@ -190,12 +255,12 @@ pip install -e .
 
 ---
 
-### 6. Run Your First Task
+## 6. Run Your First Task
 
 Let's deploy a pre-configured YAML DAG to the cluster using the Titan CLI.
 
 ```bash
-python titan_sdk/titan_cli.py deploy titan_test_suite/examples/yaml_based_static_tests/dag_structure_test
+python titan_sdk/titan_cli.py deploy titan_test_suite/examples/yaml_based_static_tests/dag_structure_test/agent.yaml
 ```
 
 **What just happened?**
@@ -207,7 +272,7 @@ python titan_sdk/titan_cli.py deploy titan_test_suite/examples/yaml_based_static
 
 ---
 
-### 7. Open the Dashboard (Optional)
+## 7. Open the Dashboard (Optional)
 
 Titan includes a lightweight Flask dashboard to visualize cluster health and stream live logs. To spin it up, run:
 
