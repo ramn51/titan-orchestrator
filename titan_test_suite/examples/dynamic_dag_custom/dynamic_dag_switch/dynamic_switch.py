@@ -42,7 +42,7 @@ def run_dynamic_pipeline():
     print("[LOGIC] Checking Cluster Metrics...")
 
     # Simulating a high-traffic event
-    traffic_load = 90
+    traffic_load = 50
 
     if traffic_load > 80:
         print(f"[CRITICAl] High Traffic ({traffic_load}%). Switching to 'FAST' pipeline to save resources.")

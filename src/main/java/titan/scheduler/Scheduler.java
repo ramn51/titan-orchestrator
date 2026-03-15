@@ -1737,12 +1737,14 @@ import titan.storage.TitanJRedisAdapter;
                 int hCount = 0;
                 for (Job j : history) {
                     String duration = "N/A";
+                    long completedAt = 0;
                     TaskExecution exec = executionHistory.get(j.getId());
                     if (exec != null) {
                         duration = exec.getDuration() + "ms";
+                        completedAt = exec.endTime;
                     }
-                    json.append(String.format("{\"id\": \"%s\", \"status\": \"%s\", \"time\": \"%s\"}",
-                            j.getId(), j.getStatus(), duration));
+                    json.append(String.format("{\"id\": \"%s\", \"status\": \"%s\", \"time\": \"%s\", \"completed_at\": %d}",
+                            j.getId(), j.getStatus(), duration, completedAt));
                     if (hCount < history.size() - 1) json.append(",");
                     hCount++;
                 }

@@ -15,6 +15,7 @@ import struct
 import base64
 import os
 import zipfile
+import json as _json
 
 # --- CONFIGURATION ---
 TITAN_HOST = "127.0.0.1"
@@ -109,8 +110,29 @@ class TitanClient:
         """Submits a list of TitanJobs as a DAG"""
         print(f"[SDK] Submitting DAG: {name}")
         dag_payload = " ; ".join([j.to_string() for j in jobs])
-        return self._send_request(OP_SUBMIT_DAG, dag_payload)
-    
+        result = self._send_request(OP_SUBMIT_DAG, dag_payload)
+        self._write_dag_manifest(name, jobs)
+        return result
+
+    def _write_dag_manifest(self, dag_name, jobs):
+        """Writes job→DAG mapping to .titan_dag_manifest.json for dashboard discovery."""
+        manifest_path = ".titan_dag_manifest.json"
+        try:
+            existing = {}
+            if os.path.exists(manifest_path):
+                with open(manifest_path) as f:
+                    existing = _json.load(f)
+            import time as _time
+            run_ts = int(_time.time() * 1000)
+            for job in jobs:
+                full_id = f"DAG-{job.id}"
+                full_deps = [f"DAG-{p}" for p in job.parents]
+                existing[full_id] = {"dag": dag_name, "deps": full_deps, "run_ts": run_ts}
+            with open(manifest_path, 'w') as f:
+                _json.dump(existing, f, indent=2)
+        except Exception:
+            pass
+
     def submit_job(self, job):
         return self.submit_dag(job.id, [job])
     

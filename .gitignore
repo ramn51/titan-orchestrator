@@ -52,3 +52,6 @@ titan_tasks.db
 
 titan_test_suite/examples/agents_examples/doc_generator_agent/tools/.env
 /docs
+
+# Runtime-generated — do not commit
+.titan_dag_manifest.json
