@@ -63,6 +63,8 @@ These are the constructor parameters:
 | `delay` | `int` | `0` | Artificial delay (in seconds/ms depending on scheduler) before execution. |
 | `affinity` | `bool` | `False` | If `True`, Titan attempts to route this task to the exact same physical node as its parent task. |
 | `requirement`| `str` | `"GENERAL"` | Hardware capability routing tag (e.g., `"GPU"`, `"HIGH_MEM"`). |
+| `hitl_message` | `str` | `None` | When set, the SDK automatically injects a Human-in-the-Loop gate after this job. The string is shown to the operator in the Dashboard. See [HITL Pipelines](../examples/hitl.md). |
+| `max_wait_seconds` | `int` | `172800` | Maximum time (in seconds) the HITL gate will wait for a human decision before auto-failing. Default is 48 hours. Only applies when `hitl_message` is set. |
 
 ---
 

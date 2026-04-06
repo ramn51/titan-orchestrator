@@ -860,11 +860,10 @@ import titan.storage.TitanJRedisAdapter;
                         selectedWorker.currentJobId = null;
                         selectedWorker.decrementCurrentLoad();
                         String wKey = String.valueOf(selectedWorker.port());
-                        workerRecentHistory.computeIfAbsent(wKey, k -> new java.util.concurrent.ConcurrentLinkedDeque<>()).add(job);
-                        // Keep list size in check
-                        if (workerRecentHistory.get(wKey).size() > 10) {
-                            workerRecentHistory.get(wKey).removeFirst();
-                        }
+                        java.util.Deque<Job> errHist = workerRecentHistory.computeIfAbsent(wKey, k -> new java.util.concurrent.ConcurrentLinkedDeque<>());
+                        errHist.removeIf(j -> j.getId().equals(job.getId()));
+                        errHist.add(job);
+                        if (errHist.size() > 10) errHist.removeFirst();
                     }
 
                     if (e.getMessage().contains("SATURATED")) {
@@ -916,6 +915,16 @@ import titan.storage.TitanJRedisAdapter;
             System.err.println("Job Moved to DLQ (Max Retries): " + job);
             this.deadLetterQueue.offer(job);
             cancelChildren(job.getId());
+            // Surface DEAD in workerRecentHistory so the dashboard stats reflect the
+            // failure.  Without this, the history only grows on completeJob(), leaving
+            // stale COMPLETED entries from previous runs visible in the UI.
+            if (record != null && record.assignedWorker != null) {
+                String wKey = String.valueOf(record.assignedWorker.port());
+                java.util.Deque<Job> dHist = workerRecentHistory.computeIfAbsent(wKey, k -> new java.util.concurrent.ConcurrentLinkedDeque<>());
+                dHist.removeIf(j -> j.getId().equals(job.getId()));
+                dHist.add(job);
+                if (dHist.size() > 10) dHist.removeFirst();
+            }
 
         } else{
             job.setStatus(Job.Status.FAILED);
@@ -1007,10 +1016,10 @@ import titan.storage.TitanJRedisAdapter;
             workerCompletionStats.merge(wKey, 1, Integer::sum);
 
             if (job != null) {
-                workerRecentHistory.computeIfAbsent(wKey, k -> new java.util.concurrent.ConcurrentLinkedDeque<>()).add(job);
-                if (workerRecentHistory.get(wKey).size() > 10) {
-                    workerRecentHistory.get(wKey).removeFirst();
-                }
+                java.util.Deque<Job> cHist = workerRecentHistory.computeIfAbsent(wKey, k -> new java.util.concurrent.ConcurrentLinkedDeque<>());
+                cHist.removeIf(j -> j.getId().equals(job.getId()));
+                cHist.add(job);
+                if (cHist.size() > 10) cHist.removeFirst();
             }
 
             propagateAffinity(job.getId(), wKey);
@@ -1541,6 +1550,12 @@ import titan.storage.TitanJRedisAdapter;
 
                 dagWaitingRoom.remove(job.getId());
                 this.deadLetterQueue.offer(job);
+                // Remove any stale completed entry from workerRecentHistory so the
+                // dashboard defaults to WAITING (blue) for blocked downstream jobs
+                // rather than showing a stale COMPLETED from a previous run.
+                for (java.util.Deque<Job> hist : workerRecentHistory.values()) {
+                    hist.removeIf(j -> j.getId().equals(job.getId()));
+                }
                 cancelChildren(job.getId());
             }
         }

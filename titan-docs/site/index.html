@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="screenshots/Titan_logo.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -442,6 +442,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#live-pipeline-visibility-dag-pipelines-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Live Pipeline Visibility — DAG Pipelines View
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-titan-supports" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -535,6 +546,28 @@
   
     <nav class="md-nav" aria-label="Built-In Dashboard">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dag-visualizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DAG Visualizer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visual-dag-constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visual DAG Constructor
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#live-log-streaming" class="md-nav__link">
@@ -1153,6 +1186,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#live-pipeline-visibility-dag-pipelines-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Live Pipeline Visibility — DAG Pipelines View
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#what-titan-supports" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1246,6 +1290,28 @@
   
     <nav class="md-nav" aria-label="Built-In Dashboard">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dag-visualizer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DAG Visualizer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visual-dag-constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visual DAG Constructor
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#live-log-streaming" class="md-nav__link">
@@ -1379,6 +1445,9 @@
 <p>Skip the reading and jump straight into the code. Follow our <strong><a href="getting-started/">5-Minute Quickstart</a></strong> to run your first distributed task, or view the <strong><a href="reference/sdk/">Python SDK Reference</a></strong>.</p>
 </div>
 <p><img alt="Titan Dashboard" src="screenshots/UI_Screenshot.png" /></p>
+<h3 id="live-pipeline-visibility-dag-pipelines-view">Live Pipeline Visibility — DAG Pipelines View</h3>
+<p>Every pipeline submitted to the cluster — via CLI, SDK, YAML, or the visual Constructor — is automatically rendered as a live dependency graph with real-time execution status per node.</p>
+<p><img alt="DAG Visualizer" src="screenshots/DAG_Visualizer_.png" /></p>
 <hr />
 <h2 id="what-titan-supports">What Titan Supports</h2>
 <h3 id="1-standalone-jobs-static-workflows">1. Standalone Jobs &amp; Static Workflows</h3>
@@ -1437,6 +1506,7 @@
         SDK["Python SDK Agent"]
         YAML["YAML Pipeline"]
         Dash["Web Dashboard"]
+        Constructor["DAG Constructor UI"]
     end
 
     subgraph ControlPlane["Titan Control Plane"]
@@ -1456,6 +1526,7 @@
 
     SDK -- "Submit Job" --&gt; Master
     YAML -- "Submit Job" --&gt; Master
+    Constructor -- "Submit Job" --&gt; Master
 
     Master -- "Distribute" --&gt; W1
     Master -- "Distribute" --&gt; W2
@@ -1503,10 +1574,29 @@
 </ol>
 <h2 id="built-in-dashboard">Built-In Dashboard</h2>
 <p>Titan includes a lightweight Python Flask dashboard to visualize cluster health, monitor worker load, and stream stdout/stderr from distributed jobs in real-time.</p>
+<p>The dashboard also ships with two DAG-specific views: a <strong>DAG Visualizer</strong> for inspecting any running or completed pipeline, and a <strong>DAG Constructor</strong> for building and deploying new ones from the browser.</p>
 <blockquote>
 <p>For the dashboard you will need Flask as external dependency (The core engine has zero dependencies, this is an extension)</p>
 </blockquote>
 <p><img alt="Titan Dashboard" src="screenshots/UI_Screenshot.png" /></p>
+<h3 id="dag-visualizer">DAG Visualizer</h3>
+<p>The DAG Pipelines view automatically renders a live graph of every pipeline that has been submitted to the cluster — regardless of how it was submitted. Whether a DAG was deployed via the CLI, the Python SDK, a YAML file, or the visual Constructor, it will appear here with its nodes, dependency edges, and real-time execution status.</p>
+<p><img alt="DAG Visualizer" src="screenshots/DAG_Visualizer_.png" /></p>
+<ul>
+<li><strong>YAML and SDK-based DAGs</strong> are represented accurately with full node and dependency structure.</li>
+<li><strong>Dynamic DAGs</strong> (flow-based, code-driven) are visualized based on the graph as submitted to the Master at runtime.</li>
+<li><strong>Agentic DAGs</strong> (where tasks spawn further tasks conditionally at runtime) will be visible based on what has been submitted so far — the graph will grow as the agent expands work, though the full future shape may not be known ahead of time.</li>
+</ul>
+<p>Node colors update live as jobs transition through <code>PENDING → RUNNING → COMPLETED / FAILED</code>, giving you a real-time view into pipeline progress without any manual refresh.</p>
+<p>For DAGs built and deployed via the visual Constructor, a <strong>Redeploy</strong> button appears directly in the pipeline view — re-submitting the full DAG to the cluster with a single click, without needing to revisit the Constructor or re-run any scripts.</p>
+<h3 id="visual-dag-constructor">Visual DAG Constructor</h3>
+<p>Build and deploy pipelines without writing any code. Drag nodes onto the canvas, draw edges to define dependencies, configure each job's script, requirements, and priority — then hit <strong>Deploy</strong> to submit directly to the cluster.</p>
+<p>The Constructor also auto-generates the equivalent <strong>Python SDK</strong> and <strong>YAML</strong> definitions, which you can copy for reuse in automated pipelines.</p>
+<div class="admonition note">
+<p class="admonition-title">Prerequisite</p>
+<p>The Deploy button submits jobs by reading script files from the Master's <code>perm_files</code> directory. Ensure the script files you reference in the Constructor have been created and staged to <code>perm_files</code> before deploying.</p>
+</div>
+<p><img alt="DAG Constructor Canvas" src="screenshots/DAG_Editor.png" /></p>
 <h3 id="live-log-streaming">Live Log streaming</h3>
 <p>Monitor remote worker execution directly from the control plane UI in real-time.</p>
 <p><img alt="Log Streaming" src="screenshots/Log_Stream.png" /></p>
@@ -1544,6 +1634,7 @@
 <p>The repository includes a comprehensive <code>titan_test_suite/</code> with ready-to-run examples demonstrating Titan's full range of capabilities:
 The examples are added as folders for each category,</p>
 <ul>
+<li><strong>Visual DAG Builder:</strong> Use the browser-based Constructor at <code>/dags/new</code> to drag-and-drop nodes, set dependencies, configure requirements, and deploy DAGs without writing any code. Auto-generates equivalent Python SDK and YAML definitions.</li>
 <li><strong>MapReduce Data Processing:</strong> A complete Python SDK implementation demonstrating how to fan-out data processing to parallel mappers and fan-in the results to a final reducer job. (<a href="https://github.com/ramn51/titan-orchestrator/blob/master/perm_files/pytests/static_dag_tests/map_reduce_test.py">View the code on GitHub</a>)</li>
 <li><strong>Static YAML Pipelines:</strong> Templates for basic Diamond Patterns, massive parallel Fan-outs, and strict hardware-aware routing (e.g., forcing tasks to <code>GPU</code> nodes).</li>
 <li><strong>Dynamic Logic Switches:</strong> Python SDK scripts that simulate measuring system traffic and dynamically spawn entirely different DAGs on the fly.</li>
@@ -1566,6 +1657,7 @@ The examples are added as folders for each category,</p>
 <h2 id="roadmap-to-v20">Roadmap to v2.0</h2>
 <p>Titan is actively evolving. Here are the major architectural milestones planned for upcoming releases. If you are looking for a high-impact way to contribute, these are our top priorities:</p>
 <ul class="task-list">
+<li class="task-list-item"><input type="checkbox" disabled checked/> <strong>Visual DAG Constructor:</strong> Browser-based drag-and-drop DAG editor with YAML/SDK code generation and one-click deploy.</li>
 <li class="task-list-item"><input type="checkbox" disabled/> <strong>Distributed Consensus:</strong> Implement Raft or Paxos for Leader Election to remove the Master node as a Single Point of Failure (SPOF).</li>
 <li class="task-list-item"><input type="checkbox" disabled/> <strong>Security &amp; Auth:</strong> Implement mTLS (Mutual TLS) for encrypted, authenticated cluster communication.</li>
 <li class="task-list-item"><input type="checkbox" disabled/> <strong>Containerized Execution:</strong> Add support for Docker execution drivers to provide true filesystem isolation (currently utilizing Process-Level isolation).</li>

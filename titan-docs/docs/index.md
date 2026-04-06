@@ -258,6 +258,7 @@ The examples are added as folders for each category,
 * **Static YAML Pipelines:** Templates for basic Diamond Patterns, massive parallel Fan-outs, and strict hardware-aware routing (e.g., forcing tasks to `GPU` nodes).
 * **Dynamic Logic Switches:** Python SDK scripts that simulate measuring system traffic and dynamically spawn entirely different DAGs on the fly.
 * **Autonomous Agents:** A recursive, self-healing agent that tracks its own retry attempts globally via TitanStore and spawns clones across the cluster until a fragile task succeeds.
+* **Human-in-the-Loop Pipelines:** A complete ML pipeline that pauses between preprocessing and training to wait for human approval. Demonstrates the `hitl_message` SDK parameter, the amber Dashboard banner, Approve/Reject flow, and per-gate timeouts. ([View the guide](examples/hitl.md))
 * **Dagster Integration:** A complete hybrid pipeline where Dagster manages the UI and data lineage, while Titan handles the physical distributed compute and log streaming.
 
 > **💡 Built with Titan:** The official JavaDocs for the Titan Core Engine were completely generated, zipped, and distributed using Titan itself as the execution runtime!
@@ -284,7 +285,7 @@ Titan is actively evolving. Here are the major architectural milestones planned 
 - [ ] **Security & Auth:** Implement mTLS (Mutual TLS) for encrypted, authenticated cluster communication.
 - [ ] **Containerized Execution:** Add support for Docker execution drivers to provide true filesystem isolation (currently utilizing Process-Level isolation).
 - [ ] **Cluster Autoscaler Webhooks:** Allow Titan to trigger external APIs (e.g., Azure VM Scale Sets, AWS EC2) to provision bare-metal compute automatically when queues saturate.
-- [ ] **Human-in-the-Loop (HIL):** Add the capability to pause DAG execution states and wait for external manual approval via Webhooks or the UI.
+- [x] **Human-in-the-Loop (HITL):** Pause DAG execution and wait for human Approve/Reject via the Dashboard. Supports per-gate timeouts and automatic gate injection via the SDK. See [HITL Pipelines](examples/hitl.md).
 
 
 ---

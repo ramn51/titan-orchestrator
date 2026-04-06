@@ -237,12 +237,15 @@ import titan.network.LogBatcher;
             streamer.start();
 
             // 4. Wait for completion
-            boolean finished = process.waitFor(60, TimeUnit.SECONDS);
+            // DAG jobs (long-running training, ETL, ML pipelines) get 24h.
+            // Standalone/test jobs keep the 60s safety limit.
+            long timeoutSeconds = jobId.startsWith("DAG-") ? 86400 : 60;
+            boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
             streamer.join(); // this ensures we capture the last line of the o/p.
 
             if (!finished) {
                 process.destroy();
-                return "ERROR: Script timed out (60s limit)";
+                return "ERROR: Script timed out (" + timeoutSeconds + "s limit)";
             }
 
             // 5. Read Output (Byte-oriented for TitanProtocol compatibility)

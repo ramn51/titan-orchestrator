@@ -33,7 +33,8 @@ OP_GET_JOB_STATUS = 0x55
 
 class TitanJob:
     def __init__(self, job_id, filename, job_type="RUN_PAYLOAD", args=None,
-             parents=None, port=0, is_archive=False, priority=1, delay=0, affinity=False, requirement="GENERAL"):
+             parents=None, port=0, is_archive=False, priority=1, delay=0, affinity=False, requirement="GENERAL",
+             hitl_message=None, max_wait_seconds=172800):
         self.id = job_id
         self.filename = filename
         self.job_type = job_type
@@ -45,6 +46,11 @@ class TitanJob:
         self.delay = delay         # Default 0 (ms or sec depends on Scheduler logic)
         self.affinity = affinity
         self.requirement = requirement
+        # When set, submit_dag auto-injects a HITL gate job after this job completes.
+        # Downstream jobs that depend on this job are automatically re-wired to wait
+        # for the gate approval before proceeding.
+        self.hitl_message = hitl_message
+        self.max_wait_seconds = max_wait_seconds
         
 
         if not self.is_archive:
@@ -108,16 +114,81 @@ class TitanJob:
 class TitanClient:
     def submit_dag(self, name, jobs):
         """Submits a list of TitanJobs as a DAG"""
+        jobs = self._inject_hitl_gates(jobs)
         print(f"[SDK] Submitting DAG: {name}")
         dag_payload = " ; ".join([j.to_string() for j in jobs])
         result = self._send_request(OP_SUBMIT_DAG, dag_payload)
-        self._write_dag_manifest(name, jobs)
+        self._write_dag_manifest(name, jobs, dag_payload)
         return result
 
-    def _write_dag_manifest(self, dag_name, jobs):
+    def _inject_hitl_gates(self, jobs):
+        """
+        For every TitanJob with hitl_message set, automatically inserts an
+        intermediate HITL gate job after it and re-wires all downstream jobs
+        that depended on the original job to depend on the gate instead.
+
+        Example — before injection:
+            preprocess  (hitl_message="Approve before training")
+            train        parents=["preprocess"]
+
+        After injection:
+            preprocess
+            hitl-gate-preprocess   parents=["preprocess"]   ← auto-inserted
+            train                  parents=["hitl-gate-preprocess"]  ← re-wired
+        """
+        # Locate hitl_gate.py (same directory as this SDK file, one level up in perm_files)
+        _sdk_dir = os.path.dirname(os.path.abspath(__file__))
+        _gate_candidates = [
+            os.path.join(_sdk_dir, "..", "perm_files", "hitl_gate.py"),
+            os.path.join(_sdk_dir, "hitl_gate.py"),
+        ]
+        gate_script = next((p for p in _gate_candidates if os.path.exists(p)), None)
+        if gate_script:
+            gate_script = os.path.abspath(gate_script)
+
+        # Build a map of job_id → gate_id for every job that has hitl_message
+        remap = {}   # original_id -> gate_id
+        gates = []   # new gate TitanJob objects to insert
+
+        for job in jobs:
+            if not job.hitl_message:
+                continue
+            if gate_script is None:
+                print(f"[SDK][WARN] hitl_gate.py not found — skipping HITL injection for '{job.id}'")
+                continue
+            gate_id = f"hitl-gate-{job.id}"
+            remap[job.id] = gate_id
+            safe_msg = job.hitl_message.replace("|", " ")
+            gates.append(TitanJob(
+                job_id   = gate_id,
+                filename = gate_script,
+                args     = f"{gate_id} {job.max_wait_seconds} {safe_msg}",
+                parents  = [job.id],
+                priority = job.priority,
+            ))
+            # Clear any stale decision from a previous run so the gate waits fresh
+            self.store_put(f"titan:hitl:status:{gate_id}", "CLEARED")
+            print(f"[SDK] HITL gate injected: {job.id} → {gate_id}")
+
+        if not remap:
+            return jobs   # nothing to inject
+
+        # Re-wire: any job whose parent is in remap should point to the gate instead
+        rewired = []
+        for job in jobs:
+            job.parents = [remap.get(p, p) for p in job.parents]
+            rewired.append(job)
+            # Insert the gate immediately after its source job
+            if job.id in remap:
+                rewired.append(next(g for g in gates if g.parents == [job.id]))
+
+        return rewired
+
+    def _write_dag_manifest(self, dag_name, jobs, dag_payload=None):
         """Writes job→DAG mapping to .titan_dag_manifest.json for dashboard discovery."""
         manifest_path = ".titan_dag_manifest.json"
         try:
+            import re as _re
             existing = {}
             if os.path.exists(manifest_path):
                 with open(manifest_path) as f:
@@ -128,6 +199,17 @@ class TitanClient:
                 full_id = f"DAG-{job.id}"
                 full_deps = [f"DAG-{p}" for p in job.parents]
                 existing[full_id] = {"dag": dag_name, "deps": full_deps, "run_ts": run_ts}
+            # Store the full payload string so the dashboard can redeploy this DAG
+            if dag_payload is not None:
+                existing[f"__payload__{dag_name}"] = {"dag_payload": dag_payload, "run_ts": run_ts}
+                # Store individual job payloads (parents stripped to []) for single-job replay
+                for job_str in dag_payload.split(" ; "):
+                    job_str = job_str.strip()
+                    if not job_str:
+                        continue
+                    job_key = job_str.split("|")[0]
+                    replay_str = _re.sub(r'\[[^\]]*\]', '[]', job_str)
+                    existing[f"__job_payload__DAG-{job_key}"] = replay_str
             with open(manifest_path, 'w') as f:
                 _json.dump(existing, f, indent=2)
         except Exception:

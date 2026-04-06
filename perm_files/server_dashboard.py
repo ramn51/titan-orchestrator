@@ -27,6 +27,16 @@ CURRENT_VERSION = 1
 OP_STATS_JSON      = 0x09
 OP_GET_LOGS        = 0x16
 OP_GET_JOB_STATUS  = 0x55
+OP_KV_SET          = 0x60
+OP_KV_GET          = 0x61
+OP_KV_SADD         = 0x62
+OP_KV_SMEMBERS     = 0x63
+
+# --- HITL KV key schema ---
+HITL_QUEUE_KEY     = "titan:hitl:queue"
+HITL_STATUS_PREFIX = "titan:hitl:status:"
+HITL_MSG_PREFIX    = "titan:hitl:message:"
+HITL_TS_PREFIX     = "titan:hitl:ts:"
 
 # -------------------------------------------------------
 # DAG Registry — tracks DAGs seen from OP_STATS_JSON
@@ -91,8 +101,20 @@ def get_job_status(job_id):
     if "COMPLETED" in raw: return "COMPLETED"
     if "RUNNING"   in raw: return "RUNNING"
     if "FAILED"    in raw: return "FAILED"
+    if "DEAD"      in raw: return "FAILED"
     if "CANCELLED" in raw: return "CANCELLED"
     return "WAITING"
+
+def kv_set(key, value):
+    titan_communicate(OP_KV_SET, f"{key}|{value}")
+
+def kv_get(key):
+    return (titan_communicate(OP_KV_GET, key) or "").strip()
+
+def kv_smembers(key):
+    raw = titan_communicate(OP_KV_SMEMBERS, key) or ""
+    return [m for m in raw.split(",") if m.strip()] if raw.strip() else []
+
 
 def discover_dags_from_stats(stats):
     """
@@ -118,12 +140,21 @@ def discover_dags_from_stats(stats):
         for svc in w.get("services", []):
             seen_jobs[svc] = {"worker": worker_addr, "status": "RUNNING", "time": ""}
 
+        # Status severity: higher = more authoritative for display.
+        # When the same job appears multiple times in history (e.g. old COMPLETED
+        # from a previous run AND a new DEAD from the current rejection), prefer
+        # the higher-severity entry so a rejection always surfaces as FAILED.
+        _SEV = {"RUNNING": 5, "DEAD": 4, "FAILED": 4, "COMPLETED": 3, "WAITING": 2}
         for h in w.get("history", []):
             jid = h.get("id", "")
-            if jid and jid not in seen_jobs:
+            if not jid:
+                continue
+            new_status = h.get("status", "UNKNOWN")
+            existing   = seen_jobs.get(jid)
+            if existing is None or _SEV.get(new_status, 0) > _SEV.get(existing["status"], 0):
                 seen_jobs[jid] = {
                     "worker":       worker_addr,
-                    "status":       h.get("status", "UNKNOWN"),
+                    "status":       new_status,
                     "time":         h.get("time", ""),
                     "completed_at": h.get("completed_at", 0),
                 }
@@ -155,21 +186,55 @@ def discover_dags_from_stats(stats):
             dag_registry[dag_key]["jobs"].append(job_id)
 
         incoming_status = meta["status"]
+        if incoming_status == "DEAD":
+            incoming_status = "FAILED"
 
         # Filter stale COMPLETED entries from previous runs.
-        # If completed_at < DAG's submitted timestamp, this job finished
-        # before the current run was submitted — it's from an old run.
+        # Two cases mark a COMPLETED entry as stale:
+        #   1. completed_at is set and predates the current run (normal case)
+        #   2. completed_at is 0 (worker didn't set it) AND the DAG was explicitly
+        #      reset by scan_yaml_dags when a newer run_ts was detected — tracked
+        #      via the "_reset_ts" field set at reset time.
         if incoming_status == "COMPLETED":
             run_ts       = dag_registry[dag_key].get("submitted", 0)
+            reset_ts     = dag_registry[dag_key].get("_reset_ts", 0)
             completed_at = meta.get("completed_at", 0)
             if run_ts > 0 and completed_at > 0 and completed_at < run_ts:
-                incoming_status = "WAITING"  # stale — don't overwrite
+                incoming_status = "WAITING"  # stale with timestamp
+            elif reset_ts > 0 and completed_at == 0:
+                incoming_status = "WAITING"  # stale after explicit reset
 
         dag_registry[dag_key]["job_meta"][job_id] = {
             "worker": meta["worker"],
             "status": incoming_status,
             "time":   meta["time"],
         }
+        # Once a job genuinely completes in the current run (has a real timestamp),
+        # clear the reset guard so it doesn't keep getting wiped on future polls.
+        if incoming_status == "COMPLETED" and meta.get("completed_at", 0) > 0:
+            dag_registry[dag_key].pop("_reset_ts", None)
+
+    # Dependency-graph validation pass.
+    # The worker history in Redis can contain COMPLETED entries from old runs
+    # that have no completed_at timestamp, so the timestamp-based stale filter
+    # above cannot catch them. As a second pass, walk the dependency graph: if
+    # any parent of a job is not yet COMPLETED, that job cannot be COMPLETED in
+    # the current run — reset it to WAITING.
+    for dag_key, dag_meta in dag_registry.items():
+        job_meta = dag_meta.get("job_meta", {})
+        changed = True
+        while changed:          # iterate until no more cascading changes
+            changed = False
+            for job_id, jmeta in job_meta.items():
+                if jmeta["status"] in ("RUNNING", "FAILED"):
+                    continue
+                for dep_id in _yaml_job_deps.get(job_id, []):
+                    dep_status = job_meta.get(dep_id, {}).get("status", "WAITING")
+                    if dep_status != "COMPLETED":
+                        if jmeta["status"] != "WAITING":
+                            jmeta["status"] = "WAITING"
+                            changed = True
+                        break
 
 
 # ================================================================
@@ -443,6 +508,15 @@ DAG_DASHBOARD_HTML = SHARED_STYLE + """
       <div class="sec-title">DAG Graph — click a node to view logs</div>
       <div class="graph-wrap">{{ selected_dag.graph_svg | safe }}</div>
 
+      <!-- HITL approval banner (shown when any job in this DAG is waiting for approval) -->
+      <div id="hitl-banner" style="display:none; margin-bottom:16px; border:1px solid #ffb74d66;
+           background:#1a160a; border-radius:10px; padding:14px 16px;">
+        <div style="font-size:12px; font-weight:600; color:#ffb74d; margin-bottom:10px; letter-spacing:.05em;">
+          ⏸ HUMAN-IN-THE-LOOP — AWAITING APPROVAL
+        </div>
+        <div id="hitl-cards" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
       <!-- Log panel (shown if job selected) -->
       {% if selected_job %}
       <div class="log-panel">
@@ -458,7 +532,14 @@ DAG_DASHBOARD_HTML = SHARED_STYLE + """
               <span class="badge" style="background:#162040; color:#4f8ef7;">service</span>
             {% endif %}
           </div>
-          <a href="/dags/{{ selected_dag.id }}"><button class="close-x">×</button></a>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button id="replay-btn"
+              onclick="replayJob('{{ selected_job.id }}')"
+              style="background:#0d0d14; border:1px solid #2a2a2a; color:#aaa; padding:4px 12px; border-radius:6px; cursor:pointer; font-size:12px;">
+              ↺ Replay
+            </button>
+            <a href="/dags/{{ selected_dag.id }}"><button class="close-x">×</button></a>
+          </div>
         </div>
         <div class="log-meta-grid">
           <div class="log-meta-item"><div class="log-meta-label">Worker</div><div class="log-meta-val">{{ selected_job.worker or 'unassigned' }}</div></div>
@@ -501,20 +582,20 @@ DAG_DASHBOARD_HTML = SHARED_STYLE + """
 
 const STATUS_DOT = {
   COMPLETED: "#4caf6e", RUNNING: "#ffb74d", WAITING: "#9090b0",
-  FAILED: "#ff5252",   CANCELLED: "#ffa000", PENDING: "#9090b0"
+  FAILED: "#ff5252",   DEAD: "#ff5252",    CANCELLED: "#ffa000", PENDING: "#9090b0"
 };
 const STATUS_FILL = {
   COMPLETED:"#132213", RUNNING:"#1e2010", WAITING:"#141420",
-  FAILED:"#221313",    CANCELLED:"#221a10",PENDING:"#141420"
+  FAILED:"#221313",    DEAD:"#221313",    CANCELLED:"#221a10", PENDING:"#141420"
 };
 const BADGE_BG = {
   COMPLETED:"rgba(0,230,118,.1)",  RUNNING:"rgba(255,183,77,.12)",
   WAITING:"rgba(120,120,160,.12)", FAILED:"rgba(255,82,82,.1)",
-  CANCELLED:"rgba(255,160,0,.1)",  PENDING:"rgba(120,120,160,.12)"
+  DEAD:"rgba(255,82,82,.1)",       CANCELLED:"rgba(255,160,0,.1)", PENDING:"rgba(120,120,160,.12)"
 };
 const BADGE_COLOR = {
   COMPLETED:"#00e676", RUNNING:"#ffb74d", WAITING:"#9090b0",
-  FAILED:"#ff5252",    CANCELLED:"#ffa000", PENDING:"#9090b0"
+  FAILED:"#ff5252",    DEAD:"#ff5252",    CANCELLED:"#ffa000", PENDING:"#9090b0"
 };
 
 // Track last known statuses so we only repaint changed nodes
@@ -669,6 +750,165 @@ async function redeployDag(dagId) {
     }, 3000);
   }
 }
+
+// ── HITL polling ─────────────────────────────────────────────
+const mainPanel = document.getElementById("dag-main-panel");
+const openDagId = mainPanel ? mainPanel.dataset.dagId : null;
+
+// Track which jobs we've already rendered amber to avoid flicker
+let hitlNodes = new Set();
+
+async function pollHitl() {
+  if (!openDagId) { setTimeout(pollHitl, 5000); return; }
+  try {
+    const r = await fetch("/api/hitl/pending");
+    if (!r.ok) { setTimeout(pollHitl, 5000); return; }
+    const pending = await r.json();
+
+    // job_id in the HITL queue may or may not have the DAG- prefix.
+    // Try both so we match whatever the gate script registered.
+    const relevant = pending.filter(p => {
+      return !!(document.querySelector(`[data-node-rect="${p.job_id}"]`) ||
+                document.querySelector(`[data-node-rect="DAG-${p.job_id}"]`));
+    });
+
+    const banner = document.getElementById("hitl-banner");
+    const cards  = document.getElementById("hitl-cards");
+    if (!banner || !cards) { setTimeout(pollHitl, 5000); return; }
+
+    if (relevant.length === 0) {
+      banner.style.display = "none";
+      hitlNodes.forEach(jid => clearHitlHighlight(jid));
+      hitlNodes.clear();
+      setTimeout(pollHitl, 5000);
+      return;
+    }
+
+    banner.style.display = "block";
+    const newIds = new Set(relevant.map(p => p.job_id));
+
+    // Remove amber from nodes no longer pending
+    hitlNodes.forEach(jid => { if (!newIds.has(jid)) clearHitlHighlight(jid); });
+    hitlNodes = newIds;
+
+    // Highlight waiting nodes in amber
+    relevant.forEach(p => setHitlHighlight(p.job_id));
+
+    // Rebuild approval cards
+    cards.innerHTML = relevant.map(p => {
+      const ago = p.ts ? Math.round((Date.now() - p.ts) / 1000) : null;
+      const agoStr = ago !== null ? (ago < 60 ? `${ago}s ago` : `${Math.round(ago/60)}m ago`) : '';
+      return `<div style="background:#0d0d14; border:1px solid #2a2a2a; border-radius:8px; padding:10px 14px;
+                           display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div>
+          <div style="font-size:12px; font-family:monospace; color:#e0e0e0;">${p.job_id}</div>
+          <div style="font-size:11px; color:#888; margin-top:3px;">${p.message}${agoStr ? ' · ' + agoStr : ''}</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button onclick="hitlDecide('${p.job_id}','approve',this)"
+            style="background:#0d2218; border:1px solid #4caf6e66; color:#4caf6e;
+                   padding:5px 16px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;">
+            ✓ Approve
+          </button>
+          <button onclick="hitlDecide('${p.job_id}','reject',this)"
+            style="background:#22100d; border:1px solid #ff525266; color:#ff5252;
+                   padding:5px 16px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600;">
+            ✗ Reject
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(e) { /* silent */ }
+  setTimeout(pollHitl, 5000);
+}
+
+function setHitlHighlight(jobId) {
+  const rect = document.querySelector(`[data-node-rect="${jobId}"]`) ||
+               document.querySelector(`[data-node-rect="DAG-${jobId}"]`);
+  if (rect) {
+    rect.setAttribute("stroke", "#ffb74d");
+    rect.setAttribute("stroke-width", "2.5");
+    rect.setAttribute("fill", "#1a1408");
+  }
+  const dot = document.querySelector(`[data-node-dot="${jobId}"]`) ||
+              document.querySelector(`[data-node-dot="DAG-${jobId}"]`);
+  if (dot) dot.setAttribute("fill", "#ffb74d");
+}
+
+function clearHitlHighlight(jobId) {
+  const rect = document.querySelector(`[data-node-rect="${jobId}"]`) ||
+               document.querySelector(`[data-node-rect="DAG-${jobId}"]`);
+  if (rect) rect.setAttribute("stroke-width", "1.5");
+}
+
+async function hitlDecide(jobId, decision, btn) {
+  btn.disabled = true;
+  btn.textContent = "⏳ Sending…";
+  try {
+    const r = await fetch(`/api/hitl/${decision}/${encodeURIComponent(jobId)}`, { method: "POST" });
+    const data = await r.json();
+    if (r.ok && data.status === "ok") {
+      btn.textContent = decision === "approve" ? "✓ Approved" : "✗ Rejected";
+      // Banner will hide itself on next pollHitl tick
+    } else {
+      btn.textContent = "✗ Error";
+      btn.disabled = false;
+    }
+  } catch {
+    btn.textContent = "✗ No connection";
+    btn.disabled = false;
+  }
+}
+
+// Kick off HITL polling (slightly offset from dag_status to spread load)
+setTimeout(pollHitl, 1500);
+
+// ── Replay single job ─────────────────────────────────────────
+async function replayJob(jobId) {
+  const btn = document.getElementById("replay-btn");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = "⏳ Replaying…";
+  btn.style.color = "#ffb74d";
+  btn.style.borderColor = "#ffb74d66";
+  try {
+    const r = await fetch(`/api/dag/replay/${encodeURIComponent(jobId)}`, { method: "POST" });
+    const data = await r.json();
+    if (r.ok && data.status === "ok") {
+      btn.textContent = "✓ Replayed";
+      btn.style.color = "#4caf6e";
+      btn.style.borderColor = "#4caf6e66";
+      btn.style.background = "#0d2218";
+      setTimeout(() => {
+        btn.textContent = "↺ Replay";
+        btn.style.color = "#aaa";
+        btn.style.borderColor = "#2a2a2a";
+        btn.style.background = "#0d0d14";
+        btn.disabled = false;
+      }, 3000);
+    } else {
+      btn.textContent = "✗ Failed";
+      btn.style.color = "#ff5252";
+      btn.style.borderColor = "#ff525266";
+      setTimeout(() => {
+        btn.textContent = "↺ Replay";
+        btn.style.color = "#aaa";
+        btn.style.borderColor = "#2a2a2a";
+        btn.style.background = "#0d0d14";
+        btn.disabled = false;
+      }, 3000);
+    }
+  } catch {
+    btn.textContent = "✗ No connection";
+    btn.style.color = "#ff5252";
+    setTimeout(() => {
+      btn.textContent = "↺ Replay";
+      btn.style.color = "#aaa";
+      btn.disabled = false;
+    }, 3000);
+  }
+}
 </script>
 </body>
 """
@@ -818,6 +1058,8 @@ def scan_yaml_dags():
                         dag_registry[dag_key]["job_meta"][jid]["status"] = "WAITING"
                         dag_registry[dag_key]["job_meta"][jid]["worker"] = None
                     dag_registry[dag_key]["submitted"] = latest_ts
+                    # Mark reset time so the stale filter can catch completed_at=0 entries
+                    dag_registry[dag_key]["_reset_ts"] = latest_ts
 
             for full_id, info in manifest.items():
                 if full_id.startswith("__") or "dag" not in info:
@@ -837,6 +1079,24 @@ def scan_yaml_dags():
                     dag_registry[dag_key]["job_meta"][full_id] = {
                         "worker": None, "status": "WAITING", "time": ""
                     }
+
+            # Clean up stale fallback DAG entries.
+            # When the dashboard starts without a manifest, discover_dags_from_stats
+            # creates individual entries (e.g. DAG-INGEST, DAG-TRANSFORM) via the
+            # fallback naming heuristic. Once the manifest is available and maps those
+            # jobs to their real DAG (e.g. ETL_PIPELINE), remove the stale entries.
+            for full_id, correct_dag_name in list(_yaml_job_to_dag.items()):
+                correct_dag_key = f"DAG-{correct_dag_name}"
+                for dag_key in list(dag_registry.keys()):
+                    if dag_key == correct_dag_key:
+                        continue
+                    entry = dag_registry[dag_key]
+                    if full_id in entry.get("jobs", []):
+                        entry["jobs"].remove(full_id)
+                        entry.get("job_meta", {}).pop(full_id, None)
+                        if not entry["jobs"]:
+                            del dag_registry[dag_key]
+
         except Exception:
             pass
 
@@ -1221,6 +1481,16 @@ def _write_constructor_manifest(dag_name, jobs_raw, dag_payload=""):
             }
         # Store full payload for redeploy
         existing[f"__payload__{dag_name}"] = {"dag_payload": dag_payload, "run_ts": run_ts}
+        # Store individual job payloads (parents stripped to []) for single-job replay
+        if dag_payload:
+            for job_str in dag_payload.split(" ; "):
+                job_str = job_str.strip()
+                if not job_str:
+                    continue
+                job_key = job_str.split("|")[0]
+                import re as _re
+                replay_str = _re.sub(r'\[[^\]]*\]', '[]', job_str)
+                existing[f"__job_payload__DAG-{job_key}"] = replay_str
         with open(manifest_path, 'w') as f:
             json.dump(existing, f, indent=2)
     except Exception:
@@ -1248,6 +1518,13 @@ def api_dag_redeploy(dag_id):
     if not dag_payload:
         return jsonify({"error": "Stored payload is empty"}), 400
 
+    # Clear stale HITL decisions so every redeployed gate waits for fresh approval.
+    # Gate job IDs follow the pattern hitl-gate-<source_job_id>.
+    for job_str in dag_payload.split(" ; "):
+        raw_id = job_str.strip().split("|")[0]          # e.g. "hitl-gate-preprocess"
+        if raw_id.startswith("hitl-gate-"):
+            titan_communicate(OP_KV_SET, f"{HITL_STATUS_PREFIX}{raw_id}|CLEARED")
+
     resp = titan_communicate(0x04, dag_payload)
 
     if resp and 'ERROR' not in (resp or '').upper():
@@ -1257,6 +1534,49 @@ def api_dag_redeploy(dag_id):
             if isinstance(val, dict) and val.get("dag") == dag_name:
                 val["run_ts"] = run_ts
         manifest[payload_key]["run_ts"] = run_ts
+        with open(manifest_path, 'w') as f:
+            json.dump(manifest, f, indent=2)
+        return jsonify({"status": "ok", "response": resp})
+
+    return jsonify({"status": "error", "response": resp}), 502
+
+
+@app.route('/api/dag/replay/<job_id>', methods=['POST'])
+def api_dag_replay(job_id):
+    """Re-submits a single job from a DAG, with its dependencies stripped so it runs immediately."""
+    manifest_path = ".titan_dag_manifest.json"
+    if not os.path.exists(manifest_path):
+        return jsonify({"error": "No manifest found"}), 404
+
+    with open(manifest_path) as f:
+        manifest = json.load(f)
+
+    payload_key = f"__job_payload__{job_id}"
+    job_payload = manifest.get(payload_key, "")
+
+    # Fallback: parse from the full DAG payload if individual entry missing (older runs)
+    if not job_payload:
+        job_info = manifest.get(job_id, {})
+        dag_name = job_info.get("dag", "")
+        full_payload = manifest.get(f"__payload__{dag_name}", {}).get("dag_payload", "")
+        if full_payload:
+            import re as _re
+            for part in full_payload.split(" ; "):
+                part = part.strip()
+                if part.startswith(job_id.replace("DAG-", "") + "|") or part.split("|")[0] == job_id.replace("DAG-", ""):
+                    job_payload = _re.sub(r'\[[^\]]*\]', '[]', part)
+                    break
+
+    if not job_payload:
+        return jsonify({"error": f"No stored payload for job '{job_id}'. Re-submit the DAG to enable replay."}), 404
+
+    resp = titan_communicate(0x04, job_payload)
+
+    if resp and 'ERROR' not in (resp or '').upper():
+        run_ts = int(time.time() * 1000)
+        if job_id in manifest and isinstance(manifest[job_id], dict):
+            manifest[job_id]["run_ts"] = run_ts
+        manifest[payload_key] = job_payload
         with open(manifest_path, 'w') as f:
             json.dump(manifest, f, indent=2)
         return jsonify({"status": "ok", "response": resp})
@@ -1318,6 +1638,44 @@ def _resolve_dag_status_from_meta(meta):
     if "CANCELLED" in statuses: return "CANCELLED"
     if all(s == "COMPLETED" for s in statuses): return "COMPLETED"
     return "PENDING"
+
+
+# ================================================================
+# HITL — Human-in-the-Loop Endpoints
+# ================================================================
+
+@app.route('/api/hitl/pending')
+def api_hitl_pending():
+    """Returns all jobs currently waiting for human approval."""
+    members = kv_smembers(HITL_QUEUE_KEY)
+    pending = []
+    for job_id in members:
+        status = kv_get(HITL_STATUS_PREFIX + job_id)
+        if status == "WAITING":
+            message = kv_get(HITL_MSG_PREFIX + job_id)
+            ts_raw  = kv_get(HITL_TS_PREFIX  + job_id)
+            try:
+                ts = int(ts_raw)
+            except Exception:
+                ts = 0
+            pending.append({"job_id": job_id, "message": message or "Awaiting approval", "ts": ts})
+    return jsonify(pending)
+
+
+@app.route('/api/hitl/approve/<job_id>', methods=['POST'])
+def api_hitl_approve(job_id):
+    result = titan_communicate(OP_KV_SET, f"{HITL_STATUS_PREFIX}{job_id}|APPROVED")
+    if result is None:
+        return jsonify({"status": "error", "message": "TitanStore unreachable"}), 502
+    return jsonify({"status": "ok", "job_id": job_id, "decision": "APPROVED"})
+
+
+@app.route('/api/hitl/reject/<job_id>', methods=['POST'])
+def api_hitl_reject(job_id):
+    result = titan_communicate(OP_KV_SET, f"{HITL_STATUS_PREFIX}{job_id}|REJECTED")
+    if result is None:
+        return jsonify({"status": "error", "message": "TitanStore unreachable"}), 502
+    return jsonify({"status": "ok", "job_id": job_id, "decision": "REJECTED"})
 
 
 if __name__ == '__main__':

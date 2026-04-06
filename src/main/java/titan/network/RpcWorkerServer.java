@@ -512,7 +512,21 @@ public class RpcWorkerServer {
 //                String result = processCommand(taskData);
 
                 System.out.println("[ASYNC] Finished "+ jobId);
-                sendCallback(jobId, "COMPLETED", result);
+                // Derive callback status from the handler result.
+                // ScriptExecutorHandler returns "COMPLETED|<exitCode>|<output>".
+                // A non-zero exit code means the script failed (e.g. HITL rejected, assertion error).
+                String callbackStatus = "COMPLETED";
+                if (result == null || result.startsWith("ERROR")) {
+                    callbackStatus = "FAILED";
+                } else if (result.startsWith("COMPLETED|")) {
+                    String[] rp = result.split("\\|", 3);
+                    if (rp.length >= 2) {
+                        try {
+                            if (Integer.parseInt(rp[1].trim()) != 0) callbackStatus = "FAILED";
+                        } catch (NumberFormatException ignored) {}
+                    }
+                }
+                sendCallback(jobId, callbackStatus, result);
             } catch(Exception e){
                 System.err.println("[ASYNC] Failed " + jobId + ": " + e.getMessage());
                 sendCallback(jobId, "FAILED", e.getMessage());

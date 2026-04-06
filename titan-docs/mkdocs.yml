@@ -65,6 +65,7 @@ nav:
   - 💡 Examples:
       - Static Pipelines (YAML): examples/yaml.md
       - Agentic Workflows (Python): examples/agentic.md
+      - Human-in-the-Loop (HITL): examples/hitl.md
       - Dagster Integration: examples/dagster.md
   - 📚 API and SDK Reference: 
       - Titan SDK: reference/sdk.md
