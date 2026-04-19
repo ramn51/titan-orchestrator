@@ -2,6 +2,7 @@
 
 **Self-Hosting, Self-Healing Execution Substrate for DAGs, Agents, and Services.**
 
+
 [![Documentation](https://img.shields.io/badge/docs-live-1de9b6.svg)](https://ramn51.github.io/titan-orchestrator/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
