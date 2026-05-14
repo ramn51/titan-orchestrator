@@ -613,7 +613,7 @@
   <span class="md-ellipsis">
     
   
-    Distributed LLM Pipeline
+    Parallel Analyst Pipeline
   
 
     
@@ -944,10 +944,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-orchestrator-stores-config-in-titanstore" class="md-nav__link">
+  <a href="#1-orchestrator-writes-topic-to-titanstore-and-runs-the-planner" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Orchestrator stores config in TitanStore
+        1. Orchestrator writes topic to TitanStore and runs the Planner
       
     </span>
   </a>
@@ -955,10 +955,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-dynamic-dag-is-built-and-submitted" class="md-nav__link">
+  <a href="#2-orchestrator-reads-the-plan-and-builds-stage-2-dag-dynamically" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Dynamic DAG is built and submitted
+        2. Orchestrator reads the plan and builds Stage 2 DAG dynamically
       
     </span>
   </a>
@@ -1027,10 +1027,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#add-more-subtopics" class="md-nav__link">
+  <a href="#influence-the-number-of-subtopics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Add more subtopics
+        Influence the number of subtopics
       
     </span>
   </a>
@@ -1495,10 +1495,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-orchestrator-stores-config-in-titanstore" class="md-nav__link">
+  <a href="#1-orchestrator-writes-topic-to-titanstore-and-runs-the-planner" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Orchestrator stores config in TitanStore
+        1. Orchestrator writes topic to TitanStore and runs the Planner
       
     </span>
   </a>
@@ -1506,10 +1506,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-dynamic-dag-is-built-and-submitted" class="md-nav__link">
+  <a href="#2-orchestrator-reads-the-plan-and-builds-stage-2-dag-dynamically" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Dynamic DAG is built and submitted
+        2. Orchestrator reads the plan and builds Stage 2 DAG dynamically
       
     </span>
   </a>
@@ -1578,10 +1578,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#add-more-subtopics" class="md-nav__link">
+  <a href="#influence-the-number-of-subtopics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Add more subtopics
+        Influence the number of subtopics
       
     </span>
   </a>
@@ -1658,28 +1658,33 @@
 
 
 <h1 id="multi-agent-research-pipeline">Multi-Agent Research Pipeline</h1>
-<p>This example shows a <strong>complete agentic workflow</strong> built on Titan — the kind that is awkward or impossible to express in static DAG tools like Airflow or Prefect.</p>
-<p>A research topic is broken into subtopics at runtime. Parallel Gemini agents research each subtopic independently on the distributed cluster. A human reviews before the final synthesis runs. The result is a polished Markdown report generated entirely by the agent network.</p>
+<p>This example shows a <strong>genuinely agentic workflow</strong> built on Titan — the kind that is awkward or impossible to express in static DAG tools like Airflow or Prefect.</p>
+<p>A Planner agent (Gemini) decides at runtime how many subtopics to research and what they are. The orchestrator cannot build the research DAG until the Planner completes — the DAG shape is unknown upfront. Parallel Gemini agents then research each subtopic independently on the distributed cluster. A human reviews the results before the final synthesis runs. The output is a polished Markdown report generated entirely by the agent network.</p>
+<p><strong>What makes this agentic:</strong> The Planner's output determines how many parallel workers are spawned. The orchestrator submits two separate DAGs — the first to run the Planner, the second (whose shape is only known after Stage 1) to run the research, review, and synthesis. The cluster topology is dynamic, not predetermined.</p>
 <pre class="mermaid"><code>flowchart TD
     O["🐍 research_pipeline.py\n(Orchestrator — your machine)"]
 
-    O --&gt;|"Writes config to TitanStore\n(topic, subtopics, run_id)"| KV[("TitanStore")]
-    O --&gt;|"submit_dag()"| M["Titan Master"]
+    O --&gt;|"Writes topic to TitanStore\n(run_id, topic)"| KV[("TitanStore")]
+    O --&gt;|"submit_dag() — Stage 1"| M["Titan Master"]
+
+    M --&gt; PL["pipeline-planner\ngemini-2.5-flash\nDecides subtopics"]
+    PL --&gt;|"Writes count + subtopic:i\nSignals planner:done"| KV
+
+    KV --&gt;|"Orchestrator reads count\nBuilds dynamic DAG"| O
+
+    O --&gt;|"submit_dag() — Stage 2\n(N jobs, determined at runtime)"| M
 
     M --&gt; R0["research-0\ngemini-2.5-flash\nSubtopic 0"]
     M --&gt; R1["research-1\ngemini-2.5-flash\nSubtopic 1"]
-    M --&gt; R2["research-2\ngemini-2.5-flash\nSubtopic 2"]
-    M --&gt; R3["research-3\ngemini-2.5-flash\nSubtopic 3"]
+    M --&gt; RN["research-N\ngemini-2.5-flash\nSubtopic N"]
 
     R0 --&gt;|"Writes result to KV"| KV
     R1 --&gt;|"Writes result to KV"| KV
-    R2 --&gt;|"Writes result to KV"| KV
-    R3 --&gt;|"Writes result to KV"| KV
+    RN --&gt;|"Writes result to KV"| KV
 
     R0 --&gt; GATE["⏸ HITL Gate\nresearch-review\n1h timeout"]
     R1 --&gt; GATE
-    R2 --&gt; GATE
-    R3 --&gt; GATE
+    RN --&gt; GATE
 
     GATE --&gt;|"Human: Approve ✅"| S["synthesize\ngemini-2.5-flash\nFan-in synthesis"]
     GATE --&gt;|"Human: Reject ❌"| STOP["Pipeline halted"]
@@ -1690,10 +1695,10 @@
     style O fill:#1e293b,stroke:#1de9b6,stroke-width:2px,color:#ffffff
     style KV fill:#1e293b,stroke:#f9a826,stroke-width:2px,color:#ffffff
     style M fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#ffffff
+    style PL fill:#1e293b,stroke:#1de9b6,stroke-width:3px,color:#ffffff
     style R0 fill:#1e293b,stroke:#818cf8,stroke-width:2px,color:#ffffff
     style R1 fill:#1e293b,stroke:#818cf8,stroke-width:2px,color:#ffffff
-    style R2 fill:#1e293b,stroke:#818cf8,stroke-width:2px,color:#ffffff
-    style R3 fill:#1e293b,stroke:#818cf8,stroke-width:2px,color:#ffffff
+    style RN fill:#1e293b,stroke:#818cf8,stroke-width:2px,color:#ffffff
     style GATE fill:#1e293b,stroke:#f59e0b,stroke-width:3px,color:#ffffff
     style S fill:#1e293b,stroke:#22c55e,stroke-width:2px,color:#ffffff
     style RPT fill:#1e293b,stroke:#22c55e,stroke-width:2px,color:#ffffff
@@ -1709,16 +1714,24 @@
 </thead>
 <tbody>
 <tr>
+<td><strong>Agentic planning</strong></td>
+<td>Planner LLM decides subtopic count and names — the orchestrator has no input on this</td>
+</tr>
+<tr>
 <td><strong>Dynamic DAG construction</strong></td>
-<td>Job count is <code>len(subtopics)</code> — add more topics, get more parallel workers</td>
+<td>Stage 2 job count equals <code>count</code> returned by the Planner — not hardcoded</td>
+</tr>
+<tr>
+<td><strong>Two-phase DAG submission</strong></td>
+<td>Stage 1 (Planner) must complete before Stage 2 DAG can be built and submitted</td>
 </tr>
 <tr>
 <td><strong>TitanStore as agent memory</strong></td>
-<td>Orchestrator writes config; research workers write results; synthesis reads all of it</td>
+<td>Orchestrator writes topic; Planner writes the plan; researchers write results; synthesis reads all</td>
 </tr>
 <tr>
 <td><strong>Parallel fan-out</strong></td>
-<td>All 4 research jobs dispatch simultaneously across available workers</td>
+<td>All N research jobs dispatch simultaneously across available workers</td>
 </tr>
 <tr>
 <td><strong>Fan-in dependency</strong></td>
@@ -1740,94 +1753,125 @@
 </table>
 <hr />
 <h2 id="prerequisites">Prerequisites</h2>
-<p>=== "Install"</p>
-<div class="language-text highlight"><pre><span></span><code>```bash
-# 1. Gemini SDK — needed on every worker node
-pip install google-genai python-dotenv
-
-# 2. Set your API key in the environment
-export GEMINI_API_KEY=&quot;your_key_here&quot;
-
-# 3. Make sure Titan is running
-./titan-dev up
-```
-</code></pre></div>
-<p>=== "Worker scripts"</p>
-<div class="language-text highlight"><pre><span></span><code>Worker scripts live alongside the orchestrator — no extra setup needed:
-
-| Script | Purpose |
-|---|---|
-| `research_pipeline/research_subtopic.py` | Calls Gemini to research one subtopic, stores result in TitanStore |
-| `research_pipeline/synthesize_report.py` | Reads all subtopic results, calls Gemini for final synthesis |
-| `research_pipeline/hitl_gate.py` | Pauses execution and waits for Dashboard Approve/Reject |
-</code></pre></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Install</label><label for="__tabbed_1_2">Worker scripts</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 1. Gemini SDK — needed on every worker node</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>pip<span class="w"> </span>install<span class="w"> </span>google-genai<span class="w"> </span>python-dotenv
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># 2. Set your API key in the environment</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">GEMINI_API_KEY</span><span class="o">=</span><span class="s2">&quot;your_key_here&quot;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># 3. Make sure Titan is running</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>./titan-dev<span class="w"> </span>up
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Worker scripts live alongside the orchestrator — no extra setup needed:</p>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>research_pipeline/pipeline_planner.py</code></td>
+<td>Calls Gemini to decide subtopic count and names — the agentic stage</td>
+</tr>
+<tr>
+<td><code>research_pipeline/research_subtopic.py</code></td>
+<td>Calls Gemini to research one subtopic, stores result in TitanStore</td>
+</tr>
+<tr>
+<td><code>research_pipeline/synthesize_report.py</code></td>
+<td>Reads all subtopic results, calls Gemini for final synthesis</td>
+</tr>
+<tr>
+<td><code>research_pipeline/hitl_gate.py</code></td>
+<td>Pauses execution and waits for Dashboard Approve/Reject</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
 <hr />
 <h2 id="quick-start">Quick Start</h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Default topic: &quot;The future of AI agents in software engineering&quot;</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python<span class="w"> </span>titan_test_suite/examples/agents_examples/research_pipeline/research_pipeline.py
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Custom topic</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>python<span class="w"> </span>research_pipeline.py<span class="w"> </span><span class="s2">&quot;Quantum computing in finance&quot;</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Custom topic + custom subtopics (2–8 subtopics)</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>python<span class="w"> </span>research_pipeline.py<span class="w"> </span><span class="s2">&quot;LLM safety&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="s2">&quot;Alignment research&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="s2">&quot;Red-teaming &amp; adversarial prompting&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span><span class="s2">&quot;Interpretability methods&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span><span class="s2">&quot;Governance and regulation&quot;</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Custom topic — Planner decides how many subtopics to spawn</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>python<span class="w"> </span>titan_test_suite/examples/agents_examples/research_pipeline/research_pipeline.py<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="s2">&quot;Quantum computing in finance&quot;</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># More complex topic — Planner will spawn more subtopics automatically</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>python<span class="w"> </span>titan_test_suite/examples/agents_examples/research_pipeline/research_pipeline.py<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="s2">&quot;The impact of LLM agents on enterprise software development&quot;</span>
 </span></code></pre></div>
 <hr />
 <h2 id="what-happens-step-by-step">What Happens Step by Step</h2>
-<h3 id="1-orchestrator-stores-config-in-titanstore">1. Orchestrator stores config in TitanStore</h3>
-<p>Before submitting the DAG, the orchestrator writes the research config into TitanStore so every worker can read it — even across different machines:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;titan:research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:topic&quot;</span><span class="p">,</span>      <span class="n">topic</span><span class="p">)</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;titan:research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:count&quot;</span><span class="p">,</span>       <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">subtopics</span><span class="p">)))</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;titan:research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:subtopic:0&quot;</span><span class="p">,</span> <span class="n">subtopics</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;titan:research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:subtopic:1&quot;</span><span class="p">,</span> <span class="n">subtopics</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># ... etc</span>
+<h3 id="1-orchestrator-writes-topic-to-titanstore-and-runs-the-planner">1. Orchestrator writes topic to TitanStore and runs the Planner</h3>
+<p>The orchestrator writes only the topic to TitanStore, then submits a single-job DAG containing the Planner:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;titan:research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:topic&quot;</span><span class="p">,</span> <span class="n">topic</span><span class="p">)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">planner_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;pipeline-planner-</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="n">_PLANNER_SCRIPT</span><span class="p">,</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">args</span>     <span class="o">=</span> <span class="n">run_id</span><span class="p">,</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">priority</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="p">)</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PIPELINE_</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">_PLAN&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">planner_job</span><span class="p">],</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1"># Block until Planner signals it is done</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="n">wait_for_signal</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;titan:research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:planner:done&quot;</span><span class="p">)</span>
 </span></code></pre></div>
-<p>Each worker reads its assigned subtopic from this key rather than receiving it in args — this avoids shell-quoting issues with complex text.</p>
-<h3 id="2-dynamic-dag-is-built-and-submitted">2. Dynamic DAG is built and submitted</h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">research_jobs</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>        <span class="n">job_id</span>    <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;research-</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        <span class="n">filename</span>  <span class="o">=</span> <span class="s2">&quot;perm_files/research_subtopic.py&quot;</span><span class="p">,</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>        <span class="n">args</span>      <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>        <span class="n">requirement</span> <span class="o">=</span> <span class="s2">&quot;GENERAL&quot;</span><span class="p">,</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        <span class="n">priority</span>  <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="p">)</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">subtopics</span><span class="p">))</span>   <span class="c1"># ← N jobs, built at runtime</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="p">]</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="n">gate_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="s2">&quot;research-review&quot;</span><span class="p">,</span>
-</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;perm_files/hitl_gate.py&quot;</span><span class="p">,</span>
-</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="n">args</span>     <span class="o">=</span> <span class="s2">&quot;research-review 3600 All subtopics complete. Approve synthesis?&quot;</span><span class="p">,</span>
-</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="n">parents</span>  <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;research-</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">subtopics</span><span class="p">))],</span>  <span class="c1"># ← waits for ALL</span>
-</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="p">)</span>
-</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>
-</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="n">synthesis_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="s2">&quot;synthesize&quot;</span><span class="p">,</span>
-</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;perm_files/synthesize_report.py&quot;</span><span class="p">,</span>
-</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>    <span class="n">args</span>     <span class="o">=</span> <span class="n">run_id</span><span class="p">,</span>
-</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>    <span class="n">parents</span>  <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;research-review&quot;</span><span class="p">],</span>   <span class="c1"># ← cannot run until human approves</span>
-</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>    <span class="n">priority</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
-</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="p">)</span>
-</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>
-</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="n">dag_name</span><span class="p">,</span> <span class="n">research_jobs</span> <span class="o">+</span> <span class="p">[</span><span class="n">gate_job</span><span class="p">,</span> <span class="n">synthesis_job</span><span class="p">])</span>
+<p>The Planner calls Gemini with a prompt asking it to decide 3–6 focused, non-overlapping subtopics for the topic. It writes <code>titan:research:{run_id}:count</code> and <code>titan:research:{run_id}:subtopic:{i}</code> back to TitanStore, then signals <code>planner:done</code>.</p>
+<h3 id="2-orchestrator-reads-the-plan-and-builds-stage-2-dag-dynamically">2. Orchestrator reads the plan and builds Stage 2 DAG dynamically</h3>
+<p>Only after Stage 1 completes can the orchestrator build the research DAG:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">count</span>     <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;titan:research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:count&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">subtopics</span> <span class="o">=</span> <span class="p">[</span><span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;titan:research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:subtopic:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">)]</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">research_jobs</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">TitanJob</span><span class="p">(</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>        <span class="n">job_id</span>      <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;research-</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        <span class="n">filename</span>    <span class="o">=</span> <span class="n">_RESEARCH_SCRIPT</span><span class="p">,</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>        <span class="n">args</span>        <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        <span class="n">requirement</span> <span class="o">=</span> <span class="s2">&quot;GENERAL&quot;</span><span class="p">,</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>        <span class="n">priority</span>    <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="p">)</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>   <span class="c1"># ← N determined by Planner, not hardcoded</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="p">]</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="n">gate_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="n">job_id</span>  <span class="o">=</span> <span class="s2">&quot;research-review&quot;</span><span class="p">,</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="n">_HITL_GATE_SCRIPT</span><span class="p">,</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>    <span class="n">args</span>    <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;research-review 3600 </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> subtopics complete. Approve synthesis?&quot;</span><span class="p">,</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>    <span class="n">parents</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;research-</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">)],</span>  <span class="c1"># ← waits for ALL</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="p">)</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="n">synthesis_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="s2">&quot;synthesize&quot;</span><span class="p">,</span>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="n">_SYNTHESIZE_SCRIPT</span><span class="p">,</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>    <span class="n">args</span>     <span class="o">=</span> <span class="n">run_id</span><span class="p">,</span>
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>    <span class="n">parents</span>  <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;research-review&quot;</span><span class="p">],</span>   <span class="c1"># ← cannot run until human approves</span>
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>    <span class="n">priority</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="p">)</span>
+</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>
+</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PIPELINE_</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s2">_RESEARCH&quot;</span><span class="p">,</span> <span class="n">research_jobs</span> <span class="o">+</span> <span class="p">[</span><span class="n">gate_job</span><span class="p">,</span> <span class="n">synthesis_job</span><span class="p">])</span>
 </span></code></pre></div>
 <h3 id="3-research-workers-run-in-parallel">3. Research workers run in parallel</h3>
 <p>Each research worker:</p>
 <ol>
-<li>Reads the main topic and its subtopic from TitanStore</li>
-<li>Calls Claude Sonnet with a focused research prompt</li>
+<li>Reads the main topic and its assigned subtopic from TitanStore (<code>titan:research:{run_id}:subtopic:{i}</code>)</li>
+<li>Calls Gemini with a focused research prompt</li>
 <li>Writes the result back to TitanStore: <code>titan:research:{run_id}:result:{i}</code></li>
-<li>Streams the Claude response directly to the Dashboard log viewer</li>
+<li>Streams the Gemini response directly to the Dashboard log viewer</li>
 </ol>
-<p>You can watch all 4 workers running simultaneously in the Dashboard:</p>
-<p><img alt="Parallel research workers running in the DAG view" src="../../screenshots/DAG_Visualizer_.png" /></p>
+<p>You can watch all N workers running simultaneously in the Dashboard.</p>
 <h3 id="4-hitl-gate-activates">4. HITL gate activates</h3>
-<p>Once all research jobs complete, the amber HITL banner appears in the Dashboard. This is your chance to review what the agents found before committing Claude Opus API credits to synthesis.</p>
+<p>Once all research jobs complete, the amber HITL banner appears in the Dashboard. This is your chance to review what the agents found before committing API credits to synthesis.</p>
 <ul>
 <li><strong>Approve</strong> → synthesis job starts immediately</li>
 <li><strong>Reject</strong> → synthesis job is never dispatched; pipeline ends here</li>
@@ -1837,15 +1881,16 @@ export GEMINI_API_KEY=&quot;your_key_here&quot;
 <p>Fetch the raw research results from TitanStore to preview before approving:
 <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">c</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;titan:research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:result:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;titan:research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:count&quot;</span><span class="p">))</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;titan:research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:result:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
 </span></code></pre></div></p>
 </div>
 <h3 id="5-synthesis-fan-in">5. Synthesis fan-in</h3>
 <p>The synthesis job:</p>
 <ol>
-<li>Reads all subtopic results from TitanStore</li>
-<li>Combines them into a structured prompt for Claude Opus</li>
+<li>Reads the count and all subtopic results from TitanStore</li>
+<li>Combines them into a structured prompt for Gemini</li>
 <li>Generates a full professional report: Executive Summary → Key Findings → Analysis → Conclusion</li>
 <li>Stores the final report in TitanStore at <code>titan:research:{run_id}:report</code></li>
 <li>Streams the full report to the Dashboard log viewer</li>
@@ -1865,22 +1910,17 @@ export GEMINI_API_KEY=&quot;your_key_here&quot;
 </span></code></pre></div>
 <hr />
 <h2 id="extending-the-pipeline">Extending the Pipeline</h2>
-<h3 id="add-more-subtopics">Add more subtopics</h3>
-<p>Pass them as CLI args:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python<span class="w"> </span>research_pipeline.py<span class="w"> </span><span class="s2">&quot;Edge AI&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="s2">&quot;Hardware constraints&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="s2">&quot;Model compression techniques&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="s2">&quot;On-device inference&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="s2">&quot;Privacy implications&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="s2">&quot;Industry adoption&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="s2">&quot;Future silicon roadmap&quot;</span>
+<h3 id="influence-the-number-of-subtopics">Influence the number of subtopics</h3>
+<p>The Planner decides the count, but you can steer it by adjusting the prompt in <code>pipeline_planner.py</code>. The default range is 3–6. For a deeper investigation, expand the range or change the instruction:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># In pipeline_planner.py — prompt excerpt</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="s2">&quot;Decide the right number of focused, non-overlapping subtopics (between 4 and 8)...&quot;</span>
 </span></code></pre></div>
-<p>Seven parallel workers will fan out across your cluster automatically.</p>
+<p>Alternatively, for the synthesizer to spend more time on each area, narrow the range to 3–4.</p>
 <h3 id="route-synthesis-to-a-gpu-worker">Route synthesis to a GPU worker</h3>
 <p>If you have a GPU-tagged worker for faster inference:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">synthesis_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">job_id</span>      <span class="o">=</span> <span class="s2">&quot;synthesize&quot;</span><span class="p">,</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">filename</span>    <span class="o">=</span> <span class="s2">&quot;perm_files/synthesize_report.py&quot;</span><span class="p">,</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">filename</span>    <span class="o">=</span> <span class="n">_SYNTHESIZE_SCRIPT</span><span class="p">,</span>
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">args</span>        <span class="o">=</span> <span class="n">run_id</span><span class="p">,</span>
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">parents</span>     <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;research-review&quot;</span><span class="p">],</span>
 </span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">requirement</span> <span class="o">=</span> <span class="s2">&quot;GPU&quot;</span><span class="p">,</span>           <span class="c1"># ← routes to GPU-tagged worker</span>
@@ -1891,13 +1931,13 @@ export GEMINI_API_KEY=&quot;your_key_here&quot;
 <p>Useful if the report needs editorial approval before being published:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">publish_gate</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="s2">&quot;publish-review&quot;</span><span class="p">,</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;perm_files/hitl_gate.py&quot;</span><span class="p">,</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="n">_HITL_GATE_SCRIPT</span><span class="p">,</span>
 </span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="n">args</span>     <span class="o">=</span> <span class="s2">&quot;publish-review 1800 Final report ready. Approve publication?&quot;</span><span class="p">,</span>
 </span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="n">parents</span>  <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;synthesize&quot;</span><span class="p">],</span>
 </span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="p">)</span>
 </span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">publish_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
 </span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="s2">&quot;publish&quot;</span><span class="p">,</span>
-</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;perm_files/publish_report.py&quot;</span><span class="p">,</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="n">_PUBLISH_SCRIPT</span><span class="p">,</span>
 </span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>    <span class="n">args</span>     <span class="o">=</span> <span class="n">run_id</span><span class="p">,</span>
 </span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>    <span class="n">parents</span>  <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;publish-review&quot;</span><span class="p">],</span>
 </span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="p">)</span>
@@ -1912,12 +1952,16 @@ export GEMINI_API_KEY=&quot;your_key_here&quot;
 <hr />
 <h2 id="under-the-hood">Under the Hood</h2>
 <div class="admonition info">
+<p class="admonition-title">Why a separate Planner stage?</p>
+<p>The research DAG cannot be constructed until the Planner decides how many subtopics to create. This two-phase submission — Stage 1 to run the Planner, Stage 2 to run everything else — is what makes this pipeline genuinely agentic rather than a static fan-out. A simple deterministic pipeline would hardcode 4 researchers; this one lets an LLM decide the right number for the topic.</p>
+</div>
+<div class="admonition info">
 <p class="admonition-title">Why TitanStore instead of passing data through args?</p>
-<p>Claude's research output is 200–400 words per subtopic — far too large to pass as a CLI argument and fragile with special characters. TitanStore acts as a <strong>shared blackboard</strong> between agents: the orchestrator writes the plan, each worker writes its findings, and the synthesis job reads them all. This pattern scales cleanly to N workers without changing any interfaces.</p>
+<p>Gemini's research output is 200–400 words per subtopic — far too large to pass as a CLI argument and fragile with special characters. TitanStore acts as a <strong>shared blackboard</strong> between agents: the Planner writes the plan, each researcher writes its findings, and the synthesizer reads them all. This pattern scales cleanly to N workers without changing any interfaces.</p>
 </div>
 <div class="admonition info">
 <p class="admonition-title">Why HITL between research and synthesis?</p>
-<p>Claude Opus synthesis is significantly more expensive than Sonnet research. The HITL gate lets you inspect the raw research quality and abort before committing to the final synthesis call — especially useful when exploring new topics where you aren't sure the subtopic breakdown is right.</p>
+<p>The HITL gate lets you inspect the Planner's subtopic choices and the raw research quality before committing to the final synthesis call — especially useful when exploring new topics where you aren't sure the subtopic breakdown is right.</p>
 </div>
 <div class="admonition info">
 <p class="admonition-title">Why not pass <code>run_id</code> via environment variable?</p>

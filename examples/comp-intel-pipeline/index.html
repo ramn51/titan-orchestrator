@@ -25,7 +25,7 @@
     
     
       
-        <title>Distributed LLM Pipeline - Titan Orchestrator</title>
+        <title>Parallel Analyst Pipeline - Titan Orchestrator</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#distributed-llm-pipeline-competitive-intelligence" class="md-skip">
+        <a href="#distributed-llm-pipeline-parallel-analyst" class="md-skip">
           Skip to content
         </a>
       
@@ -109,7 +109,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Distributed LLM Pipeline
+              Parallel Analyst Pipeline
             
           </span>
         </div>
@@ -624,7 +624,7 @@
   <span class="md-ellipsis">
     
   
-    Distributed LLM Pipeline
+    Parallel Analyst Pipeline
   
 
     
@@ -642,7 +642,7 @@
   <span class="md-ellipsis">
     
   
-    Distributed LLM Pipeline
+    Parallel Analyst Pipeline
   
 
     
@@ -1435,7 +1435,7 @@
   
 
 
-<h1 id="distributed-llm-pipeline-competitive-intelligence">Distributed LLM Pipeline — Competitive Intelligence</h1>
+<h1 id="distributed-llm-pipeline-parallel-analyst">Distributed LLM Pipeline — Parallel Analyst</h1>
 <p>A parallel, fan-out/fan-in pipeline where multiple Gemini agents analyse competing frameworks simultaneously and a synthesis agent consolidates the results into a structured report.</p>
 <p>This example demonstrates Titan as a <strong>distributed LLM pipeline runner</strong> — the same pattern used in data engineering (MapReduce, ETL) but with LLM calls as the compute step.</p>
 <hr />
@@ -1446,17 +1446,35 @@
 <li>Each analyst writes its result to the <strong>shared workspace</strong></li>
 <li>A <strong>synthesis agent</strong> (dependent on all analysts completing) reads all results and calls Gemini to produce a structured comparison report</li>
 </ol>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Orchestrator
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    │  submit_dag()
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    ▼
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Titan Master
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    ├── analyst-0  →  Gemini  →  shared/intel_&lt;run_id&gt;_result_0.txt
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    ├── analyst-1  →  Gemini  →  shared/intel_&lt;run_id&gt;_result_1.txt
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    └── analyst-2  →  Gemini  →  shared/intel_&lt;run_id&gt;_result_2.txt
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>             │  (all three must complete)
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>             ▼
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        synthesizer  →  Gemini  →  shared/comp_intel_&lt;fws&gt;_&lt;run_id&gt;.md
-</span></code></pre></div>
+<pre class="mermaid"><code>flowchart TD
+    O["🐍 Orchestrator\n(your machine)"]
+    M["Titan Master"]
+
+    O --&gt;|"submit_dag()"| M
+
+    M --&gt; A0["analyst-0\ngemini-2.5-flash\nFramework 0"]
+    M --&gt; A1["analyst-1\ngemini-2.5-flash\nFramework 1"]
+    M --&gt; A2["analyst-2\ngemini-2.5-flash\nFramework 2"]
+
+    A0 --&gt;|"intel_result_0.txt"| WS[("titan_workspace\n/shared")]
+    A1 --&gt;|"intel_result_1.txt"| WS
+    A2 --&gt;|"intel_result_2.txt"| WS
+
+    A0 --&gt; S["synthesizer\ngemini-2.5-flash\nFan-in report"]
+    A1 --&gt; S
+    A2 --&gt; S
+
+    WS --&gt;|"reads all results"| S
+    S --&gt; RPT["📄 comp_intel_report.md"]
+
+    style O fill:#1e293b,stroke:#1de9b6,stroke-width:2px,color:#ffffff
+    style M fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#ffffff
+    style A0 fill:#1e293b,stroke:#818cf8,stroke-width:2px,color:#ffffff
+    style A1 fill:#1e293b,stroke:#818cf8,stroke-width:2px,color:#ffffff
+    style A2 fill:#1e293b,stroke:#818cf8,stroke-width:2px,color:#ffffff
+    style WS fill:#1e293b,stroke:#f9a826,stroke-width:2px,color:#ffffff
+    style S fill:#1e293b,stroke:#22c55e,stroke-width:2px,color:#ffffff
+    style RPT fill:#1e293b,stroke:#22c55e,stroke-width:2px,color:#ffffff</code></pre>
 <hr />
 <h2 id="titan-features-demonstrated">Titan Features Demonstrated</h2>
 <table>
@@ -1491,36 +1509,37 @@
 </table>
 <hr />
 <h2 id="prerequisites">Prerequisites</h2>
-<p>=== "Install"</p>
-<div class="language-text highlight"><pre><span></span><code>```bash
-pip install google-genai python-dotenv
-```
-</code></pre></div>
-<p>=== ".env"</p>
-<div class="language-text highlight"><pre><span></span><code>Create a `.env` file at the project root:
-
-```
-GEMINI_API_KEY=your_key_here
-```
-</code></pre></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Install</label><label for="__tabbed_1_2">.env</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>google-genai<span class="w"> </span>python-dotenv
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Create a <code>.env</code> file at the project root:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>GEMINI_API_KEY=your_key_here
+</span></code></pre></div>
+</div>
+</div>
+</div>
 <hr />
 <h2 id="run-it">Run It</h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Default — compares LangGraph, CrewAI, AutoGen</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>python<span class="w"> </span>titan_test_suite/examples/agents_examples/comp_intel/comp_intel_pipeline.py
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Custom topic + frameworks (wrap multi-word names in quotes)</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>python<span class="w"> </span>titan_test_suite/examples/agents_examples/comp_intel/comp_intel_pipeline.py<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="s2">&quot;Cloud AI Platforms&quot;</span><span class="w"> </span><span class="s2">&quot;AWS SageMaker&quot;</span><span class="w"> </span><span class="s2">&quot;Google Vertex AI&quot;</span><span class="w"> </span><span class="s2">&quot;Azure ML&quot;</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1"># Any domain</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>python<span class="w"> </span>titan_test_suite/examples/agents_examples/comp_intel/comp_intel_pipeline.py<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">  </span><span class="s2">&quot;JavaScript Frameworks&quot;</span><span class="w"> </span><span class="s2">&quot;React&quot;</span><span class="w"> </span><span class="s2">&quot;Vue&quot;</span><span class="w"> </span><span class="s2">&quot;Svelte&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Default — compares LangGraph, CrewAI, AutoGen</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>python<span class="w"> </span>titan_test_suite/examples/agents_examples/comp_intel/comp_intel_pipeline.py
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Custom topic + frameworks (wrap multi-word names in quotes)</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>python<span class="w"> </span>titan_test_suite/examples/agents_examples/comp_intel/comp_intel_pipeline.py<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="s2">&quot;Cloud AI Platforms&quot;</span><span class="w"> </span><span class="s2">&quot;AWS SageMaker&quot;</span><span class="w"> </span><span class="s2">&quot;Google Vertex AI&quot;</span><span class="w"> </span><span class="s2">&quot;Azure ML&quot;</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># Any domain</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>python<span class="w"> </span>titan_test_suite/examples/agents_examples/comp_intel/comp_intel_pipeline.py<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span><span class="s2">&quot;JavaScript Frameworks&quot;</span><span class="w"> </span><span class="s2">&quot;React&quot;</span><span class="w"> </span><span class="s2">&quot;Vue&quot;</span><span class="w"> </span><span class="s2">&quot;Svelte&quot;</span>
 </span></code></pre></div>
 <p>Watch it run at <strong>http://localhost:5000</strong> — analyst nodes turn orange as they execute in parallel, then green as they complete. The synthesizer node activates only after all analysts are green.</p>
 <hr />
 <h2 id="output">Output</h2>
 <p>The synthesis report is saved to:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>titan_workspace/shared/comp_intel_&lt;frameworks&gt;_&lt;run_id&gt;.md
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>titan_workspace/shared/comp_intel_&lt;frameworks&gt;_&lt;run_id&gt;.md
 </span></code></pre></div>
 <p><strong>Report structure (generated by Gemini):</strong></p>
 <ol>
@@ -1556,21 +1575,21 @@ GEMINI_API_KEY=your_key_here
 <hr />
 <h2 id="extend-it">Extend It</h2>
 <p><strong>Add more frameworks</strong> — just pass more args:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>python<span class="w"> </span>comp_intel_pipeline.py<span class="w"> </span><span class="s2">&quot;Database Engines&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="s2">&quot;PostgreSQL&quot;</span><span class="w"> </span><span class="s2">&quot;MongoDB&quot;</span><span class="w"> </span><span class="s2">&quot;Cassandra&quot;</span><span class="w"> </span><span class="s2">&quot;CockroachDB&quot;</span><span class="w"> </span><span class="s2">&quot;DynamoDB&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>python<span class="w"> </span>comp_intel_pipeline.py<span class="w"> </span><span class="s2">&quot;Database Engines&quot;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="s2">&quot;PostgreSQL&quot;</span><span class="w"> </span><span class="s2">&quot;MongoDB&quot;</span><span class="w"> </span><span class="s2">&quot;Cassandra&quot;</span><span class="w"> </span><span class="s2">&quot;CockroachDB&quot;</span><span class="w"> </span><span class="s2">&quot;DynamoDB&quot;</span>
 </span></code></pre></div>
 <p>Up to 6 analysts run in parallel. Each additional framework adds one parallel job with zero code changes.</p>
 <p><strong>Add a HITL gate</strong> before synthesis — review the raw analyses before committing the Gemini synthesis call:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">gate_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="s2">&quot;review-gate&quot;</span><span class="p">,</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="n">_HITL_GATE_SCRIPT</span><span class="p">,</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">args</span>     <span class="o">=</span> <span class="s2">&quot;review-gate 3600 Analyses ready. Approve synthesis?&quot;</span><span class="p">,</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">parents</span>  <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;analyst-</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frameworks</span><span class="p">))],</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="p">)</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">synthesizer_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="o">...</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="n">parents</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;review-gate&quot;</span><span class="p">],</span>   <span class="c1"># depends on gate, not analysts directly</span>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">gate_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="s2">&quot;review-gate&quot;</span><span class="p">,</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="n">_HITL_GATE_SCRIPT</span><span class="p">,</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">args</span>     <span class="o">=</span> <span class="s2">&quot;review-gate 3600 Analyses ready. Approve synthesis?&quot;</span><span class="p">,</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">parents</span>  <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;analyst-</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frameworks</span><span class="p">))],</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">)</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="n">synthesizer_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="o">...</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="n">parents</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;review-gate&quot;</span><span class="p">],</span>   <span class="c1"># depends on gate, not analysts directly</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <div class="admonition note">

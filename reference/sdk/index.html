@@ -605,7 +605,7 @@
   <span class="md-ellipsis">
     
   
-    Distributed LLM Pipeline
+    Parallel Analyst Pipeline
   
 
     
@@ -1033,6 +1033,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="2. Defining DAGs Programmatically">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#linking-multiple-dags-into-one-agent-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Linking multiple DAGs into one Agent Run
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1040,6 +1057,17 @@
     <span class="md-ellipsis">
       
         3. Using the Distributed Data Bus (TitanStore)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-file-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. File Artifacts
       
     </span>
   </a>
@@ -1362,6 +1390,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="2. Defining DAGs Programmatically">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#linking-multiple-dags-into-one-agent-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Linking multiple DAGs into one Agent Run
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1369,6 +1414,17 @@
     <span class="md-ellipsis">
       
         3. Using the Distributed Data Bus (TitanStore)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-file-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. File Artifacts
       
     </span>
   </a>
@@ -1403,9 +1459,11 @@
 <p>The main entry point for connecting to the cluster.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Initialize connection (defaults to localhost:9090)</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">9090</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># No constructor args — host and port are configured via</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># TITAN_HOST / TITAN_PORT environment variables (default: 127.0.0.1:9090)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
 </span></code></pre></div>
+<p><strong>DAG submission</strong></p>
 <table>
 <thead>
 <tr>
@@ -1419,8 +1477,8 @@
 <td>Dispatches a single <code>TitanJob</code> to the cluster.</td>
 </tr>
 <tr>
-<td><code>client.submit_dag(name, jobs)</code></td>
-<td>Submits a list of linked <code>TitanJob</code> objects as a single DAG.</td>
+<td><code>client.submit_dag(name, jobs, agent_run_id=None)</code></td>
+<td>Submits a list of linked <code>TitanJob</code> objects as a single named DAG. Pass <code>agent_run_id</code> to link multiple DAG submissions into one logical agent run visible in the Dashboard.</td>
 </tr>
 <tr>
 <td><code>client.get_job_status(job_id)</code></td>
@@ -1430,17 +1488,55 @@
 <td><code>client.fetch_logs(job_id)</code></td>
 <td>Retrieves the stdout/stderr logs for a specific job ID.</td>
 </tr>
+</tbody>
+</table>
+<p><strong>File transfer</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>client.upload_file(filepath)</code></td>
+<td>Uploads a single file to the Master's <code>uploads/</code> directory. Returns <code>"UPLOAD_SUCCESS"</code> on success.</td>
+</tr>
 <tr>
 <td><code>client.upload_project_folder(path)</code></td>
 <td>Zips and uploads a local folder to the Master's artifact registry.</td>
 </tr>
 <tr>
-<td><code>client.upload_file(filepath)</code></td>
-<td>Uploads a single file to the Master's artifact registry.</td>
+<td><code>client.publish_artifact(key, filename)</code></td>
+<td><strong>Worker-side.</strong> Uploads <code>filename</code> to Master and registers the basename in TitanStore under <code>key</code>. Pair with <code>get_artifact</code> on the orchestrator side.</td>
 </tr>
 <tr>
+<td><code>client.get_artifact(key, save_path=None)</code></td>
+<td><strong>Orchestrator-side.</strong> Reads the filename registered under <code>key</code>, downloads it from Master, and saves to <code>save_path</code> (defaults to <code>/tmp/&lt;filename&gt;</code>). Returns <code>True</code> on success.</td>
+</tr>
+<tr>
+<td><code>client.fetch_artifact(filename, save_path=None)</code></td>
+<td>Low-level download by filename from Master's <code>uploads/</code> directory.</td>
+</tr>
+<tr>
+<td><code>client.deploy_script(filepath)</code></td>
+<td>Deploys a worker script to Master's <code>perm_files/</code> directory. Returns <code>"DEPLOY_SUCCESS"</code> on success.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>TitanStore (shared KV)</strong></p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
 <td><code>client.store_put(key, value)</code></td>
-<td>Saves a string value to the distributed TitanStore (Data Bus).</td>
+<td>Saves a string value to the distributed TitanStore.</td>
 </tr>
 <tr>
 <td><code>client.store_get(key)</code></td>
@@ -1448,7 +1544,7 @@
 </tr>
 <tr>
 <td><code>client.store_sadd(key, member)</code></td>
-<td>Adds a member to a distributed Set. Returns 1 if new, 0 if exists.</td>
+<td>Adds a member to a distributed Set. Returns <code>1</code> if new, <code>0</code> if already exists.</td>
 </tr>
 <tr>
 <td><code>client.store_smembers(key)</code></td>
@@ -1579,34 +1675,73 @@
 </span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="n">job_id</span><span class="o">=</span><span class="s2">&quot;train_model&quot;</span><span class="p">,</span>
 </span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;ml/train.py&quot;</span><span class="p">,</span>
 </span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="n">requirement</span><span class="o">=</span><span class="s2">&quot;GPU&quot;</span><span class="p">,</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;extract_data&quot;</span><span class="p">]</span> <span class="c1"># &lt;--- Defines the dependency</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;extract_data&quot;</span><span class="p">]</span>  <span class="c1"># &lt;--- Defines the dependency</span>
 </span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="p">)</span>
 </span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>
 </span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="c1"># Step 3: Submit them as a unified DAG</span>
 </span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;nightly_pipeline&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">task_a</span><span class="p">,</span> <span class="n">task_b</span><span class="p">])</span>
 </span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DAG Submitted!&quot;</span><span class="p">)</span>
 </span></code></pre></div>
+<h3 id="linking-multiple-dags-into-one-agent-run">Linking multiple DAGs into one Agent Run</h3>
+<p>For agentic workflows that submit several DAGs sequentially, pass the same <code>agent_run_id</code> to each <code>submit_dag</code> call. This links all stages into a single run entry in the Dashboard's <strong>Agent Runs</strong> view.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">run_id</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">12</span><span class="p">]</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;PLAN&quot;</span><span class="p">,</span>    <span class="p">[</span><span class="n">planner_job</span><span class="p">],</span>   <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># ... wait for planner, read results ...</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;EXECUTE&quot;</span><span class="p">,</span> <span class="n">executor_jobs</span><span class="p">,</span>   <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># ... wait, evaluate ...</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;SYNTH&quot;</span><span class="p">,</span>   <span class="p">[</span><span class="n">synthesis_job</span><span class="p">],</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+</span></code></pre></div>
 <hr />
 <h2 id="3-using-the-distributed-data-bus-titanstore">3. Using the Distributed Data Bus (TitanStore)</h2>
 <p>Tasks running on completely different physical nodes can share state, pass intermediate variables, or track metrics using Titan's built-in persistence layer.</p>
 <p><strong>File 1: <code>task_a.py</code> (Producer)</strong></p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Save a result globally before the task exits</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="s2">&quot;task_123_accuracy&quot;</span><span class="p">,</span> <span class="s2">&quot;98.5&quot;</span><span class="p">)</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">client</span><span class="o">.</span><span class="n">store_sadd</span><span class="p">(</span><span class="s2">&quot;processed_files&quot;</span><span class="p">,</span> <span class="s2">&quot;batch_A.csv&quot;</span><span class="p">)</span>
-</span></code></pre></div>
-<p><strong>File 2: <code>task_b.py</code> (Consumer)</strong></p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Retrieve the data passed from Task A</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">accuracy</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="s2">&quot;task_123_accuracy&quot;</span><span class="p">)</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">completed_files</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">store_smembers</span><span class="p">(</span><span class="s2">&quot;processed_files&quot;</span><span class="p">)</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downstream task received accuracy: </span><span class="si">{</span><span class="n">accuracy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Save a result globally before the task exits</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="s2">&quot;task_123_accuracy&quot;</span><span class="p">,</span> <span class="s2">&quot;98.5&quot;</span><span class="p">)</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">client</span><span class="o">.</span><span class="n">store_sadd</span><span class="p">(</span><span class="s2">&quot;processed_files&quot;</span><span class="p">,</span> <span class="s2">&quot;batch_A.csv&quot;</span><span class="p">)</span>
 </span></code></pre></div>
+<p><strong>File 2: <code>task_b.py</code> (Consumer)</strong></p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Retrieve the data passed from Task A</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">accuracy</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="s2">&quot;task_123_accuracy&quot;</span><span class="p">)</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="n">completed_files</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">store_smembers</span><span class="p">(</span><span class="s2">&quot;processed_files&quot;</span><span class="p">)</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downstream task received accuracy: </span><span class="si">{</span><span class="n">accuracy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<hr />
+<h2 id="4-file-artifacts">4. File Artifacts</h2>
+<p>Use artifacts when a worker produces a file that the orchestrator (or a downstream worker) needs to read. TitanStore only holds strings — for binary files or large text outputs, use the artifact system.</p>
+<p><strong>Pattern: worker publishes → orchestrator downloads</strong></p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># worker_script.py (runs on a worker node)</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># Write the output file to the local workspace</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;report.md&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">final_report</span><span class="p">)</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="c1"># Upload to master and register under a TitanStore key</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="n">client</span><span class="o">.</span><span class="n">publish_artifact</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:report&quot;</span><span class="p">,</span> <span class="s2">&quot;report.md&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># orchestrator.py (runs on your machine)</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1"># Download the file by key — saves to /tmp/report.md by default</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">client</span><span class="o">.</span><span class="n">get_artifact</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:report&quot;</span><span class="p">,</span> <span class="n">save_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/tmp/report_</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">.md&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Worker workspace is local to the worker node</p>
+<p><code>titan_workspace/shared</code> exists on the worker node, not on the master or orchestrator. <code>publish_artifact</code> is the correct way to move files across nodes. Do not assume the orchestrator can read files written by workers directly.</p>
+</div>
 
 
 
