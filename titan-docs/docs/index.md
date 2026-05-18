@@ -98,40 +98,57 @@ Monitor remote worker execution directly from the control plane UI in real-time.
 ![Log Streaming](screenshots/Log_Stream.png)
 
 
-## Demo in Action:
+## Demos
 
-### 1. Control Plane: Dynamic DAG Execution
-*Watch Titan resolve dependencies and execute a multi-stage workflow where the path is decided at runtime.*
+### 1. Visual DAG Constructor
+*Build a pipeline by dragging nodes and drawing edges — then deploy directly to the cluster with one click.*
 
-<video autoplay loop muted playsinline width="100%">
-  <source src="https://github.com/user-attachments/assets/5731c0b8-d392-4890-a3c5-f7e9cf611d65" type="video/mp4">
+<video autoplay loop muted playsinline controls width="100%">
+  <source src="https://github.com/user-attachments/assets/4f63abbc-e5e9-435e-83cb-bafe6eb9883e" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
+### 2. Human-in-the-Loop (HITL) Gate
+*A DAG pauses at a checkpoint and waits for a human Approve/Reject before downstream jobs resume.*
 
-
-### 2. Reactive Worker Scaling
-*Watch the cluster detect load, spawn an additional Worker process on the same host, and distribute tasks across it.*
-
-
-<video autoplay loop muted playsinline width="100%">
-  <source src="https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172" type="video/mp4">
+<video autoplay loop muted playsinline controls width="100%">
+  <source src="https://github.com/user-attachments/assets/bbdb6772-a9ee-4094-85b4-0516a0543c62" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
+### 3. HITL on a Complex Graph
+*HITL gate mid-execution on a multi-branch pipeline — shows how the visualizer reflects the paused state.*
+
+<video autoplay loop muted playsinline controls width="100%">
+  <source src="https://github.com/user-attachments/assets/724e3f3d-1d75-407e-a0c2-cd43f2939ad5" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+### 4. Agentic AI Workflow
+*A multi-stage agent loop — each stage is a separate DAG submission, grouped into a single timeline in the Agent Runs view.*
+
+<video autoplay loop muted playsinline controls width="100%">
+  <source src="https://github.com/user-attachments/assets/d6c40a50-9afc-45f6-abfc-b50c94324363" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
 <details>
-  <summary><b>🎬 View More Scenarios (GPU Routing, Fanout, Full Scale Cycle)</b></summary>
+  <summary><b>View More: Dynamic DAG Execution, Reactive Scaling, GPU Routing, Fanout</b></summary>
   <br>
-  
-  GPU Affinity Routing
 
+  **Control Plane: Dynamic DAG Execution**
+  <video src="https://github.com/user-attachments/assets/5731c0b8-d392-4890-a3c5-f7e9cf611d65" controls="controls" style="max-width: 100%;"></video>
+
+  **Reactive Worker Scaling**
+  <video src="https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172" controls="controls" style="max-width: 100%;"></video>
+
+  **GPU Affinity Routing**
   <video src="https://github.com/user-attachments/assets/9a1abc1c-d01f-4998-8c74-30409113ec85" controls="controls" style="max-width: 100%;"></video>
 
-  Parallel Execution (Fanout)
+  **Parallel Execution (Fanout)**
   <video src="https://github.com/user-attachments/assets/812fd793-eab4-499e-9364-f1d3ccbbcc59" controls="controls" style="max-width: 100%;"></video>
 
-  Full Load Cycle (Scale Up & Descale)
+  **Full Load Cycle (Scale Up & Descale)**
   <video src="https://github.com/user-attachments/assets/49afd1c6-bed3-444b-8d12-adff07832d8b" controls="controls" style="max-width: 100%;"></video>
 </details>
 

@@ -118,19 +118,37 @@ Pause a DAG at any checkpoint and wait for a human Approve/Reject before downstr
 
 ## Demos in Action
 
-### 1. Control Plane: Dynamic DAG Execution
-*Watch Titan resolve dependencies and execute a multi-stage workflow where the path is decided at runtime.*
+### 1. Visual DAG Constructor
+*Build a pipeline by dragging nodes and drawing edges — deploy directly to the cluster with one click.*
 
-https://github.com/user-attachments/assets/5731c0b8-d392-4890-a3c5-f7e9cf611d65
+https://github.com/user-attachments/assets/4f63abbc-e5e9-435e-83cb-bafe6eb9883e
 
-### 2. Reactive Worker Scaling
-*Watch the cluster detect load, spawn an additional Worker process on the same host, and distribute tasks across it.*
+### 2. Human-in-the-Loop (HITL) Gate
+*A DAG pauses at a checkpoint and waits for a human Approve/Reject before downstream jobs resume.*
 
-https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172
+https://github.com/user-attachments/assets/bbdb6772-a9ee-4094-85b4-0516a0543c62
+
+### 3. HITL on a Complex Graph
+*HITL gate mid-execution on a multi-branch pipeline.*
+
+https://github.com/user-attachments/assets/724e3f3d-1d75-407e-a0c2-cd43f2939ad5
+
+### 4. Agentic AI Workflow
+*A multi-stage agent loop grouped into a single timeline in the Agent Runs view.*
+
+https://github.com/user-attachments/assets/d6c40a50-9afc-45f6-abfc-b50c94324363
 
 <details>
-  <summary><b>View More Scenarios (GPU Routing, Fanout, Full Scale Cycle)</b></summary>
+  <summary><b>View More: Dynamic DAG Execution, Reactive Scaling, GPU Routing, Fanout</b></summary>
   <br>
+
+  **Control Plane: Dynamic DAG Execution**
+
+  https://github.com/user-attachments/assets/5731c0b8-d392-4890-a3c5-f7e9cf611d65
+
+  **Reactive Worker Scaling**
+
+  https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172
 
   **GPU Affinity Routing**
   <video src="https://github.com/user-attachments/assets/9a1abc1c-d01f-4998-8c74-30409113ec85" controls="controls" style="max-width: 100%;"></video>
