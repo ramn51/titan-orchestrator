@@ -629,10 +629,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-elasticity-reactive-auto-scaling" class="md-nav__link">
+  <a href="#2-reactive-worker-scaling" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Elasticity: Reactive Auto-Scaling
+        2. Reactive Worker Scaling
       
     </span>
   </a>
@@ -649,6 +649,17 @@
     <span class="md-ellipsis">
       
         Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment
       
     </span>
   </a>
@@ -2246,10 +2257,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-elasticity-reactive-auto-scaling" class="md-nav__link">
+  <a href="#2-reactive-worker-scaling" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Elasticity: Reactive Auto-Scaling
+        2. Reactive Worker Scaling
       
     </span>
   </a>
@@ -2266,6 +2277,17 @@
     <span class="md-ellipsis">
       
         Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment
       
     </span>
   </a>
@@ -2331,7 +2353,7 @@
 
 <h1 id="titan-orchestrator">Titan Orchestrator</h1>
 <p><a href="https://github.com/ramn51/titan-orchestrator"><img alt="GitHub Repo" src="https://img.shields.io/badge/GitHub-View_Repository-181717?logo=github" /></a> <img alt="Status: Experimental" src="https://img.shields.io/badge/Status-Experimental_Research-blue" /> <img alt="Built by: 1 Developer" src="https://img.shields.io/badge/Solo_Project-Ram_Narayanan-brightgreen" /></p>
-<p><strong>A self-hosted distributed runtime for DAGs, services, and agentic workflows — shipped as a single zero-dependency JAR. Define jobs in YAML or Python, and Titan handles capability routing, scaling, and failure recovery across your cluster — from a nightly ETL pipeline to a self-mutating LLM agent.</strong></p>
+<p><strong>A self-hosted distributed runtime for DAGs, services, and agentic workflows — shipped as a single zero-dependency JAR. Define jobs in YAML or Python, and Titan handles capability routing and dependency execution across your cluster — from a nightly ETL pipeline to a multi-agent LLM workflow.</strong></p>
 <div class="admonition tip">
 <p class="admonition-title">Ready to dive in?</p>
 <p>Skip the reading and jump straight into the code. Follow our <strong><a href="getting-started/">5-Minute Quickstart</a></strong> to run your first distributed task, or view the <strong><a href="reference/sdk/">Python SDK Reference</a></strong>.</p>
@@ -2416,8 +2438,8 @@
   Your browser does not support the video tag.
 </video>
 
-<h3 id="2-elasticity-reactive-auto-scaling">2. Elasticity: Reactive Auto-Scaling</h3>
-<p><em>Watch the cluster detect load, spawn a new Worker process automatically, and distribute tasks.</em></p>
+<h3 id="2-reactive-worker-scaling">2. Reactive Worker Scaling</h3>
+<p><em>Watch the cluster detect load, spawn an additional Worker process on the same host, and distribute tasks across it.</em></p>
 <video autoplay loop muted playsinline width="100%">
   <source src="https://github.com/user-attachments/assets/3f7d41df-654a-45d9-a49e-85978fad9172" type="video/mp4">
   Your browser does not support the video tag.
@@ -2467,6 +2489,27 @@
 </tbody>
 </table>
 <p><a class="md-button" href="examples/agentic/">💡 View All Examples</a></p>
+<hr />
+<h2 id="deployment">Deployment</h2>
+<p>Titan runs locally out of the box. When you're ready to move to the cloud:</p>
+<table>
+<thead>
+<tr>
+<th>Setup</th>
+<th>When to use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="deployment/cloud/">Multi-VM Cloud Setup</a></td>
+<td>Permanent cluster on GCP / AWS / Azure — Master on a VM, workers on VMs</td>
+</tr>
+<tr>
+<td><a href="deployment/remote-gpu-worker/">Remote GPU Worker via SSH Tunnel</a></td>
+<td>Keep your local machine as the Master, tunnel a remote GPU (RunPod, cloud VM) as a worker — no open ports needed</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h2 id="api-reference">API &amp; Reference</h2>
 <ul>

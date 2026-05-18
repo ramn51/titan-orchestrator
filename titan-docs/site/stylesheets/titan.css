@@ -1,114 +1,118 @@
 /* ─────────────────────────────────────────────────────────────
    Titan Orchestrator — Custom Theme Overrides
-   Targets: slate (dark) scheme only unless noted
    ───────────────────────────────────────────────────────────── */
 
-/* ── 1. Darker overall background ───────────────────────────── */
+/* ── 1. Background — dark but not black, VS Code level ───────── */
 [data-md-color-scheme="slate"] {
-  --md-default-bg-color:        #0d1117;   /* main content area — near-black */
-  --md-default-fg-color:        #e6edf3;   /* body text */
-  --md-default-fg-color--light: #8b949e;   /* muted text */
-  --md-code-bg-color:           #161b22;   /* code blocks */
-  --md-footer-bg-color:         #010409;
+  --md-default-bg-color:        #1e1e2e;
+  --md-default-fg-color:        #cdd6f4;
+  --md-default-fg-color--light: #a6adc8;
+  --md-code-bg-color:           #181825;
+  --md-footer-bg-color:         #181825;
 }
 
-/* ── 2. Darker green primary (replaces "light green") ────────── */
+/* ── 2. Vibrant green primary ────────────────────────────────── */
 [data-md-color-scheme="slate"] {
-  --md-primary-fg-color:        #1a7a3c;   /* header bar, active accents */
-  --md-primary-fg-color--light: #238a47;
-  --md-primary-fg-color--dark:  #145e2e;
-  --md-primary-bg-color:        #ffffff;   /* text on primary bg */
-  --md-accent-fg-color:         #2ea04b;   /* hover / active links */
+  --md-primary-fg-color:        #00c853;
+  --md-primary-fg-color--light: #00e676;
+  --md-primary-fg-color--dark:  #009624;
+  --md-primary-bg-color:        #ffffff;
+  --md-accent-fg-color:         #00e676;
 }
 
-/* ── 3. Header bar — darker green ───────────────────────────── */
+/* ── 3. Header — rich dark with green tint, not black ────────── */
 [data-md-color-scheme="slate"] .md-header {
-  background-color: #0f3d20;
+  background-color: #3d7a52;
+  box-shadow: 0 2px 10px rgba(0, 200, 83, 0.25);
 }
 
 [data-md-color-scheme="slate"] .md-tabs {
-  background-color: #0d3419;
+  background-color: #356b47;
 }
 
-/* ── 4. Sidebar — slightly lighter than page so it reads ─────── */
+[data-md-color-scheme="slate"] .md-tabs__link {
+  color: #d0f0dc;
+  opacity: 1;
+}
+
+[data-md-color-scheme="slate"] .md-tabs__link--active,
+[data-md-color-scheme="slate"] .md-tabs__link:hover {
+  color: #ffffff;
+}
+
+/* Header title and icons */
+[data-md-color-scheme="slate"] .md-header__title,
+[data-md-color-scheme="slate"] .md-header__button {
+  color: #ffffff;
+}
+
+/* ── 4. Sidebar ──────────────────────────────────────────────── */
 [data-md-color-scheme="slate"] .md-sidebar {
-  background-color: #111820;
+  background-color: #1a1a2e;
 }
 
-/* ── 5. Nav section labels — unselected items more visible ───── */
-[data-md-color-scheme="slate"] .md-nav__item .md-nav__link {
-  color: #9db4c8;           /* brighter than default muted grey */
+/* ── 5. Nav items — unselected clear, selected vibrant ─────────  */
+[data-md-color-scheme="slate"] .md-nav__link {
+  color: #b0bec5;
 }
 
-[data-md-color-scheme="slate"] .md-nav__item .md-nav__link:hover {
-  color: #e6edf3;
+[data-md-color-scheme="slate"] .md-nav__link:hover {
+  color: #e0e0e0;
 }
 
-/* Active / selected nav item */
 [data-md-color-scheme="slate"] .md-nav__item--active > .md-nav__link {
-  color: #2ea04b;
+  color: #00e676;
   font-weight: 600;
 }
 
-/* ── 6. Top-level nav section titles (e.g. "Architecture") ───── */
+/* ── 6. Nav section titles — bright and distinct ─────────────── */
+[data-md-color-scheme="slate"] .md-nav__title {
+  color: #cdd6f4;
+  font-weight: 700;
+}
+
 [data-md-color-scheme="slate"] .md-nav__item--section > .md-nav__link {
-  color: #b8cfe0;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  color: #7dd4d8;
+  font-weight: 700;
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-size: 0.72rem;
 }
 
-/* ── 7. Expand arrow — show there are subsections below ──────── */
-[data-md-color-scheme="slate"] .md-nav__item--nested > .md-nav__link::after {
-  opacity: 0.85;
+[data-md-color-scheme="slate"] .md-nav__link {
+  color: #c8d8e8;
 }
 
-/* Force section toggle arrows to be visible even when collapsed */
-[data-md-color-scheme="slate"] .md-nav__toggle ~ .md-nav__link .md-nav__icon {
-  color: #4a7c6b;
+[data-md-color-scheme="slate"] .md-nav__link:hover {
+  color: #ffffff;
 }
 
-[data-md-color-scheme="slate"] .md-nav__toggle:checked ~ .md-nav__link .md-nav__icon {
-  color: #2ea04b;
-}
-
-/* ── 8. Contributing section — ensure it shows after Architecture */
-[data-md-color-scheme="slate"] .md-nav__list > .md-nav__item:last-child {
-  border-bottom: none;
-  padding-bottom: 1rem;
-}
-
-/* Subtle divider between top-level nav sections */
-[data-md-color-scheme="slate"] .md-nav--secondary .md-nav__list,
-[data-md-color-scheme="slate"] .md-nav__list > .md-nav__item--section {
-  border-top: 1px solid #1e2d3d;
-  margin-top: 0.25rem;
-  padding-top: 0.25rem;
-}
-
-/* ── 9. Content area — slightly off-black for contrast ─────── */
+/* ── 7. Content area ─────────────────────────────────────────── */
 [data-md-color-scheme="slate"] .md-content {
-  background-color: #0d1117;
+  background-color: #1e1e2e;
 }
 
-[data-md-color-scheme="slate"] .md-typeset h1,
-[data-md-color-scheme="slate"] .md-typeset h2,
-[data-md-color-scheme="slate"] .md-typeset h3 {
-  color: #e6edf3;
-}
+[data-md-color-scheme="slate"] .md-typeset h1 { color: #cdd6f4; }
+[data-md-color-scheme="slate"] .md-typeset h2 { color: #b0c4de; }
+[data-md-color-scheme="slate"] .md-typeset h3 { color: #a0b4c8; }
 
-/* ── 10. Tables — visible borders in dark mode ──────────────── */
+/* ── 8. Tables ───────────────────────────────────────────────── */
 [data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
-  background-color: #161b22;
-  color: #e6edf3;
+  background-color: #181825;
+  color: #cdd6f4;
 }
 
 [data-md-color-scheme="slate"] .md-typeset table:not([class]) td,
 [data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
-  border-color: #21262d;
+  border-color: #313244;
 }
 
 [data-md-color-scheme="slate"] .md-typeset table:not([class]) tr:hover {
-  background-color: #161b22;
+  background-color: #232336;
+}
+
+/* ── 9. Admonition accent ────────────────────────────────────── */
+[data-md-color-scheme="slate"] .md-typeset .admonition,
+[data-md-color-scheme="slate"] .md-typeset details {
+  border-color: #00c853;
 }

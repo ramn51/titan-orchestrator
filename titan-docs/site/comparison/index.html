@@ -2250,7 +2250,7 @@
 
 
 <h1 id="how-titan-compares">How Titan Compares</h1>
-<p>Titan operates across three distinct capability tiers — most orchestrators only cover one or two. The tables below help you decide whether Titan is the right fit and where it sits relative to the tools you already know.</p>
+<p>Titan is designed to cover three capability tiers in a single binary — task scheduling, service orchestration, and agentic execution. Most orchestrators specialise in one of these and do it very well; Titan trades depth for breadth. The tables below help you decide whether that tradeoff makes sense for your use case.</p>
 <div class="admonition tip">
 <p class="admonition-title">TL;DR</p>
 <p>Titan is a <strong>distributed task scheduler</strong>, a <strong>service orchestrator</strong>, and an <strong>agentic runtime</strong> — in one lightweight binary. It does not replace Kubernetes or Temporal in production today, and it is not a managed service. It is a self-hosted, single-Master, research-grade runtime (v1.0) designed for teams that want to own their execution substrate.</p>
@@ -2691,12 +2691,12 @@
 <h3 id="tier-1-distributed-task-scheduler">Tier 1 — Distributed Task Scheduler</h3>
 <p>You can use Titan purely as a remote job runner. The CLI and Python SDK let you submit standalone scripts, static YAML pipelines, or programmatically defined DAGs to the cluster — Titan handles dispatch, capability routing, retries, and crash recovery.</p>
 <p><strong>Use this tier when:</strong> you have batch workloads, ETL pipelines, ML training jobs, or any "run this graph of scripts across these machines" problem.</p>
-<p><strong>Key features:</strong> YAML pipelines, Python SDK, GPU/CPU capability tags, affinity routing, AOF-based crash recovery, MapReduce patterns.</p>
+<p><strong>Key features:</strong> YAML pipelines, Python SDK, GPU/CPU capability tags, affinity routing, AOF-backed state recovery on Master restart, fan-out/fan-in patterns.</p>
 <p><a href="../examples/yaml/">→ Static Pipelines (YAML)</a> · <a href="../examples/comp-intel-pipeline/">→ Parallel Analyst Pipeline</a></p>
 <h3 id="tier-2-service-orchestrator">Tier 2 — Service Orchestrator</h3>
 <p>The same runtime that schedules batch jobs can deploy long-running services. Pass <code>isPermanent=true</code> to a worker and it becomes a protected node; deploy a service payload to it with port management and auto-restart on crash.</p>
 <p><strong>Use this tier when:</strong> you want a single substrate for both your batch jobs and your sidecar / always-on services — similar to what Nomad provides for mixed workloads.</p>
-<p><strong>Key features:</strong> Permanent workers, port management, auto-restart, capability tagging for service nodes.</p>
+<p><strong>Key features:</strong> Permanent workers, port management, capability tagging for service nodes. Workers re-register with the Master after job completion — note this is process re-registration, not OS-level service management.</p>
 <p><a href="../getting-started/">→ Getting Started</a></p>
 <h3 id="tier-3-agentic-runtime">Tier 3 — Agentic Runtime</h3>
 <p>Titan's most differentiated mode. Tasks can inspect logs, call LLMs, mutate the DAG at runtime, spawn new tasks on different hardware, and use TitanStore as shared agent memory. Combined with native HITL gates, this is a full substrate for autonomous and semi-autonomous AI agents distributed across a cluster.</p>
