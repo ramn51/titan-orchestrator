@@ -1,0 +1,118 @@
+/* ─────────────────────────────────────────────────────────────
+   Titan Orchestrator — Custom Theme Overrides
+   ───────────────────────────────────────────────────────────── */
+
+/* ── 1. Background — dark but not black, VS Code level ───────── */
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color:        #1e1e2e;
+  --md-default-fg-color:        #cdd6f4;
+  --md-default-fg-color--light: #a6adc8;
+  --md-code-bg-color:           #181825;
+  --md-footer-bg-color:         #181825;
+}
+
+/* ── 2. Vibrant green primary ────────────────────────────────── */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color:        #00c853;
+  --md-primary-fg-color--light: #00e676;
+  --md-primary-fg-color--dark:  #009624;
+  --md-primary-bg-color:        #ffffff;
+  --md-accent-fg-color:         #00e676;
+}
+
+/* ── 3. Header — rich dark with green tint, not black ────────── */
+[data-md-color-scheme="slate"] .md-header {
+  background-color: #3d7a52;
+  box-shadow: 0 2px 10px rgba(0, 200, 83, 0.25);
+}
+
+[data-md-color-scheme="slate"] .md-tabs {
+  background-color: #356b47;
+}
+
+[data-md-color-scheme="slate"] .md-tabs__link {
+  color: #d0f0dc;
+  opacity: 1;
+}
+
+[data-md-color-scheme="slate"] .md-tabs__link--active,
+[data-md-color-scheme="slate"] .md-tabs__link:hover {
+  color: #ffffff;
+}
+
+/* Header title and icons */
+[data-md-color-scheme="slate"] .md-header__title,
+[data-md-color-scheme="slate"] .md-header__button {
+  color: #ffffff;
+}
+
+/* ── 4. Sidebar ──────────────────────────────────────────────── */
+[data-md-color-scheme="slate"] .md-sidebar {
+  background-color: #1a1a2e;
+}
+
+/* ── 5. Nav items — unselected clear, selected vibrant ─────────  */
+[data-md-color-scheme="slate"] .md-nav__link {
+  color: #b0bec5;
+}
+
+[data-md-color-scheme="slate"] .md-nav__link:hover {
+  color: #e0e0e0;
+}
+
+[data-md-color-scheme="slate"] .md-nav__item--active > .md-nav__link {
+  color: #00e676;
+  font-weight: 600;
+}
+
+/* ── 6. Nav section titles — bright and distinct ─────────────── */
+[data-md-color-scheme="slate"] .md-nav__title {
+  color: #cdd6f4;
+  font-weight: 700;
+}
+
+[data-md-color-scheme="slate"] .md-nav__item--section > .md-nav__link {
+  color: #7dd4d8;
+  font-weight: 700;
+  font-size: 0.76rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+[data-md-color-scheme="slate"] .md-nav__link {
+  color: #c8d8e8;
+}
+
+[data-md-color-scheme="slate"] .md-nav__link:hover {
+  color: #ffffff;
+}
+
+/* ── 7. Content area ─────────────────────────────────────────── */
+[data-md-color-scheme="slate"] .md-content {
+  background-color: #1e1e2e;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h1 { color: #cdd6f4; }
+[data-md-color-scheme="slate"] .md-typeset h2 { color: #b0c4de; }
+[data-md-color-scheme="slate"] .md-typeset h3 { color: #a0b4c8; }
+
+/* ── 8. Tables ───────────────────────────────────────────────── */
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
+  background-color: #181825;
+  color: #cdd6f4;
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) td,
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
+  border-color: #313244;
+}
+
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) tr:hover {
+  background-color: #232336;
+}
+
+/* ── 9. Admonition accent ────────────────────────────────────── */
+[data-md-color-scheme="slate"] .md-typeset .admonition,
+[data-md-color-scheme="slate"] .md-typeset details {
+  border-color: #00c853;
+}
