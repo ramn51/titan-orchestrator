@@ -11,7 +11,7 @@
       
       
       
-        <link rel="prev" href="../reference/rpc-spec/">
+        <link rel="prev" href="../integrations/langchain/">
       
       
         <link rel="next" href="../architecture/design/">
@@ -347,6 +347,46 @@
   
   
   📚 API and SDK Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../mcp/overview/" class="md-tabs__link">
+          
+  
+  
+  🤖 MCP / Agent Access
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../integrations/langchain/" class="md-tabs__link">
+          
+  
+  
+  🔗 Integrations
 
         </a>
       </li>
@@ -1735,6 +1775,184 @@
       
   
   
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🤖 MCP / Agent Access
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🤖 MCP / Agent Access
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview & Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🔗 Integrations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🔗 Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/langchain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LangChain / LangGraph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -1954,10 +2172,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
             
   
   
@@ -1975,8 +2193,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2443,7 +2661,7 @@
 </tr>
 <tr>
 <td><strong>Agentic workflows (tasks spawn tasks at runtime)</strong></td>
-<td>✅ First-class</td>
+<td>✅ Native</td>
 <td>❌</td>
 <td>❌</td>
 <td>⚠️ Possible</td>
@@ -2462,7 +2680,7 @@
 <td>✅</td>
 </tr>
 <tr>
-<td><strong>Affinity-based routing (data locality)</strong></td>
+<td><strong>Affinity-based routing (worker tag matching)</strong></td>
 <td>✅ Native</td>
 <td>❌</td>
 <td>❌</td>
@@ -2632,8 +2850,8 @@
 <tr>
 <td><strong>LangGraph / agent frameworks</strong></td>
 <td>In-process agent orchestration</td>
-<td>Same agent patterns but distributed across nodes with capability routing</td>
-<td>Tight LLM provider integration, prebuilt agent patterns</td>
+<td>Agent logic runs distributed across worker nodes; TitanStore for cross-node state; HITL gates</td>
+<td>LangGraph's tight LLM provider integration, prebuilt agent patterns, single-process simplicity</td>
 </tr>
 <tr>
 <td><strong>A custom in-house DAG runner</strong></td>
@@ -2699,7 +2917,7 @@
 <p><strong>Key features:</strong> Permanent workers, port management, capability tagging for service nodes. Workers re-register with the Master after job completion — note this is process re-registration, not OS-level service management.</p>
 <p><a href="../getting-started/">→ Getting Started</a></p>
 <h3 id="tier-3-agentic-runtime">Tier 3 — Agentic Runtime</h3>
-<p>Titan's most differentiated mode. Tasks can inspect logs, call LLMs, mutate the DAG at runtime, spawn new tasks on different hardware, and use TitanStore as shared agent memory. Combined with native HITL gates, this is a full substrate for autonomous and semi-autonomous AI agents distributed across a cluster.</p>
+<p>Titan's agentic mode. Tasks can inspect logs, call LLMs, mutate the DAG at runtime, spawn new tasks on different hardware, and use TitanStore as shared agent memory. Combined with native HITL gates, this is a runtime for distributed agent workflows with dynamic task generation and human-in-the-loop checkpoints.</p>
 <p><strong>Use this tier when:</strong> you're building agentic systems that need to run distributed (not in one Python process), with dynamic task generation, shared state, and human-in-the-loop checkpoints.</p>
 <p><strong>Key features:</strong> Dynamic DAG mutation, LLM-driven self-healing loops, TitanStore as agent memory, HITL Approve/Reject gates, multi-agent fan-out and synthesis.</p>
 <p><a href="../examples/agentic/">→ Agentic Examples</a> · <a href="../examples/research-pipeline/">→ Multi-Agent Research Pipeline</a> · <a href="../examples/hitl/">→ HITL Pipelines</a></p>
