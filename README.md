@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>A self-hosted distributed runtime for DAGs, services, and agentic workflows — shipped as a single zero-dependency JAR.</b>
+  <b>A distributed execution runtime built from first principles — custom TCP protocol, DAG scheduler, AOF-backed store, and agentic runtime in a single zero-dependency JAR.</b>
 </p>
 
 <p align="center">
@@ -22,7 +22,9 @@
 
 ---
 
-Titan is a distributed execution runtime built from first principles. Define jobs in YAML or Python, and Titan handles capability routing, dependency execution, and crash recovery across your cluster — from a nightly ETL pipeline to a multi-agent LLM workflow.
+Titan is a distributed execution runtime with a custom DAG scheduler, binary wire protocol, AOF-backed KV store, and agentic execution engine. The core engine is a single JAR with zero external dependencies — it schedules, routes, and executes across a cluster with nothing else installed. The dashboard (Flask) and MCP server (`mcp` package) are optional extensions on top. It runs on a bare VM or laptop.
+
+Submit jobs in YAML or Python. Titan resolves dependencies, routes to capable workers, streams logs back, and recovers from crashes via AOF replay. At the agentic tier, tasks can spawn new tasks mid-execution, share state across nodes through TitanStore, and pause for human approval before continuing.
 
 It covers three capability tiers in one binary:
 
@@ -194,10 +196,16 @@ Titan executes the parallel jobs, fans results into a synthesis job, and returns
 - Dynamic DAG mutation at runtime — tasks can spawn new tasks mid-execution
 - Long-running services alongside batch jobs in one runtime
 
-**Routing**
-- Capability-based routing — tag workers `GPU`, `HIGH_MEM`, or custom; jobs wait for a matching node
+**Routing & Scaling**
+- Capability-based routing — tag workers `GPU`, `HIGH_MEM`, or custom; jobs are held until a matching node is free
 - Affinity routing — pin jobs to specific workers by tag
 - Least-connection dispatch across available workers
+- Reactive auto-scaling — when a worker's queue saturates, it spawns child worker processes on the same machine to absorb the spike; idle burst workers decommission automatically after 45 seconds
+
+**Worker Lifecycle**
+- Permanent vs. ephemeral workers — mark nodes as permanent so they stay alive across job completions; burst workers exit when idle
+- Workers re-register with the Master on reconnect — the cluster heals through a Master restart without manual intervention
+- Orphan cleanup on startup — workers scan for and kill leftover processes from a previous crash before accepting new work
 
 **Resilience**
 - AOF crash recovery — Master replays state on restart, resumes in-flight DAGs

@@ -50,13 +50,21 @@ import java.util.Scanner;
     /** Prints a list of available commands and their basic usage to the console. This method is called when the user types 'help'. **/
     private void printHelp() {
         System.out.println("Commands:");
-        System.out.println("  upload <local_path>  - Upload a file to server storage (perm_files)");
-        System.out.println("  deploy <filename> [port] - Start a service/worker using a file on server");
-        System.out.println("  run <filename>       - Execute a one-off script existing on server");
-        System.out.println("  stats                - View cluster status");
-        System.out.println("  stop <service_id>    - Stop a running service");
-        System.out.println("  shutdown <port>      - Kill a specific worker node");
-        System.out.println("  dag <dag_string>     - Submit raw DAG");
+        System.out.println("  upload <local_path>              - Upload a file to server storage (perm_files)");
+        System.out.println("  deploy <filename> [port] [req]   - Start a service/worker using a file on server");
+        System.out.println("  run <filename> [requirement]     - Execute a one-off script existing on server");
+        System.out.println("  stats                            - View cluster status (text)");
+        System.out.println("  json                             - View cluster status (JSON)");
+        System.out.println("  dag <dag_string>                 - Submit raw DAG");
+        System.out.println("  status <job_id>                  - Get status of a job (e.g. status DAG-myjob)");
+        System.out.println("  logs <job_id>                    - Fetch stdout/stderr for a job");
+        System.out.println("  cancel <job_id>                  - Cancel a running or queued job");
+        System.out.println("  approve <gate_id>                - Approve a HITL gate (e.g. approve hitl-gate-preprocess)");
+        System.out.println("  reject <gate_id>                 - Reject a HITL gate");
+        System.out.println("  store get <key>                  - Read a value from TitanStore");
+        System.out.println("  store set <key> <value>          - Write a value to TitanStore");
+        System.out.println("  stop <service_id>                - Stop a running service");
+        System.out.println("  shutdown <host> <port>           - Kill a specific worker node");
         System.out.println("  exit");
     }
 
@@ -179,6 +187,77 @@ Supported commands include `stats`, `upload`, `submit`, `dag`, `run`, `deploy`, 
             opCode = TitanProtocol.OP_DEPLOY;
             // Payload: "filename|port"
             payload = filename + "|" + targetPort+ "|" + requirement;
+        }
+        else if (input.startsWith("status ")) {
+            String jobId = input.substring(7).trim();
+            if (jobId.isEmpty()) {
+                System.out.println("[FAIL] Usage: status <job_id>");
+                return;
+            }
+            // Ensure DAG- prefix
+            if (!jobId.startsWith("DAG-")) jobId = "DAG-" + jobId;
+            opCode = TitanProtocol.OP_GET_JOB_STATUS;
+            payload = jobId;
+        }
+        else if (input.startsWith("logs ")) {
+            String jobId = input.substring(5).trim();
+            if (jobId.isEmpty()) {
+                System.out.println("[FAIL] Usage: logs <job_id>");
+                return;
+            }
+            if (!jobId.startsWith("DAG-")) jobId = "DAG-" + jobId;
+            opCode = TitanProtocol.OP_GET_LOGS;
+            payload = jobId;
+        }
+        else if (input.startsWith("cancel ")) {
+            String jobId = input.substring(7).trim();
+            if (jobId.isEmpty()) {
+                System.out.println("[FAIL] Usage: cancel <job_id>");
+                return;
+            }
+            if (!jobId.startsWith("DAG-")) jobId = "DAG-" + jobId;
+            opCode = TitanProtocol.OP_CANCEL_JOB;
+            payload = jobId;
+        }
+        else if (input.startsWith("approve ")) {
+            String gateId = input.substring(8).trim();
+            if (gateId.isEmpty()) {
+                System.out.println("[FAIL] Usage: approve <gate_id>  (e.g. approve hitl-gate-preprocess)");
+                return;
+            }
+            opCode = TitanProtocol.OP_KV_SET;
+            payload = "titan:hitl:status:" + gateId + "|APPROVED";
+        }
+        else if (input.startsWith("reject ")) {
+            String gateId = input.substring(7).trim();
+            if (gateId.isEmpty()) {
+                System.out.println("[FAIL] Usage: reject <gate_id>  (e.g. reject hitl-gate-preprocess)");
+                return;
+            }
+            opCode = TitanProtocol.OP_KV_SET;
+            payload = "titan:hitl:status:" + gateId + "|REJECTED";
+        }
+        else if (input.startsWith("store ")) {
+            String[] parts = input.substring(6).trim().split("\\s+", 3);
+            if (parts.length < 2) {
+                System.out.println("[FAIL] Usage: store get <key>  |  store set <key> <value>");
+                return;
+            }
+            String subCmd = parts[0];
+            if (subCmd.equalsIgnoreCase("get")) {
+                opCode = TitanProtocol.OP_KV_GET;
+                payload = parts[1];
+            } else if (subCmd.equalsIgnoreCase("set")) {
+                if (parts.length < 3) {
+                    System.out.println("[FAIL] Usage: store set <key> <value>");
+                    return;
+                }
+                opCode = TitanProtocol.OP_KV_SET;
+                payload = parts[1] + "|" + parts[2];
+            } else {
+                System.out.println("[FAIL] Unknown store subcommand. Use: store get <key>  |  store set <key> <value>");
+                return;
+            }
         }
         else if (input.startsWith("stop ")) {
             opCode = TitanProtocol.OP_STOP;
