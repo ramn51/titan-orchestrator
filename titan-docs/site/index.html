@@ -585,6 +585,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ways-to-define-a-dag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ways to Define a DAG
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-capability-spectrum" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -718,6 +729,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mcp-agent-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP / Agent Access
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MCP / Agent Access">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#langchain-langgraph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LangChain / LangGraph
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deployment" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -732,7 +771,7 @@
   <a href="#api-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API &amp; Reference
+        API &amp; SDK Reference
       
     </span>
   </a>
@@ -2413,6 +2452,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#ways-to-define-a-dag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ways to Define a DAG
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#the-capability-spectrum" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2546,6 +2596,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#mcp-agent-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP / Agent Access
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MCP / Agent Access">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#langchain-langgraph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LangChain / LangGraph
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deployment" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2560,7 +2638,7 @@
   <a href="#api-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        API &amp; Reference
+        API &amp; SDK Reference
       
     </span>
   </a>
@@ -2620,6 +2698,20 @@
 <p class="admonition-title">Ready to dive in?</p>
 <p>Skip the reading and jump straight into the code. Follow our <strong><a href="getting-started/">5-Minute Quickstart</a></strong> to run your first distributed task, or view the <strong><a href="reference/sdk/">Python SDK Reference</a></strong>.</p>
 </div>
+<hr />
+<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:1rem;">
+  <a href="#architecture-overview" class="md-button md-button--primary" style="font-size:.8em; padding:4px 12px;">Architecture</a>
+  <a href="#ways-to-define-a-dag" class="md-button" style="font-size:.8em; padding:4px 12px;">Define a DAG</a>
+  <a href="#mcp-agent-access" class="md-button" style="font-size:.8em; padding:4px 12px;">MCP / Agents</a>
+  <a href="#built-in-dashboard" class="md-button" style="font-size:.8em; padding:4px 12px;">Dashboard</a>
+  <a href="#demos" class="md-button" style="font-size:.8em; padding:4px 12px;">Demos</a>
+  <a href="#examples" class="md-button" style="font-size:.8em; padding:4px 12px;">Examples</a>
+  <a href="#deployment" class="md-button" style="font-size:.8em; padding:4px 12px;">Deployment</a>
+  <a href="#api-reference" class="md-button" style="font-size:.8em; padding:4px 12px;">API & SDK</a>
+  <a href="#roadmap-to-v20" class="md-button" style="font-size:.8em; padding:4px 12px;">Roadmap</a>
+</div>
+
+<hr />
 <p><img alt="Titan Dashboard" src="screenshots/dashboard_orchestrator.png" /></p>
 <h3 id="live-pipeline-visibility-dag-pipelines-view">Live Pipeline Visibility — DAG Pipelines View</h3>
 <p>Every pipeline submitted to the cluster — via CLI, SDK, YAML, or the visual Constructor — is automatically rendered as a live dependency graph with real-time execution status per node.</p>
@@ -2636,6 +2728,42 @@
 <p>Titan is fully functional without TitanStore — core execution and routing work without it, but you lose state recovery and SDK-driven KV operations.</p>
 </blockquote>
 <p><a class="md-button" href="architecture/design/">🧠 Architecture Deep Dive</a></p>
+<hr />
+<hr />
+<h2 id="ways-to-define-a-dag">Ways to Define a DAG</h2>
+<p>Titan accepts pipeline definitions in four forms — pick whatever fits your workflow:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Best for</th>
+<th>Where to start</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>YAML file</strong></td>
+<td>Repeatable, version-controlled pipelines. Define jobs, dependencies, requirements, and priorities in a declarative file. Commit to git and re-run any time.</td>
+<td><a href="examples/yaml/">Static YAML Pipelines</a></td>
+</tr>
+<tr>
+<td><strong>Python SDK</strong></td>
+<td>Programmatic pipelines where the shape is determined at runtime — agent loops, conditional branching, dynamic fan-out. Full control in code.</td>
+<td><a href="reference/sdk/">SDK Reference</a></td>
+</tr>
+<tr>
+<td><strong>Visual Constructor</strong></td>
+<td>Building pipelines without writing code. Drag nodes, draw edges, set scripts — then deploy directly to the cluster in one click. Auto-generates the equivalent YAML and SDK code.</td>
+<td><a href="constructor/overview/">DAG Constructor</a></td>
+</tr>
+<tr>
+<td><strong>MCP (natural language)</strong></td>
+<td>Controlling Titan from Claude Desktop, Cursor, or any MCP-compatible AI client. Describe what you want — the agent writes the scripts and submits the DAG on your behalf.</td>
+<td><a href="mcp/overview/">MCP / Agent Access</a></td>
+</tr>
+</tbody>
+</table>
+<p>All four paths produce the same result on the cluster — a DAG tracked in the visualizer, with per-job logs, status, and workspace files.</p>
 <hr />
 <div class="admonition question">
 <p class="admonition-title">Wondering how Titan compares to Airflow, Dagster, Ray, or Temporal?</p>
@@ -2771,6 +2899,57 @@
 </table>
 <p><a class="md-button" href="examples/agentic/">💡 View All Examples</a></p>
 <hr />
+<hr />
+<h2 id="mcp-agent-access">MCP / Agent Access</h2>
+<p>Titan ships with a built-in <a href="mcp/overview/">MCP server</a> — connect any MCP-compatible client (Claude Desktop, Cursor) and control your cluster in natural language.</p>
+<p><strong>Why use MCP over the SDK directly?</strong></p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Use MCP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>You want to submit and monitor pipelines without writing code</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Your pipeline shape isn't known upfront — the agent decides at runtime</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>You need a durable HITL approval flow in a chat conversation</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>You want to schedule recurring pipelines without a separate cron setup</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>You're building automated pipelines in code</td>
+<td>No — use the SDK or LangChain directly</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Real example:</strong> ask Claude Desktop to audit 10 doc pages in parallel, fan results into a consolidation job, and render a rated report — all from one sentence. Titan executed a 12-job DAG; Claude never left the chat window.</p>
+<p><a class="md-button" href="mcp/overview/">🤖 MCP Setup &amp; Use Cases</a></p>
+<h3 id="langchain-langgraph">LangChain / LangGraph</h3>
+<p>If you're building agent pipelines in code rather than through an interactive client, wrap the Titan SDK as LangChain tools and use any LLM. No MCP needed — <code>TitanClient</code> is called directly.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">langchain_core.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">tool</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk.titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span><span class="p">,</span> <span class="n">TitanJob</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nd">@tool</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">titan_get_status</span><span class="p">(</span><span class="n">job_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the current status of a Titan job.&quot;&quot;&quot;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">prefixed</span> <span class="o">=</span> <span class="n">job_id</span> <span class="k">if</span> <span class="n">job_id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;DAG-&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;DAG-</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="k">return</span> <span class="n">client</span><span class="o">.</span><span class="n">get_job_status</span><span class="p">(</span><span class="n">prefixed</span><span class="p">)</span>
+</span></code></pre></div>
+<p>LangChain is optional — not a Titan dependency. A self-contained validation script with all five core tool wrappers is at <code>examples/langchain_titan.py</code>.</p>
+<p><a class="md-button" href="integrations/langchain/">🔗 LangChain Integration Guide</a></p>
+<hr />
 <h2 id="deployment">Deployment</h2>
 <p>Titan runs locally out of the box. When you're ready to move to the cloud:</p>
 <table>
@@ -2792,7 +2971,7 @@
 </tbody>
 </table>
 <hr />
-<h2 id="api-reference">API &amp; Reference</h2>
+<h2 id="api-reference">API &amp; SDK Reference</h2>
 <ul>
 <li><strong><a href="reference/sdk/">Python SDK Reference</a></strong> — <code>TitanClient</code>, <code>TitanJob</code>, TitanStore, artifacts, and agent patterns</li>
 <li><strong><a href="reference/cli/">CLI Commands</a></strong> — Spin up Master, boot Workers, submit jobs from the terminal</li>

@@ -9,8 +9,24 @@
 
 **A self-hosted distributed runtime for DAGs, services, and agentic workflows — shipped as a single zero-dependency JAR. Define jobs in YAML or Python, and Titan handles capability routing and dependency execution across your cluster — from a nightly ETL pipeline to a multi-agent LLM workflow.**
 
-!!! tip "Ready to dive in?" 
+!!! tip "Ready to dive in?"
     Skip the reading and jump straight into the code. Follow our **[5-Minute Quickstart](getting-started.md)** to run your first distributed task, or view the **[Python SDK Reference](reference/sdk.md)**.
+
+---
+
+<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:1rem;">
+  <a href="#architecture-overview" class="md-button md-button--primary" style="font-size:.8em; padding:4px 12px;">Architecture</a>
+  <a href="#ways-to-define-a-dag" class="md-button" style="font-size:.8em; padding:4px 12px;">Define a DAG</a>
+  <a href="#mcp-agent-access" class="md-button" style="font-size:.8em; padding:4px 12px;">MCP / Agents</a>
+  <a href="#built-in-dashboard" class="md-button" style="font-size:.8em; padding:4px 12px;">Dashboard</a>
+  <a href="#demos" class="md-button" style="font-size:.8em; padding:4px 12px;">Demos</a>
+  <a href="#examples" class="md-button" style="font-size:.8em; padding:4px 12px;">Examples</a>
+  <a href="#deployment" class="md-button" style="font-size:.8em; padding:4px 12px;">Deployment</a>
+  <a href="#api-reference" class="md-button" style="font-size:.8em; padding:4px 12px;">API & SDK</a>
+  <a href="#roadmap-to-v20" class="md-button" style="font-size:.8em; padding:4px 12px;">Roadmap</a>
+</div>
+
+---
 
 ![Titan Dashboard](screenshots/dashboard_orchestrator.png)
 
@@ -33,6 +49,23 @@ Titan consists of three components:
 > Titan is fully functional without TitanStore — core execution and routing work without it, but you lose state recovery and SDK-driven KV operations.
 
 [🧠 Architecture Deep Dive](architecture/design.md){ .md-button }
+
+---
+
+---
+
+## Ways to Define a DAG
+
+Titan accepts pipeline definitions in four forms — pick whatever fits your workflow:
+
+| Method | Best for | Where to start |
+|---|---|---|
+| **YAML file** | Repeatable, version-controlled pipelines. Define jobs, dependencies, requirements, and priorities in a declarative file. Commit to git and re-run any time. | [Static YAML Pipelines](examples/yaml.md) |
+| **Python SDK** | Programmatic pipelines where the shape is determined at runtime — agent loops, conditional branching, dynamic fan-out. Full control in code. | [SDK Reference](reference/sdk.md) |
+| **Visual Constructor** | Building pipelines without writing code. Drag nodes, draw edges, set scripts — then deploy directly to the cluster in one click. Auto-generates the equivalent YAML and SDK code. | [DAG Constructor](constructor/overview.md) |
+| **MCP (natural language)** | Controlling Titan from Claude Desktop, Cursor, or any MCP-compatible AI client. Describe what you want — the agent writes the scripts and submits the DAG on your behalf. | [MCP / Agent Access](mcp/overview.md) |
+
+All four paths produce the same result on the cluster — a DAG tracked in the visualizer, with per-job logs, status, and workspace files.
 
 ---
 
@@ -168,6 +201,48 @@ The `titan_test_suite/` directory has ready-to-run examples for every capability
 
 ---
 
+---
+
+## MCP / Agent Access
+
+Titan ships with a built-in [MCP server](mcp/overview.md) — connect any MCP-compatible client (Claude Desktop, Cursor) and control your cluster in natural language.
+
+**Why use MCP over the SDK directly?**
+
+| Situation | Use MCP |
+|---|---|
+| You want to submit and monitor pipelines without writing code | Yes |
+| Your pipeline shape isn't known upfront — the agent decides at runtime | Yes |
+| You need a durable HITL approval flow in a chat conversation | Yes |
+| You want to schedule recurring pipelines without a separate cron setup | Yes |
+| You're building automated pipelines in code | No — use the SDK or LangChain directly |
+
+**Real example:** ask Claude Desktop to audit 10 doc pages in parallel, fan results into a consolidation job, and render a rated report — all from one sentence. Titan executed a 12-job DAG; Claude never left the chat window.
+
+[🤖 MCP Setup & Use Cases](mcp/overview.md){ .md-button }
+
+### LangChain / LangGraph
+
+If you're building agent pipelines in code rather than through an interactive client, wrap the Titan SDK as LangChain tools and use any LLM. No MCP needed — `TitanClient` is called directly.
+
+```python
+from langchain_core.tools import tool
+from titan_sdk.titan_sdk import TitanClient, TitanJob
+
+@tool
+def titan_get_status(job_id: str) -> str:
+    """Get the current status of a Titan job."""
+    client = TitanClient()
+    prefixed = job_id if job_id.startswith("DAG-") else f"DAG-{job_id}"
+    return client.get_job_status(prefixed)
+```
+
+LangChain is optional — not a Titan dependency. A self-contained validation script with all five core tool wrappers is at `examples/langchain_titan.py`.
+
+[🔗 LangChain Integration Guide](integrations/langchain.md){ .md-button }
+
+---
+
 ## Deployment
 
 Titan runs locally out of the box. When you're ready to move to the cloud:
@@ -179,7 +254,7 @@ Titan runs locally out of the box. When you're ready to move to the cloud:
 
 ---
 
-## API & Reference
+## API & SDK Reference { #api-reference }
 
 * **[Python SDK Reference](reference/sdk.md)** — `TitanClient`, `TitanJob`, TitanStore, artifacts, and agent patterns
 * **[CLI Commands](reference/cli.md)** — Spin up Master, boot Workers, submit jobs from the terminal

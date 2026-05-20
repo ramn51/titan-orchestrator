@@ -59,9 +59,9 @@ Where Titan sits relative to the tools engineers most often consider alongside i
 | **Static DAGs (YAML)** | ✅ | ✅ | ✅ | ✅ | ⚠️ Code only | ⚠️ Code only | ⚠️ Job specs |
 | **Static DAGs (programmatic SDK)** | ✅ | ✅ Python | ✅ Python | ✅ Python | ✅ Multi-lang | ✅ Python | ❌ |
 | **Dynamic DAG mutation at runtime** | ✅ Native | ⚠️ DynamicTaskMapping (limited) | ⚠️ Dynamic graphs | ✅ | ✅ | ✅ | ❌ |
-| **Agentic workflows (tasks spawn tasks at runtime)** | ✅ First-class | ❌ | ❌ | ⚠️ Possible | ⚠️ Possible | ✅ | ❌ |
+| **Agentic workflows (tasks spawn tasks at runtime)** | ✅ Native | ❌ | ❌ | ⚠️ Possible | ⚠️ Possible | ✅ | ❌ |
 | **Capability-based routing (GPU/CPU/custom tags)** | ✅ Native | ⚠️ Queues / pools | ⚠️ Tags | ⚠️ Work pools | ❌ | ✅ | ✅ |
-| **Affinity-based routing (data locality)** | ✅ Native | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ |
+| **Affinity-based routing (worker tag matching)** | ✅ Native | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ |
 | **Long-running services + batch in one runtime** | ✅ | ❌ | ❌ | ❌ | ⚠️ | ✅ | ✅ |
 | **Cron / recurring schedules** | 🔜 Roadmap (delayed exec available today) | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ |
 | **Human-in-the-loop gates** | ✅ Native (Approve / Reject in dashboard) | ⚠️ Custom sensors | ⚠️ Custom | ⚠️ Custom | ⚠️ Signals | ❌ | ❌ |
@@ -88,7 +88,7 @@ Where Titan sits relative to the tools engineers most often consider alongside i
 | **Nomad** for mixed batch + service workloads | Single binary, multi-workload | Same multi-workload model with DAG dependencies and live visualization baked in | Production hardening, ACLs, Vault integration |
 | **Ray** for agentic / dynamic compute | Distributed Python primitives | DAG-first declarative deps, YAML option, built-in dashboard | Actor model, GPU memory management, ML ecosystem |
 | **Kubernetes Jobs + CronJobs** | Ubiquitous infra | Zero infra to install; works on bare VMs or laptops; DAG semantics built in | K8s ecosystem, ingress, service mesh, secrets management |
-| **LangGraph / agent frameworks** | In-process agent orchestration | Same agent patterns but distributed across nodes with capability routing | Tight LLM provider integration, prebuilt agent patterns |
+| **LangGraph / agent frameworks** | In-process agent orchestration | Agent logic runs distributed across worker nodes; TitanStore for cross-node state; HITL gates | LangGraph's tight LLM provider integration, prebuilt agent patterns, single-process simplicity |
 | **A custom in-house DAG runner** | Full control | Skip rebuilding scheduling, retry, fan-out, HITL, and dashboarding from scratch | Total control over every primitive |
 
 ---
@@ -130,7 +130,7 @@ The same runtime that schedules batch jobs can deploy long-running services. Pas
 
 ### Tier 3 — Agentic Runtime
 
-Titan's most differentiated mode. Tasks can inspect logs, call LLMs, mutate the DAG at runtime, spawn new tasks on different hardware, and use TitanStore as shared agent memory. Combined with native HITL gates, this is a full substrate for autonomous and semi-autonomous AI agents distributed across a cluster.
+Titan's agentic mode. Tasks can inspect logs, call LLMs, mutate the DAG at runtime, spawn new tasks on different hardware, and use TitanStore as shared agent memory. Combined with native HITL gates, this is a runtime for distributed agent workflows with dynamic task generation and human-in-the-loop checkpoints.
 
 **Use this tier when:** you're building agentic systems that need to run distributed (not in one Python process), with dynamic task generation, shared state, and human-in-the-loop checkpoints.
 
