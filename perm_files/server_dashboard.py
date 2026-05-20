@@ -119,6 +119,35 @@ def kv_smembers(key):
     return [m for m in raw.split(",") if m.strip()] if raw.strip() else []
 
 
+_TERMINAL_STATUSES = {"COMPLETED", "FAILED", "CANCELLED", "DEAD"}
+
+def _persist_terminal_statuses_to_manifest(registry):
+    """Write terminal job statuses back to manifest so they survive cluster restarts."""
+    manifest_path = ".titan_dag_manifest.json"
+    try:
+        existing = {}
+        if os.path.exists(manifest_path):
+            with open(manifest_path) as f:
+                existing = json.load(f)
+
+        dirty = False
+        for dag_key, dag_meta in registry.items():
+            for job_id, jmeta in dag_meta.get("job_meta", {}).items():
+                status = jmeta.get("status", "")
+                if status not in _TERMINAL_STATUSES:
+                    continue
+                entry = existing.get(job_id, {})
+                if entry.get("final_status") != status:
+                    existing.setdefault(job_id, {})["final_status"] = status
+                    dirty = True
+
+        if dirty:
+            with open(manifest_path, "w") as f:
+                json.dump(existing, f)
+    except Exception:
+        pass  # never crash the dashboard over a manifest write
+
+
 def discover_dags_from_stats(stats):
     """
     Auto-discover DAGs from OP_STATS_JSON worker history.
@@ -218,6 +247,9 @@ def discover_dags_from_stats(stats):
         # clear the reset guard so it doesn't keep getting wiped on future polls.
         if incoming_status == "COMPLETED" and meta.get("completed_at", 0) > 0:
             dag_registry[dag_key].pop("_reset_ts", None)
+
+    # Persist terminal statuses to manifest so they survive cluster restarts.
+    _persist_terminal_statuses_to_manifest(dag_registry)
 
     # Dependency-graph validation pass.
     # The worker history in Redis can contain COMPLETED entries from old runs
@@ -2058,8 +2090,12 @@ def _resolve_dag_status_from_jobs(jobs):
 
 def _resolve_dag_status_from_meta(meta):
     jobs_meta = meta.get("job_meta", {})
-    statuses  = [v.get("status", "WAITING") for v in jobs_meta.values()]
-    if not statuses:           return "PENDING"
+    # Use persisted final_status when live status is unavailable (e.g. after restart)
+    statuses = [
+        v.get("status") or v.get("final_status", "WAITING")
+        for v in jobs_meta.values()
+    ]
+    if not statuses:            return "PENDING"
     if "FAILED"    in statuses: return "FAILED"
     if "RUNNING"   in statuses: return "RUNNING"
     if "CANCELLED" in statuses: return "CANCELLED"

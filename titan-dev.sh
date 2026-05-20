@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Load environment variables from .env if present (workers inherit these)
+if [ -f "$(dirname "$0")/.env" ]; then
+    set -a
+    source "$(dirname "$0")/.env"
+    set +a
+fi
+
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'

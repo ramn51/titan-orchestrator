@@ -105,6 +105,12 @@ nav:
       - Titan CLI: reference/cli.md
       - Titan RPC Spec: reference/rpc-spec.md
 
+  - 🤖 MCP / Agent Access:
+      - Overview & Setup: mcp/overview.md
+
+  - 🔗 Integrations:
+      - LangChain / LangGraph: integrations/langchain.md
+
   - ⚖️ How Titan Compares: comparison.md
 
   - 🧠 Architecture Deep Dive:

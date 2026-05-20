@@ -21,6 +21,9 @@ setup(
     install_requires=[
         'requests'
     ],
+    extras_require={
+        'mcp': ['mcp'],
+    },
     license="Apache-2.0",
     classifiers=[
         "License :: OSI Approved :: Apache Software License",

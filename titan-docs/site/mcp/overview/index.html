@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../cli/">
+        <link rel="prev" href="../../reference/rpc-spec/">
       
       
-        <link rel="next" href="../../mcp/overview/">
+        <link rel="next" href="../../integrations/langchain/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>Titan RPC Spec - Titan Orchestrator</title>
+        <title>Overview & Setup - Titan Orchestrator</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#titan-rpc-specification-payload-translation" class="md-skip">
+        <a href="#mcp-server-titan-for-agents" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Titan RPC Spec
+              Overview & Setup
             
           </span>
         </div>
@@ -338,13 +338,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../sdk/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../reference/sdk/" class="md-tabs__link">
           
   
   
@@ -360,11 +358,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../mcp/overview/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
           
   
   
@@ -1602,31 +1602,28 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
             
   
   
@@ -1644,7 +1641,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1662,7 +1659,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sdk/" class="md-nav__link">
+      <a href="../../reference/sdk/" class="md-nav__link">
         
   
   
@@ -1718,7 +1715,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cli/" class="md-nav__link">
+      <a href="../../reference/cli/" class="md-nav__link">
         
   
   
@@ -1743,6 +1740,98 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/rpc-spec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Titan RPC Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🤖 MCP / Agent Access
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🤖 MCP / Agent Access
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
     
   
   
@@ -1762,7 +1851,7 @@
   <span class="md-ellipsis">
     
   
-    Titan RPC Spec
+    Overview & Setup
   
 
     
@@ -1780,7 +1869,7 @@
   <span class="md-ellipsis">
     
   
-    Titan RPC Spec
+    Overview & Setup
   
 
     
@@ -1806,22 +1895,44 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-execution-translation-layer" class="md-nav__link">
+  <a href="#the-mental-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🔄 The Execution Translation Layer
+        The Mental Model
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🔄 The Execution Translation Layer">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#seen-in-action" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seen in Action
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Setup">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-standard-scripts-run_payload" class="md-nav__link">
+  <a href="#1-install-the-mcp-dependency" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Standard Scripts (RUN_PAYLOAD)
+        1. Install the MCP dependency
       
     </span>
   </a>
@@ -1829,10 +1940,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-detached-services-deploy_payload" class="md-nav__link">
+  <a href="#2-add-to-claude-desktop-config" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Detached Services (DEPLOY_PAYLOAD)
+        2. Add to Claude Desktop config
       
     </span>
   </a>
@@ -1840,10 +1951,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-archive-execution-run_archive" class="md-nav__link">
+  <a href="#3-start-your-cluster" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Archive Execution (RUN_ARCHIVE)
+        3. Start your cluster
       
     </span>
   </a>
@@ -1851,10 +1962,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#4-archive-services-start_archive_service" class="md-nav__link">
+  <a href="#4-restart-claude-desktop" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Archive Services (START_ARCHIVE_SERVICE)
+        4. Restart Claude Desktop
       
     </span>
   </a>
@@ -1867,22 +1978,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-control-translation-layer" class="md-nav__link">
+  <a href="#available-tools" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🛑 The Control Translation Layer
+        Available Tools
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🛑 The Control Translation Layer">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Use Cases">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-shutting-down-a-worker" class="md-nav__link">
+  <a href="#scheduled-recurring-pipelines" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Shutting Down a Worker
+        Scheduled / Recurring Pipelines
       
     </span>
   </a>
@@ -1890,10 +2012,65 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-stopping-a-remote-service" class="md-nav__link">
+  <a href="#saved-pipelines-triggered-by-natural-language" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Stopping a Remote Service
+        Saved Pipelines Triggered by Natural Language
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynamic-pipelines-shape-determined-at-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic Pipelines — Shape Determined at Runtime
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hitl-human-in-the-loop-via-chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HITL (Human-in-the-Loop) via Chat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observability-and-debugging-via-chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observability and Debugging via Chat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional-orchestration-pipelines-that-decide-their-own-next-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional Orchestration — Pipelines That Decide Their Own Next Step
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation-and-content-review-real-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation and Content Review (Real Example)
       
     </span>
   </a>
@@ -1906,22 +2083,121 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dag-job-definition-standard" class="md-nav__link">
+  <a href="#example-requests-to-try" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🕸️ DAG Job Definition Standard
+        Example Requests to Try
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🕸️ DAG Job Definition Standard">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-to-use-titan-mcp-vs-plain-claude-gemini-chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Titan + MCP vs Plain Claude / Gemini Chat
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#real-use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real Use Cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Real Use Cases">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#field-breakdown" class="md-nav__link">
+  <a href="#1-nightly-model-evaluation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Field Breakdown
+        1. Nightly Model Evaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-data-pipeline-with-human-review-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Data Pipeline with Human Review Gate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-parallel-hyperparameter-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Parallel Hyperparameter Search
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-scheduled-weekly-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Scheduled Weekly Report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-batch-document-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Batch Document Processing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-ml-deployment-pipeline-with-gated-rollout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. ML Deployment Pipeline with Gated Rollout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-multi-model-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Multi-Model Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-ci-for-your-own-pipelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. CI for Your Own Pipelines
       
     </span>
   </a>
@@ -1934,82 +2210,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scheduler-server-rpc-endpoints" class="md-nav__link">
+  <a href="#what-mcp-unlocks-vs-direct-sdk-use" class="md-nav__link">
     <span class="md-ellipsis">
       
-        📡 Scheduler Server RPC Endpoints
+        What MCP Unlocks vs Direct SDK Use
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="📡 Scheduler Server RPC Endpoints">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#worker-cluster-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Worker &amp; Cluster Management
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#job-dag-execution" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Job &amp; DAG Execution
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#asset-file-distribution" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Asset &amp; File Distribution
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#logging-telemetry" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Logging &amp; Telemetry
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#titanstore-key-value-engine" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        TitanStore (Key-Value Engine)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#worker-node-rpc-endpoints-master-worker" class="md-nav__link">
+  <a href="#design-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ⚙️ Worker Node RPC Endpoints (Master ➡️ Worker)
+        Design Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
       
     </span>
   </a>
@@ -2020,95 +2246,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
-        
-          
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    🤖 MCP / Agent Access
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    🤖 MCP / Agent Access
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../mcp/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Overview & Setup
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -2408,22 +2545,44 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-execution-translation-layer" class="md-nav__link">
+  <a href="#the-mental-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🔄 The Execution Translation Layer
+        The Mental Model
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🔄 The Execution Translation Layer">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#seen-in-action" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Seen in Action
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Setup">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-standard-scripts-run_payload" class="md-nav__link">
+  <a href="#1-install-the-mcp-dependency" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Standard Scripts (RUN_PAYLOAD)
+        1. Install the MCP dependency
       
     </span>
   </a>
@@ -2431,10 +2590,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-detached-services-deploy_payload" class="md-nav__link">
+  <a href="#2-add-to-claude-desktop-config" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Detached Services (DEPLOY_PAYLOAD)
+        2. Add to Claude Desktop config
       
     </span>
   </a>
@@ -2442,10 +2601,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-archive-execution-run_archive" class="md-nav__link">
+  <a href="#3-start-your-cluster" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Archive Execution (RUN_ARCHIVE)
+        3. Start your cluster
       
     </span>
   </a>
@@ -2453,10 +2612,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#4-archive-services-start_archive_service" class="md-nav__link">
+  <a href="#4-restart-claude-desktop" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Archive Services (START_ARCHIVE_SERVICE)
+        4. Restart Claude Desktop
       
     </span>
   </a>
@@ -2469,22 +2628,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-control-translation-layer" class="md-nav__link">
+  <a href="#available-tools" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🛑 The Control Translation Layer
+        Available Tools
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🛑 The Control Translation Layer">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Use Cases">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-shutting-down-a-worker" class="md-nav__link">
+  <a href="#scheduled-recurring-pipelines" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Shutting Down a Worker
+        Scheduled / Recurring Pipelines
       
     </span>
   </a>
@@ -2492,10 +2662,65 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-stopping-a-remote-service" class="md-nav__link">
+  <a href="#saved-pipelines-triggered-by-natural-language" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Stopping a Remote Service
+        Saved Pipelines Triggered by Natural Language
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dynamic-pipelines-shape-determined-at-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic Pipelines — Shape Determined at Runtime
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hitl-human-in-the-loop-via-chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HITL (Human-in-the-Loop) via Chat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observability-and-debugging-via-chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Observability and Debugging via Chat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional-orchestration-pipelines-that-decide-their-own-next-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional Orchestration — Pipelines That Decide Their Own Next Step
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation-and-content-review-real-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Documentation and Content Review (Real Example)
       
     </span>
   </a>
@@ -2508,22 +2733,121 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dag-job-definition-standard" class="md-nav__link">
+  <a href="#example-requests-to-try" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🕸️ DAG Job Definition Standard
+        Example Requests to Try
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🕸️ DAG Job Definition Standard">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-to-use-titan-mcp-vs-plain-claude-gemini-chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Titan + MCP vs Plain Claude / Gemini Chat
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#real-use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real Use Cases
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Real Use Cases">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#field-breakdown" class="md-nav__link">
+  <a href="#1-nightly-model-evaluation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Field Breakdown
+        1. Nightly Model Evaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-data-pipeline-with-human-review-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Data Pipeline with Human Review Gate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-parallel-hyperparameter-search" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Parallel Hyperparameter Search
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-scheduled-weekly-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Scheduled Weekly Report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-batch-document-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Batch Document Processing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-ml-deployment-pipeline-with-gated-rollout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. ML Deployment Pipeline with Gated Rollout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-multi-model-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Multi-Model Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-ci-for-your-own-pipelines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. CI for Your Own Pipelines
       
     </span>
   </a>
@@ -2536,82 +2860,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scheduler-server-rpc-endpoints" class="md-nav__link">
+  <a href="#what-mcp-unlocks-vs-direct-sdk-use" class="md-nav__link">
     <span class="md-ellipsis">
       
-        📡 Scheduler Server RPC Endpoints
+        What MCP Unlocks vs Direct SDK Use
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="📡 Scheduler Server RPC Endpoints">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#worker-cluster-management" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Worker &amp; Cluster Management
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#job-dag-execution" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Job &amp; DAG Execution
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#asset-file-distribution" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Asset &amp; File Distribution
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#logging-telemetry" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Logging &amp; Telemetry
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#titanstore-key-value-engine" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        TitanStore (Key-Value Engine)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#worker-node-rpc-endpoints-master-worker" class="md-nav__link">
+  <a href="#design-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ⚙️ Worker Node RPC Endpoints (Master ➡️ Worker)
+        Design Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
       
     </span>
   </a>
@@ -2638,358 +2912,449 @@
   
 
 
-<h1 id="titan-rpc-specification-payload-translation">Titan RPC Specification &amp; Payload Translation</h1>
-<p>In the Titan architecture, the Master node does not simply forward messages from the Python SDK to the Worker nodes. It acts as an intelligent <strong>API Gateway</strong>. </p>
-<p>When a client submits a high-level intent, the Master intercepts the payload, injects system-generated state (such as the <code>Job_ID</code>), and translates the request into specific execution primitives for the Worker.</p>
+<h1 id="mcp-server-titan-for-agents">MCP Server — Titan for Agents</h1>
+<p>Titan ships a first-class <strong>Model Context Protocol (MCP) server</strong> that turns any MCP-compatible AI client (Claude Desktop, Cursor, custom agent loops) into a full Titan operator.</p>
+<p>The client writes the code. Titan executes it.</p>
 <hr />
-<h2 id="the-execution-translation-layer">🔄 The Execution Translation Layer</h2>
-<p>This layer handles the staging and execution of code. For many of these commands, the Master utilizes a <strong>Two-Phase Commit</strong> pattern: it first instructs the worker to stage the file, and only upon success does it send the execution command.</p>
-<h3 id="1-standard-scripts-run_payload">1. Standard Scripts (<code>RUN_PAYLOAD</code>)</h3>
-<p>When a user executes a standalone script, the Master stages the file and appends the system-generated Job ID before execution.</p>
+<h2 id="the-mental-model">The Mental Model</h2>
+<pre class="mermaid"><code>flowchart TD
+    U("You\n(natural language)")
+    C("Claude Desktop / Cursor / Agent\ngenerates job scripts on the fly")
+    M("titan_mcp_server.py\n11 MCP tools")
+    T("Titan Master\nport 9090")
+    W1("Worker\njob-1")
+    W2("Worker\njob-2")
+    W3("Worker\njob-3")
+    W4("Worker\njob-4 fan-in")
+
+    U --&gt; C
+    C --&gt;|"MCP protocol (stdio)"| M
+    M --&gt;|"TCP"| T
+    T --&gt; W1
+    T --&gt; W2
+    T --&gt; W3
+    W1 --&gt; W4
+    W2 --&gt; W4
+    W3 --&gt; W4</code></pre>
+<p>The AI client acts as the <strong>pipeline architect</strong> — it decides the DAG shape, writes the job scripts, submits them, and monitors completion. Titan handles scheduling, dependency management, parallel execution, HITL gates, and observability. Neither layer needs to know about the other's internals.</p>
+<hr />
+<h2 id="seen-in-action">Seen in Action</h2>
+<p>A real example: asking Claude Desktop to audit Titan's own documentation. One natural language prompt — Claude architects a 12-job DAG on the fly, submits it to Titan, and renders a structured report when done.</p>
+<p><strong>The query</strong> <em>(fast-typed, typos included — Titan doesn't care)</em>:</p>
+<p><img alt="MCP query in Claude Desktop" src="../../screenshots/mcp-query.png" /></p>
+<p><strong>Claude's reasoning and tool call sequence</strong> — fetches the docs index, decides the DAG shape (one fetch job → N parallel rating jobs → one consolidate job), submits it, polls status, reads consolidated output, and renders the final markdown report inline. Scored the docs at <strong>8.53 / 10</strong>:</p>
+<p><img alt="Claude MCP run sequence showing DAG submission and results" src="../../screenshots/mcp-run-sequence.png" /></p>
+<p><strong>The live DAG in Titan's dashboard</strong> — 12 jobs, all COMPLETED, fan-out shape clearly visible: <code>fetch-docs</code> feeds 10 parallel <code>rate-*</code> jobs which all feed into <code>consolidate-ratings</code>:</p>
+<p><img alt="Titan DAG view for titan-docs-rating pipeline" src="../../screenshots/mcp-dag-view.png" /></p>
+<p><strong>The consolidation job logs</strong> — <code>DAG-consolidate-ratings</code> output, showing per-section scores and the final average. Completed in 31ms after all 10 parallel rating jobs fed into it:</p>
+<p><img alt="Consolidate job logs showing per-section ratings" src="../../screenshots/mcp-logs-view.png" /></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>[CONSOLIDATE] 10 sections, avg=8.53/10
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  [ 9.3/10] getting-started
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  [   9/10] constructor
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  [   9/10] sdk-reference
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  [   9/10] comparison
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  [   9/10] contributing
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  [ 8.5/10] home
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  [ 8.5/10] cloud-deployment
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  [   8/10] examples-overview
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  [   8/10] visualizer
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  [   7/10] architecture
+</span></code></pre></div>
+<hr />
+<h2 id="setup">Setup</h2>
+<h3 id="1-install-the-mcp-dependency">1. Install the MCP dependency</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>mcp
+</span></code></pre></div>
+<h3 id="2-add-to-claude-desktop-config">2. Add to Claude Desktop config</h3>
+<p>Edit <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&quot;titan&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/path/to/titan-orchestrator/titan_sdk/titan_mcp_server.py&quot;</span><span class="p">],</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="nt">&quot;TITAN_HOST&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="nt">&quot;TITAN_PORT&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;9090&quot;</span><span class="p">,</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="nt">&quot;GEMINI_API_KEY&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;your-key-here&quot;</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">      </span><span class="p">}</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="p">}</span>
+</span></code></pre></div>
+<h3 id="3-start-your-cluster">3. Start your cluster</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>./titan-dev.sh<span class="w"> </span>up
+</span></code></pre></div>
+<h3 id="4-restart-claude-desktop">4. Restart Claude Desktop</h3>
+<p>Look for the <strong>hammer icon</strong> in the chat input — that confirms the MCP server connected and all tools are registered.</p>
+<hr />
+<h2 id="available-tools">Available Tools</h2>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ping_master</code></td>
+<td>TCP health check — confirms cluster is reachable</td>
+</tr>
+<tr>
+<td><code>submit_single_job</code></td>
+<td>Submit one Python script as a standalone job</td>
+</tr>
+<tr>
+<td><code>submit_dag_pipeline</code></td>
+<td>Submit a JSON-defined multi-job DAG with dependencies</td>
+</tr>
+<tr>
+<td><code>submit_yaml_pipeline</code></td>
+<td>Run an existing <code>.yaml</code> pipeline file</td>
+</tr>
+<tr>
+<td><code>get_job_status</code></td>
+<td>Poll a job's current state (PENDING / RUNNING / COMPLETED / FAILED)</td>
+</tr>
+<tr>
+<td><code>get_job_logs</code></td>
+<td>Fetch stdout/stderr for any job</td>
+</tr>
+<tr>
+<td><code>approve_hitl_gate</code></td>
+<td>Unblock a paused HITL gate — pipeline resumes</td>
+</tr>
+<tr>
+<td><code>reject_hitl_gate</code></td>
+<td>Reject a HITL gate — downstream jobs are cancelled</td>
+</tr>
+<tr>
+<td><code>store_get</code></td>
+<td>Read a value from TitanStore (cross-job shared KV)</td>
+</tr>
+<tr>
+<td><code>store_put</code></td>
+<td>Write a value to TitanStore</td>
+</tr>
+<tr>
+<td><code>deploy_script</code></td>
+<td>Upload a Python file to the cluster's <code>perm_files/</code></td>
+</tr>
+</tbody>
+</table>
+<p>Every DAG submitted via MCP automatically gets an <code>agent_run_id</code> and appears in the <strong>Agent Runs</strong> tab of the dashboard — fully traceable alongside SDK-submitted runs.</p>
+<hr />
+<h2 id="use-cases">Use Cases</h2>
+<h3 id="scheduled-recurring-pipelines">Scheduled / Recurring Pipelines</h3>
+<p>Titan has no built-in cron. MCP fills that gap — pair it with an agent loop to trigger any saved pipeline on a schedule:</p>
+<blockquote>
+<p>"Run my <code>weekly-report.yaml</code> pipeline every Monday at 9am and show me a summary of the results."</p>
+</blockquote>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Via Claude Code&#39;s /loop skill:</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>/loop<span class="w"> </span>1w<span class="w"> </span>submit_yaml_pipeline<span class="w"> </span>weekly-report.yaml
+</span></code></pre></div>
+<hr />
+<h3 id="saved-pipelines-triggered-by-natural-language">Saved Pipelines Triggered by Natural Language</h3>
+<p>Write your pipeline once as YAML. Invoke it anytime with plain English — no terminal, no code:</p>
+<blockquote>
+<p>"Re-run the data prep pipeline but set all jobs to priority 2."</p>
+<p>"Run the GPU training pipeline. Skip the eval step."</p>
+<p>"Run last week's pipeline again with a different input file."</p>
+</blockquote>
+<hr />
+<h3 id="dynamic-pipelines-shape-determined-at-runtime">Dynamic Pipelines — Shape Determined at Runtime</h3>
+<p>Some pipelines can't be pre-written because their structure depends on runtime input. The agent generates the DAG on the fly:</p>
+<p><strong>Example — parallel literature analysis:</strong></p>
+<pre class="mermaid"><code>flowchart TD
+    F("fetch-papers")
+    A1("analyze-gaps")
+    A2("analyze-method")
+    A3("analyze-open")
+    S("synthesize")
+
+    F --&gt; A1
+    F --&gt; A2
+    F --&gt; A3
+    A1 --&gt; S
+    A2 --&gt; S
+    A3 --&gt; S</code></pre>
+<blockquote>
+<p>"Research recent approaches to distributed ML scheduling. Analyze gaps, methodology, and open problems in parallel. Synthesize the results."</p>
+</blockquote>
+<p>Titan executes the three middle jobs <strong>concurrently</strong> — true parallel execution, visible as overlapping RUNNING states in the dashboard.</p>
+<hr />
+<h3 id="hitl-human-in-the-loop-via-chat">HITL (Human-in-the-Loop) via Chat</h3>
+<p>Submit a pipeline with a pause point. The agent waits, shows you the intermediate output, and only continues after you approve — all within the same conversation:</p>
+<blockquote>
+<p>"Run the training pipeline. After training completes, show me the validation metrics before proceeding to deploy."</p>
+</blockquote>
+<pre class="mermaid"><code>flowchart LR
+    T("train") --&gt; H{"HITL gate\n⏸ awaiting approval"}
+    H --&gt;|"approved"| D("deploy")
+    H --&gt;|"rejected"| X("cancelled")</code></pre>
+<p>The agent reads the metrics via <code>get_job_logs</code>, surfaces them in the chat, and calls <code>approve_hitl_gate</code> only after you confirm. Reject it and the deploy job is cancelled without touching production.</p>
+<hr />
+<h3 id="observability-and-debugging-via-chat">Observability and Debugging via Chat</h3>
+<p>Instead of grepping log files, just ask:</p>
+<blockquote>
+<p>"Why did the last training job fail?"</p>
+<p>"Compare the output of the two synthesis jobs from today's runs."</p>
+<p>"What did each job in yesterday's pipeline print?"</p>
+</blockquote>
+<p>The agent fetches logs, reads them, and gives you an actual answer — not a raw log dump.</p>
+<hr />
+<h3 id="conditional-orchestration-pipelines-that-decide-their-own-next-step">Conditional Orchestration — Pipelines That Decide Their Own Next Step</h3>
+<p>Static DAGs can't branch based on results. MCP adds runtime decision-making:</p>
+<blockquote>
+<p>"Run the eval job. If accuracy is above 0.92, submit the deploy pipeline. Otherwise, kick off another training round with a higher learning rate."</p>
+</blockquote>
+<p>The agent reads the job output, parses the metric, and conditionally calls <code>submit_dag_pipeline</code> with the appropriate next step. This is the core of agentic ML workflows — compute a result, make a decision, trigger the next stage.</p>
+<hr />
+<h3 id="documentation-and-content-review-real-example">Documentation and Content Review (Real Example)</h3>
+<p>One concrete use: asking Claude to audit Titan's own documentation. Claude fetched the docs index, fanned out a rating job per section (10 parallel workers), fanned back into a consolidation job, and rendered a structured markdown report — all from a single fast-typed prompt with typos.</p>
+<p>The DAG shape Claude chose unprompted:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>fetch-docs → rate-home ──────────────────┐
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>           → rate-getting-started ────── │
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>           → rate-cloud-deployment ───── │──▶ consolidate-ratings
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>           → rate-examples ──────────── │
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>           → rate-constructor ────────── │
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>           → ... (10 sections total) ───┘
+</span></code></pre></div>
+<p>Result: <strong>8.53 / 10</strong> overall score with per-section breakdowns. See the <a href="#seen-in-action">live screenshots above</a>.</p>
+<p>This isn't exactly dogfooding (the docs aren't a pipeline), but it demonstrates the pattern: <strong>use your own execution substrate for batch tasks you'd otherwise do manually.</strong> Any workload expressible as a Python script — evaluation, processing, summarisation, validation — can be submitted through MCP and tracked in the dashboard.</p>
+<hr />
+<h2 id="example-requests-to-try">Example Requests to Try</h2>
+<p>These work as-is in Claude Desktop — no need to specify job names or DAG structure. Just describe what you want:</p>
+<blockquote>
+<p>"Is the Titan cluster running? Check and tell me."</p>
+<p>"Run a quick benchmark and print the result."</p>
+<p>"Research three recent papers on a topic of your choice. Summarise each one in parallel, then combine into a single report."</p>
+<p>"Run my evaluation pipeline. Pause before the export step and show me the numbers first."</p>
+<p>"What happened in the last pipeline run? Pull the logs and explain."</p>
+<p>"Submit a job that writes today's date and system info to TitanStore, then read it back and confirm."</p>
+<p>"Run the pipeline — if the first job fails, tell me why instead of continuing."</p>
+</blockquote>
+<p>The agent decides how to structure the DAG based on your intent. You describe the goal; Titan executes it.</p>
+<hr />
+<h2 id="when-to-use-titan-mcp-vs-plain-claude-gemini-chat">When to Use Titan + MCP vs Plain Claude / Gemini Chat</h2>
+<p>Plain Claude or Gemini chat is great for one-shot questions, writing, and short code generation. The moment your task has any of these properties, you need an execution substrate like Titan:</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Plain chat</th>
+<th>Titan + MCP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Job runs longer than a few minutes</td>
+<td>Times out / loses context</td>
+<td>Runs to completion, logs persist</td>
+</tr>
+<tr>
+<td>Need to run N things simultaneously</td>
+<td>Sequential, one at a time</td>
+<td>True parallel workers</td>
+</tr>
+<tr>
+<td>Results need to survive session end</td>
+<td>Gone when you close the tab</td>
+<td>Persisted in TitanStore</td>
+</tr>
+<tr>
+<td>Need a human to approve before next step</td>
+<td>Manual, ad-hoc</td>
+<td>HITL gate baked into the pipeline</td>
+</tr>
+<tr>
+<td>Need to re-run the same pipeline next week</td>
+<td>Redo it from scratch</td>
+<td>Committed YAML, re-run any time</td>
+</tr>
+<tr>
+<td>Job needs specific hardware (GPU)</td>
+<td>No routing</td>
+<td>Worker capability matching</td>
+</tr>
+<tr>
+<td>Need an audit trail of what ran and when</td>
+<td>No logs</td>
+<td>Per-job stdout/stderr + status history</td>
+</tr>
+<tr>
+<td>Pipeline has conditional branching on output</td>
+<td>Model guesses</td>
+<td>Agent reads real output, decides</td>
+</tr>
+</tbody>
+</table>
+<p>The core rule: <strong>if the work takes real compute, real time, or real repeatability — use Titan. If it's a quick question or a one-off — chat is fine.</strong></p>
+<hr />
+<h2 id="real-use-cases">Real Use Cases</h2>
+<h3 id="1-nightly-model-evaluation">1. Nightly Model Evaluation</h3>
+<p>Run evals across multiple benchmarks in parallel every night. Collect results via TitanStore. Fan into a summary job that writes a structured report.</p>
+<pre class="mermaid"><code>flowchart TD
+    T("trigger\n(scheduled)") --&gt; B1("eval-benchmark-1")
+    T --&gt; B2("eval-benchmark-2")
+    T --&gt; B3("eval-benchmark-3")
+    B1 --&gt; R("aggregate-report\nwrites to TitanStore")
+    B2 --&gt; R
+    B3 --&gt; R</code></pre>
+<p>Why not plain chat: evals take minutes each. Running 3 in parallel overnight unattended is not possible in a chat window.</p>
+<hr />
+<h3 id="2-data-pipeline-with-human-review-gate">2. Data Pipeline with Human Review Gate</h3>
+<p>Raw data arrives. Transform it, generate a preview, pause for a human to verify quality before writing to production.</p>
+<pre class="mermaid"><code>flowchart LR
+    I("ingest") --&gt; T("transform")
+    T --&gt; P("preview-report")
+    P --&gt; G{"HITL gate\nhuman reviews"}
+    G --&gt;|"approved"| L("load-to-prod")
+    G --&gt;|"rejected"| F("flag-for-rework")</code></pre>
+<p>Why not plain chat: the gate needs to be durable — the pipeline should stay paused for hours if needed, survive a laptop sleep, and only proceed when explicitly approved.</p>
+<hr />
+<h3 id="3-parallel-hyperparameter-search">3. Parallel Hyperparameter Search</h3>
+<p>Submit 8 training jobs with different configs simultaneously. Each writes its validation metric to TitanStore under a unique key. A final job reads all metrics and picks the winner.</p>
+<pre class="mermaid"><code>flowchart TD
+    S("generate-configs") --&gt; J1("train-lr-0.001")
+    S --&gt; J2("train-lr-0.01")
+    S --&gt; J3("train-wd-0.0001")
+    S --&gt; J4("train-wd-0.001")
+    J1 --&gt; C("compare-and-select\nreads TitanStore")
+    J2 --&gt; C
+    J3 --&gt; C
+    J4 --&gt; C</code></pre>
+<p>Why not plain chat: you need actual compute running in parallel. Chat generates config suggestions but can't execute 8 training runs simultaneously and collect results.</p>
+<hr />
+<h3 id="4-scheduled-weekly-report">4. Scheduled Weekly Report</h3>
+<p>A pipeline that pulls data, processes it, and writes a summary — runs every Monday without anyone triggering it.</p>
+<blockquote>
+<p>"Run <code>weekly-summary.yaml</code> every Monday at 9am. If any job fails, show me the logs."</p>
+</blockquote>
+<p>Why not plain chat: there's no persistent scheduler in a chat session. Once you close it, nothing runs.</p>
+<hr />
+<h3 id="5-batch-document-processing">5. Batch Document Processing</h3>
+<p>Process 50 PDFs in parallel — extract structured data from each, write results to TitanStore, aggregate into a single dataset.</p>
+<pre class="mermaid"><code>flowchart TD
+    S("split-batch\n50 documents") --&gt; P1("process-doc-1..10")
+    S --&gt; P2("process-doc-11..20")
+    S --&gt; P3("process-doc-21..30")
+    S --&gt; P4("process-doc-31..40")
+    S --&gt; P5("process-doc-41..50")
+    P1 --&gt; A("aggregate\nmerge all outputs")
+    P2 --&gt; A
+    P3 --&gt; A
+    P4 --&gt; A
+    P5 --&gt; A</code></pre>
+<p>Why not plain chat: 50 documents exceed context window limits. Processing them sequentially in chat is slow and lossy. Titan fans them out across workers in parallel.</p>
+<hr />
+<h3 id="6-ml-deployment-pipeline-with-gated-rollout">6. ML Deployment Pipeline with Gated Rollout</h3>
+<p>Train → evaluate → if metrics pass threshold, deploy to staging → human approves → deploy to production.</p>
+<pre class="mermaid"><code>flowchart LR
+    TR("train") --&gt; EV("evaluate")
+    EV --&gt; CH{"metrics\npass threshold?"}
+    CH --&gt;|"yes"| ST("deploy-staging")
+    CH --&gt;|"no"| AB("abort")
+    ST --&gt; G{"HITL gate\nreview staging"}
+    G --&gt;|"approved"| PR("deploy-prod")
+    G --&gt;|"rejected"| RB("rollback")</code></pre>
+<p>Why not plain chat: the pipeline needs to run unattended for the compute-heavy steps (train/eval), then pause durably for human review of staging, then continue. Chat can't hold state across that span.</p>
+<hr />
+<h3 id="7-multi-model-comparison">7. Multi-Model Comparison</h3>
+<p>Run the same prompt or task through different model configurations in parallel. Collect outputs. Have a final job score and rank them.</p>
+<p>Why not plain chat: you'd have to run each manually, copy-paste results, and compare by eye. Titan fans out the calls, collects outputs into TitanStore, and the aggregation job produces a structured comparison.</p>
+<hr />
+<h3 id="8-ci-for-your-own-pipelines">8. CI for Your Own Pipelines</h3>
+<p>When you commit changes to a pipeline YAML, automatically trigger a test run against a known input with expected output. Gate merges behind a passing test.</p>
+<p>Why not plain chat: CI needs to be triggered automatically, run unattended, and produce a pass/fail signal. That's an execution substrate, not a chat session.</p>
+<hr />
+<h2 id="what-mcp-unlocks-vs-direct-sdk-use">What MCP Unlocks vs Direct SDK Use</h2>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Direct SDK / YAML</th>
+<th>MCP + Agent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Run a predefined pipeline</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Adjust pipeline at runtime</td>
+<td>No — static DAG</td>
+<td>Yes — agent rewrites scripts</td>
+</tr>
+<tr>
+<td>Natural language invocation</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Conditional next-step logic</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Scheduling / cron</td>
+<td>No</td>
+<td>Yes (via agent loop)</td>
+</tr>
+<tr>
+<td>HITL approval in chat</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Debugging via conversation</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Auditability (Agent Runs tab)</td>
+<td>Partial</td>
+<td>Full — every run tagged</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="design-notes">Design Notes</h2>
+<p>MCP is a well-established protocol for connecting AI models to external tools — it's the same mechanism used by many AI coding assistants and agent frameworks to call APIs, run code, and interact with external systems. Titan implements it as a thin server layer: 11 tools exposed over stdio, no state held in the server itself. Everything persists in Titan Master, TitanStore, and the dashboard manifest.</p>
+<p>Key properties of the Titan MCP server:</p>
 <ul>
-<li><strong>Client Sends (<code>OP_RUN</code>):</strong> <code>RUN_PAYLOAD | script.py | arg1 | &lt;base64_string&gt; | GPU</code></li>
-<li><strong>Master Translation Step 1 (<code>OP_STAGE</code>):</strong> <code>script.py | &lt;base64_string&gt;</code></li>
-<li><strong>Master Translation Step 2 (<code>OP_RUN</code>):</strong> <code>JOB-123 | script.py | arg1</code></li>
-</ul>
-<h3 id="2-detached-services-deploy_payload">2. Detached Services (<code>DEPLOY_PAYLOAD</code>)</h3>
-<p>Similar to script execution, but the final command instructs the Worker to launch the artifact as a detached background daemon on a specified port.</p>
-<ul>
-<li><strong>Client Sends (<code>OP_DEPLOY</code>):</strong> <code>DEPLOY_PAYLOAD | Worker.jar | &lt;base64_string&gt; | 8085</code></li>
-<li><strong>Master Translation Step 1 (<code>OP_STAGE</code>):</strong> <code>Worker.jar | &lt;base64_string&gt;</code></li>
-<li><strong>Master Translation Step 2 (<code>OP_START_SERVICE</code>):</strong> <code>Worker.jar | WRK-8085-uuid | 8085</code></li>
-</ul>
-<h3 id="3-archive-execution-run_archive">3. Archive Execution (<code>RUN_ARCHIVE</code>)</h3>
-<p>For complex projects packaged as ZIP files, the Master resolves the internal archive pointer locally to extract the specific entry point before pushing the payload to the worker.</p>
-<ul>
-<li><strong>Client Sends (<code>OP_SUBMIT_JOB</code>):</strong> <code>RUN_ARCHIVE | my_project.zip/main.py</code></li>
-<li><strong>Master Translation (<code>OP_RUN_ARCHIVE</code>):</strong> <code>JOB-123 | main.py | &lt;base64_content_of_main_py&gt;</code></li>
-</ul>
-<h3 id="4-archive-services-start_archive_service">4. Archive Services (<code>START_ARCHIVE_SERVICE</code>)</h3>
-<p>Deploys a long-running service directly from a bundled ZIP archive.</p>
-<ul>
-<li><strong>Client Sends (<code>OP_SUBMIT_JOB</code>):</strong> <code>START_ARCHIVE_SERVICE | web.zip/server.py | --prod | 8080</code></li>
-<li><strong>Master Translation (<code>OP_START_SERVICE_ARCHIVE</code>):</strong> <code>JOB-123 | server.py | 8080 | &lt;base64_content_of_server_py&gt;</code></li>
+<li><strong>Stateless bridge</strong> — the MCP server holds no state. It translates tool calls into Titan SDK calls and returns results. All persistence is in the cluster.</li>
+<li><strong>Auto-tagged runs</strong> — every DAG submitted via MCP gets a unique <code>agent_run_id</code>, so agent-submitted work is always distinguishable from SDK-submitted work in the dashboard.</li>
+<li><strong>Project-root anchored</strong> — the server always runs from the project root regardless of where the AI client launches it, so workspace paths and manifest writes resolve correctly.</li>
+<li><strong>Works alongside existing pipelines</strong> — MCP is one ingress path into Titan. Your existing YAML pipelines, SDK scripts, and Constructor-built DAGs all continue to work unchanged.</li>
 </ul>
 <hr />
-<h2 id="the-control-translation-layer">🛑 The Control Translation Layer</h2>
-<p>For administrative and lifecycle commands, the Client SDK specifies the target. The Master leverages its internal connection state to locate the exact Worker socket, simplifying the command sent over the network.</p>
-<h3 id="1-shutting-down-a-worker">1. Shutting Down a Worker</h3>
-<p>The Client only knows the Worker's IP and Port. The Master handles the socket routing.</p>
-<ul>
-<li><strong>Client Sends (<code>OP_KILL_WORKER</code>):</strong> <code>192.168.1.5|8081</code> <em>(Target definition)</em></li>
-<li><strong>Master Translation (<code>OP_KILL_WORKER</code>):</strong> <code>NOW</code> <em>(The Master identifies the correct socket and sends the immediate execution command)</em></li>
-</ul>
-<h3 id="2-stopping-a-remote-service">2. Stopping a Remote Service</h3>
-<ul>
-<li><strong>Client Sends (<code>OP_STOP</code>):</strong> <code>DAG999_job_1</code></li>
-<li><strong>Master Translation (<code>OP_STOP</code>):</strong> <code>DAG999_job_1</code> <em>(The payload remains unchanged, but the Master performs the heavy lifting of routing it strictly to the assigned Worker)</em></li>
-</ul>
-<hr />
-<h2 id="dag-job-definition-standard">🕸️ DAG Job Definition Standard</h2>
-<p>When submitting a Directed Acyclic Graph (DAG) using <code>OP_SUBMIT_DAG</code>, multiple jobs are sent as a single string separated by semicolons (<code>;</code>). To prevent data corruption, the Titan Master uses a strict <strong>Outside-In Parsing</strong> algorithm. </p>
-<p>Every individual job within a DAG must adhere to the following pipe-delimited format:</p>
-<p><code>ID | SKILL | &lt;COMMAND_PAYLOAD&gt; | PRIORITY | DELAY_MS | [DEPENDENCIES] | OPTIONAL_FLAGS</code></p>
-<h3 id="field-breakdown">Field Breakdown</h3>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Field</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Example</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>ID</code></td>
-<td style="text-align: left;">The unique identifier for the job. The Master will automatically prefix this with <code>DAG-</code> if not provided.</td>
-<td style="text-align: left;"><code>extract_data</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>SKILL</code></td>
-<td style="text-align: left;">The capability required by the Worker to execute this job.</td>
-<td style="text-align: left;"><code>GENERAL</code>, <code>GPU</code>, <code>PYTHON</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>&lt;COMMAND_PAYLOAD&gt;</code></td>
-<td style="text-align: left;">The standard execution payload.</td>
-<td style="text-align: left;"><code>RUN_PAYLOAD|calc.py|UEsDBB...</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>PRIORITY</code></td>
-<td style="text-align: left;">Integer defining queue priority (0 = Low, 1 = Normal, 2 = High).</td>
-<td style="text-align: left;"><code>1</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>DELAY_MS</code></td>
-<td style="text-align: left;">Time in milliseconds to wait before placing the job in the active queue.</td>
-<td style="text-align: left;"><code>0</code> (immediate)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>[DEPENDENCIES]</code></td>
-<td style="text-align: left;">A comma-separated list of parent Job IDs wrapped in brackets.</td>
-<td style="text-align: left;"><code>[extract_data, clean_data]</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OPTIONAL_FLAGS</code></td>
-<td style="text-align: left;">System modifiers. Currently supports <code>AFFINITY</code> or <code>STICKY</code>.</td>
-<td style="text-align: left;"><code>AFFINITY</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="scheduler-server-rpc-endpoints">📡 Scheduler Server RPC Endpoints</h2>
-<p>The <code>SchedulerServer</code> acts as the primary ingress point for the Titan cluster. It accepts formatted TCP payloads from clients and workers, dispatches them to the internal engine, and returns standardized responses.</p>
-<h3 id="worker-cluster-management">Worker &amp; Cluster Management</h3>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">OpCode</th>
-<th style="text-align: left;">Payload String Format</th>
-<th style="text-align: left;">Example Payload</th>
-<th style="text-align: left;">Engine Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>OP_REGISTER</code></td>
-<td style="text-align: left;"><code>workerPort||capability||isPerm</code></td>
-<td style="text-align: left;"><code>8081||GPU||true</code></td>
-<td style="text-align: left;">Registers a new worker node in the Scheduler's internal map.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_KILL_WORKER</code></td>
-<td style="text-align: left;"><code>HOST|PORT</code></td>
-<td style="text-align: left;"><code>192.168.1.5|8081</code></td>
-<td style="text-align: left;">Sends a fatal shutdown signal to a specific Worker JVM.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_STATS</code></td>
-<td style="text-align: left;"><em>(Empty / Ignored)</em></td>
-<td style="text-align: left;"><code></code></td>
-<td style="text-align: left;">Returns cluster statistics as a formatted string.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_STATS_JSON</code></td>
-<td style="text-align: left;"><em>(Empty / Ignored)</em></td>
-<td style="text-align: left;"><code></code></td>
-<td style="text-align: left;">Returns cluster statistics serialized as a JSON string.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_CLEAN_STATS</code></td>
-<td style="text-align: left;"><em>(Empty / Ignored)</em></td>
-<td style="text-align: left;"><code></code></td>
-<td style="text-align: left;">Clears the <code>LiveServiceMap</code> to remove stale dashboard data.</td>
-</tr>
-</tbody>
-</table>
-<h3 id="job-dag-execution">Job &amp; DAG Execution</h3>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">OpCode</th>
-<th style="text-align: left;">Payload String Format</th>
-<th style="text-align: left;">Example Payload</th>
-<th style="text-align: left;">Engine Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>OP_SUBMIT_JOB</code></td>
-<td style="text-align: left;"><code>Job_Definition_String</code></td>
-<td style="text-align: left;"><code>RUN_PAYLOAD|script.py|base64...</code></td>
-<td style="text-align: left;">Parses a single job definition and adds it to the execution queue.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_SUBMIT_DAG</code></td>
-<td style="text-align: left;"><code>job1_def;job2_def;...</code></td>
-<td style="text-align: left;"><code>job1;job2;job3</code></td>
-<td style="text-align: left;">Splits the string by <code>;</code> and submits multiple linked jobs simultaneously.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_RUN</code></td>
-<td style="text-align: left;"><code>filename|requirement</code></td>
-<td style="text-align: left;"><code>train.py|GPU</code></td>
-<td style="text-align: left;">Wraps a script from <code>perm_files</code> into a job and queues it.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_STOP</code></td>
-<td style="text-align: left;"><code>serviceId</code></td>
-<td style="text-align: left;"><code>DAG999_job_1</code></td>
-<td style="text-align: left;">Forcibly terminates a running service or process tree.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_UNREGISTER_SERVICE</code></td>
-<td style="text-align: left;"><code>serviceId</code></td>
-<td style="text-align: left;"><code>DAG999_job_1</code></td>
-<td style="text-align: left;">Silently removes a service from the Master's active tracking map.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_JOB_COMPLETE</code></td>
-<td style="text-align: left;"><code>jobId|status|result</code></td>
-<td style="text-align: left;"><code>DAG999_job_1|COMPLETED|Ok</code></td>
-<td style="text-align: left;">Triggers the Master's DAG resolution logic to unlock dependent nodes.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_GET_JOB_STATUS</code></td>
-<td style="text-align: left;"><code>jobId</code></td>
-<td style="text-align: left;"><code>DAG-test_job_123</code></td>
-<td style="text-align: left;">Queries TitanStore for the exact execution state of a job.</td>
-</tr>
-</tbody>
-</table>
-<h3 id="asset-file-distribution">Asset &amp; File Distribution</h3>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">OpCode</th>
-<th style="text-align: left;">Payload String Format</th>
-<th style="text-align: left;">Example Payload</th>
-<th style="text-align: left;">Engine Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>OP_UPLOAD_ASSET</code></td>
-<td style="text-align: left;"><code>FILENAME|BASE64_CONTENT</code></td>
-<td style="text-align: left;"><code>data.csv|UEsDBBQ...</code></td>
-<td style="text-align: left;">Decodes the Base64 stream and saves the asset directly to the <code>perm_files/</code> directory.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_FETCH_ASSET</code></td>
-<td style="text-align: left;"><code>filename</code></td>
-<td style="text-align: left;"><code>model_weights.pt</code></td>
-<td style="text-align: left;">Reads a file from <code>perm_files/</code> and returns it encoded as a Base64 string.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_DEPLOY</code></td>
-<td style="text-align: left;"><code>filename|port|requirement</code></td>
-<td style="text-align: left;"><code>Worker.jar|9050|GENERAL</code></td>
-<td style="text-align: left;">Wraps a file into a deployment job to stage and execute it on a worker.</td>
-</tr>
-</tbody>
-</table>
-<h3 id="logging-telemetry">Logging &amp; Telemetry</h3>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">OpCode</th>
-<th style="text-align: left;">Payload String Format</th>
-<th style="text-align: left;">Example Payload</th>
-<th style="text-align: left;">Engine Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>OP_LOG_STREAM</code></td>
-<td style="text-align: left;"><code>jobId|logLine</code></td>
-<td style="text-align: left;"><code>job_123|Epoch 1 complete</code></td>
-<td style="text-align: left;">Streams a single log line into the Master's in-memory buffer.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_LOG_BATCH</code></td>
-<td style="text-align: left;"><code>jobId|line1\nline2...</code></td>
-<td style="text-align: left;"><code>job_123|Line1\nLine2</code></td>
-<td style="text-align: left;">Splits a block of text by <code>\n</code> and ingests multiple log lines simultaneously.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_GET_LOGS</code></td>
-<td style="text-align: left;"><code>jobId</code></td>
-<td style="text-align: left;"><code>job_123</code></td>
-<td style="text-align: left;">Retrieves the log history from the in-memory buffer or the disk archive.</td>
-</tr>
-</tbody>
-</table>
-<h3 id="titanstore-key-value-engine">TitanStore (Key-Value Engine)</h3>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">OpCode</th>
-<th style="text-align: left;">Payload String Format</th>
-<th style="text-align: left;">Example Payload</th>
-<th style="text-align: left;">Engine Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>OP_KV_SET</code></td>
-<td style="text-align: left;"><code>key|value</code></td>
-<td style="text-align: left;"><code>model_acc|0.95</code></td>
-<td style="text-align: left;">Prepends <code>user:</code> and writes the value to the integrated database.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_KV_GET</code></td>
-<td style="text-align: left;"><code>key</code></td>
-<td style="text-align: left;"><code>model_acc</code></td>
-<td style="text-align: left;">Queries the database for <code>user:&lt;key&gt;</code> and returns the stored value.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_KV_SADD</code></td>
-<td style="text-align: left;"><code>key|member</code></td>
-<td style="text-align: left;"><code>active_users|uuid-456</code></td>
-<td style="text-align: left;">Adds a member to a distributed Set. Returns "1" (new) or "0" (exists).</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_KV_SMEMBERS</code></td>
-<td style="text-align: left;"><code>key</code></td>
-<td style="text-align: left;"><code>active_users</code></td>
-<td style="text-align: left;">Retrieves a Set and formats it as a comma-separated string.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="worker-node-rpc-endpoints-master-worker">⚙️ Worker Node RPC Endpoints (Master ➡️ Worker)</h2>
-<p>While the Scheduler manages the cluster state, the <code>RpcWorkerServer</code> listens for direct execution commands from the Master. The Worker node parses these payloads to manage local OS processes, stage files, and report telemetry.</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">OpCode</th>
-<th style="text-align: left;">Expected Payload Format</th>
-<th style="text-align: left;">Worker Action &amp; Response</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>OP_HEARTBEAT</code></td>
-<td style="text-align: left;"><em>(Empty / Ignored)</em></td>
-<td style="text-align: left;">The worker calculates its active thread count vs. <code>MAX_THREADS</code> and responds with <code>PONG | activeLoad | maxCapacity</code>.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_STAGE</code></td>
-<td style="text-align: left;"><code>filename | &lt;base64_string&gt;</code></td>
-<td style="text-align: left;">Synchronously decodes the Base64 string and writes it to the local <code>titan_workspace</code>. Returns <code>FILE_SAVED</code> or an error.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_RUN</code></td>
-<td style="text-align: left;"><code>jobId | filename | args</code></td>
-<td style="text-align: left;">Spawns a background thread to execute the script via <code>ScriptExecutorHandler</code>. Upon completion, it automatically opens a new socket to send <code>OP_JOB_COMPLETE</code> back to the Master.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_START_SERVICE</code></td>
-<td style="text-align: left;"><code>filename | serviceId | port</code></td>
-<td style="text-align: left;">Synchronously launches the file as a detached background daemon, registers the PID, and returns <code>DEPLOYED_SUCCESS</code>.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_STOP</code></td>
-<td style="text-align: left;"><code>serviceId</code></td>
-<td style="text-align: left;">Looks up the Java <code>Process</code> object in the active map and executes a recursive <code>destroyForcibly()</code> on the OS process tree.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_KILL_WORKER</code></td>
-<td style="text-align: left;"><code>NOW</code> (or any string)</td>
-<td style="text-align: left;">Triggers a 100ms busy-wait followed by a hard <code>System.exit(0)</code> to gracefully terminate the JVM.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_RUN_ARCHIVE</code></td>
-<td style="text-align: left;"><code>jobId | entryFile | &lt;base64_zip&gt;</code></td>
-<td style="text-align: left;">Synchronously unzips the payload using <code>WorkspaceManager</code>, resolves the entry file path, and executes it asynchronously.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>OP_START_SERVICE_ARCHIVE</code></td>
-<td style="text-align: left;"><code>serviceId | entryFile | port | &lt;base64_zip&gt;</code></td>
-<td style="text-align: left;">Synchronously unzips the payload, resolves the entry file, and launches it as a detached background daemon.</td>
-</tr>
-</tbody>
-</table>
+<h2 id="architecture">Architecture</h2>
+<pre class="mermaid"><code>flowchart TD
+    subgraph Client["AI Client"]
+        C("Claude Desktop / Cursor\nMCP-compatible client")
+    end
+
+    subgraph Bridge["MCP Bridge"]
+        M("titan_mcp_server.py\n11 tools · auto agent_run_id · stateless")
+    end
+
+    subgraph Cluster["Titan Cluster"]
+        T("Titan Master\nDAG scheduler · job queue · HITL gate manager")
+        KV("TitanStore\npersistent KV")
+        W1("Worker 1\nGENERAL")
+        W2("Worker 2\nGENERAL")
+        WN("Worker N\nGPU")
+    end
+
+    C --&gt;|"MCP stdio"| M
+    M --&gt;|"TCP 9090"| T
+    T &lt;--&gt; KV
+    T --&gt; W1
+    T --&gt; W2
+    T --&gt; WN</code></pre>
 
 
 
