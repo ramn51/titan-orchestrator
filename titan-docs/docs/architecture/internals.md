@@ -23,9 +23,11 @@ This header adds exactly 8 bytes of overhead per message, achieving very low lat
 
 ---
 
-## 2. TitanStore Architecture (Powered by JKRedis)
+## 2. TitanStore Architecture
 
-To eliminate the Master as a Single Point of Failure (SPOF) and provide a distributed data bus, Titan integrates **TitanStore** (built on JKRedis). It is a multi-threaded, persistent Redis clone built from scratch in Java using standard I/O (`ServerSocket`), requiring no external frameworks like Netty.
+TitanStore is a separate Java project ([RedisJava](https://github.com/ramn51/RedisJava)) that ships as a pre-built JAR (`perm_files/TitanStore.jar`). It is a multi-threaded, persistent Redis-compatible server built from scratch using standard I/O (`ServerSocket`), requiring no external frameworks like Netty.
+
+Titan connects to TitanStore via `TitanJRedisAdapter.java`, which speaks the RESP protocol over TCP (port 6379). TitanStore's source code, issues, and development are managed in its own repository — changes to the store are made there, not in the Titan orchestrator repo.
 
 
 

@@ -1,6 +1,6 @@
 # Contributing
 
-Titan is a solo-built experimental runtime. Contributions are welcome — bug fixes, docs, tests, and new examples are all useful. Large architectural changes are best discussed first in a [GitHub Discussion](https://github.com/ramn51/titan-orchestrator/discussions) before opening a PR.
+Titan is a solo-built experimental runtime. Contributions are welcome — bug fixes, docs, tests, new examples, and new capabilities (execution drivers, scheduling policies, integration layers) are all useful. If you've built something on top of Titan that you think belongs in the core, open a PR. Large architectural changes are best discussed first in a [GitHub Discussion](https://github.com/ramn51/titan-orchestrator/discussions) before starting work.
 
 ---
 

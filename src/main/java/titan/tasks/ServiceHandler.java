@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * keyed by their unique service IDs. This allows for tracking and managing active services.
  */
     private static final Map<String, Process> runningServices = new ConcurrentHashMap<>();
+    private static final java.util.Set<String> intentionallyStopped = java.util.concurrent.ConcurrentHashMap.newKeySet();
     /**
  * The base directory where service files are expected to be located and where service-related
  * logs and temporary files are stored.
@@ -251,12 +252,18 @@ import java.util.concurrent.ConcurrentHashMap;
             long pid = process.pid();
             titan.tasks.ProcessRegistry.register(serviceId, pid);
 
-            // 5. Clean up Map when process dies
+            // 5. Clean up Map when process dies — restart unless explicitly stopped
             process.onExit().thenRun(() -> {
                 runningServices.remove(serviceId);
                 titan.tasks.ProcessRegistry.unregister(serviceId);
-                System.out.println("[INFO] Service Stopped: " + serviceId);
-                parentServer.notifyMasterOfServiceStop(serviceId);
+                if (intentionallyStopped.remove(serviceId)) {
+                    System.out.println("[INFO] Service Stopped (intentional): " + serviceId);
+                    parentServer.notifyMasterOfServiceStop(serviceId);
+                } else {
+                    System.out.println("[WARN] Service Crashed: " + serviceId + " — restarting in 3s...");
+                    try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
+                    launchDetachedProcess(serviceId, executionDir, command);
+                }
             });
 
             return "DEPLOYED_SUCCESS | ID: " + serviceId + " | PID: " + process.pid();
@@ -279,6 +286,7 @@ import java.util.concurrent.ConcurrentHashMap;
     private String stopProcess(String serviceId){
         Process p = runningServices.get(serviceId);
             if(p!=null){
+                intentionallyStopped.add(serviceId);
                 p.descendants().forEach(ProcessHandle::destroyForcibly);
                 p.destroyForcibly();
                 runningServices.remove(serviceId);

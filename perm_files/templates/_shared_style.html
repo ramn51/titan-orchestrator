@@ -1,0 +1,37 @@
+<style>
+  body { background:#121212; color:#e0e0e0; font-family:'Segoe UI',sans-serif; padding:0; margin:0; }
+  a { text-decoration:none; color:inherit; }
+  a:hover { text-decoration:underline; color:#64b5f6; }
+
+  /* NAV */
+  .topnav { background:#1a1a2e; border-bottom:1px solid #333; padding:0 24px; display:flex; align-items:center; gap:0; }
+  .topnav-brand { font-size:15px; font-weight:700; letter-spacing:1px; padding:10px 20px 10px 0; color:#fff; border-right:1px solid #333; margin-right:8px; display:flex; align-items:center; }
+  .topnav a.tab { padding:14px 18px; font-size:13px; color:#aaa; border-bottom:3px solid transparent; display:inline-block; }
+  .topnav a.tab:hover { color:#fff; text-decoration:none; }
+  .topnav a.tab.active { color:#64b5f6; border-bottom-color:#64b5f6; }
+  .topnav-right { margin-left:auto; display:flex; align-items:center; gap:10px; font-size:12px; color:#777; }
+  .conn-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+
+  .page-wrap { padding:20px 24px; }
+
+  /* Cards */
+  .card { background:#1e1e1e; border:1px solid #333; border-radius:8px; padding:20px; }
+
+  /* Badges */
+  .badge { font-weight:600; font-size:11px; padding:2px 8px; border-radius:99px; display:inline-flex; align-items:center; gap:4px; }
+  .badge-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+  .b-COMPLETED { background:rgba(0,230,118,0.1); color:#00e676; }
+  .b-RUNNING   { background:rgba(255,183,77,0.12); color:#ffb74d; }
+  .b-WAITING   { background:rgba(120,120,160,0.12); color:#9090b0; }
+  .b-FAILED    { background:rgba(255,82,82,0.1); color:#ff5252; }
+  .b-CANCELLED { background:rgba(255,160,0,0.1); color:#ffa000; }
+  .b-PENDING   { background:rgba(120,120,160,0.12); color:#9090b0; }
+
+  .req-gpu { background:#2a1040; color:#ce93d8; font-size:10px; padding:1px 7px; border-radius:99px; font-weight:500; }
+  .req-gen { background:#1e2a1e; color:#81c784; font-size:10px; padding:1px 7px; border-radius:99px; font-weight:500; }
+
+  /* Section label */
+  .sec-title { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:#555; margin:14px 0 8px; border-bottom:1px solid #2a2a2a; padding-bottom:4px; }
+
+  @keyframes pulse { 0%{opacity:1;box-shadow:0 0 0 0 rgba(255,183,77,.7)} 70%{opacity:.8;box-shadow:0 0 0 6px rgba(255,183,77,0)} 100%{opacity:1;box-shadow:0 0 0 0 rgba(255,183,77,0)} }
+</style>

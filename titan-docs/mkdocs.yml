@@ -66,12 +66,29 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
 
 nav:
-  - 🏠 Home: index.md
-  - 🚀 Getting Started: getting-started.md
-  - ☁️ Cloud Deployment:
-      - Multi-VM Setup: deployment/cloud.md
-      - Remote GPU Worker (SSH Tunnel): deployment/remote-gpu-worker.md
-  - 💡 Examples:
+  - Home: index.md
+  - Getting Started: getting-started.md
+
+  - Defining Pipelines:
+      - YAML Pipelines: examples/yaml.md
+      - Python SDK: reference/sdk.md
+      - Visual Constructor: constructor/overview.md
+      - MCP (Natural Language): mcp/overview.md
+
+  - Dashboard:
+      - DAG Visualizer: visualizer/overview.md
+      - Monitoring & Logs: visualizer/monitoring.md
+      - HITL Approval: visualizer/hitl-approval.md
+      - Workspace Files: visualizer/workspace-files.md
+      - Agent Runs: visualizer/agent-runs.md
+      - DAG Constructor:
+          - Overview: constructor/overview.md
+          - Building DAGs: constructor/building-dags.md
+          - HITL Gates: constructor/hitl.md
+          - Managing DAGs: constructor/managing-dags.md
+          - Keyboard Shortcuts: constructor/keyboard-shortcuts.md
+
+  - Examples:
       - Overview: examples/agentic.md
       - Pipelines:
           - Static Pipelines (YAML): examples/yaml.md
@@ -85,37 +102,28 @@ nav:
           - Multi-Agent Research Pipeline: examples/research-pipeline.md
       - Advanced:
           - Titan CI Pipeline (Dogfooding): examples/titan-ci.md
-  - 🛠️ DAG Constructor:
-      - Overview: constructor/overview.md
-      - Building DAGs: constructor/building-dags.md
-      - HITL Gates: constructor/hitl.md
-      - Managing DAGs: constructor/managing-dags.md
-      - Keyboard Shortcuts: constructor/keyboard-shortcuts.md
 
-  - 📊 DAG Visualizer:
-      - Overview: visualizer/overview.md
-      - Monitoring & Logs: visualizer/monitoring.md
-      - HITL Approval: visualizer/hitl-approval.md
-      - Workspace Files: visualizer/workspace-files.md
-      - Agent Runs: visualizer/agent-runs.md
+  - Deployment:
+      - Multi-VM Cloud Setup: deployment/cloud.md
+      - Remote GPU Worker (SSH Tunnel): deployment/remote-gpu-worker.md
 
-  - 📚 API and SDK Reference:
-      - Titan SDK: reference/sdk.md
-      - Java Engine API: javadocs/docs/index.html
+  - API Reference:
+      - Python SDK: reference/sdk.md
       - Titan CLI: reference/cli.md
       - Titan RPC Spec: reference/rpc-spec.md
+      - Java Engine API: javadocs/docs/index.html
 
-  - 🤖 MCP / Agent Access:
-      - Overview & Setup: mcp/overview.md
-
-  - 🔗 Integrations:
+  - Integrations:
+      - MCP Server: mcp/overview.md
       - LangChain / LangGraph: integrations/langchain.md
 
-  - ⚖️ How Titan Compares: comparison.md
-
-  - 🧠 Architecture Deep Dive:
+  - Architecture:
       - System Design: architecture/design.md
       - TitanStore & IPC: architecture/internals.md
-  - 🤝 Contributing: contributing.md
+      - How Titan Compares: comparison.md
+
+  - Contributing:
+      - How to Contribute: contributing.md
+      - Developer Guide: contributing-dev-guide.md
 
 copyright: 'Copyright &copy; 2026 Ram Narayanan A S. Released under the <a href="https://github.com/ramn51/titan-orchestrator/blob/main/LICENSE" target="_blank">Apache 2.0 License</a>.'

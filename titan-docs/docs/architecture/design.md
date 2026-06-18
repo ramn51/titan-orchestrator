@@ -166,6 +166,22 @@ The Python SDK submits the entire DAG in one atomic binary payload. The Titan Ma
 
 ![Titan Only Sequence](../screenshots/Titan_only_Sequence.png)
 
+### Detailed Code Flows
+
+For step-by-step traces through the codebase showing exactly which file and method handles each stage of execution, see the [Developer Guide — Code Flow by Scenario](../contributing-dev-guide.md#code-flow-by-scenario). It covers:
+
+- Single job submission (SDK → Master → Worker → callback)
+- DAG chain resolution (dependency unlock sequence)
+- Fan-out/fan-in (parallel dispatch + incremental fan-in)
+- Service deployment (long-running with auto-restart)
+- HITL gate (polling, approval, downstream unlock)
+- Failure with retry and dead-letter
+- Cancel with cascade
+- Worker crash and recovery
+- MCP submission (natural language → engine)
+
+Each scenario includes a sequence diagram and a line-by-line code trace.
+
 ## 6. Limitations & Design Constraints
 
 Titan is a research runtime designed to explore the **primitives of orchestration** (Scheduling, IPC, State Management) without the complexity of existing frameworks. As such, certain "Production" features are explicitly out of scope for V1:
