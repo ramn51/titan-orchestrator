@@ -1,0 +1,3997 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A lightweight distributed execution runtime for DAGs, Agents, and Services.">
+      
+      
+      
+      
+        <link rel="prev" href="../contributing/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../screenshots/Titan_logo.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+    
+    
+      
+        <title>Developer Guide - Titan Orchestrator</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/titan.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="light-green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#developer-guide-building-on-titan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Titan Orchestrator" class="md-header__button md-logo" aria-label="Titan Orchestrator" data-md-component="logo">
+      
+  <img src="../screenshots/Titan_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Titan Orchestrator
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Developer Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="light-green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ramn51/titan-orchestrator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ramn51/titan-orchestrator
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../examples/yaml/" class="md-tabs__link">
+          
+  
+  
+  Defining Pipelines
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../visualizer/overview/" class="md-tabs__link">
+          
+  
+  
+  Dashboard
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../examples/agentic/" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../deployment/cloud/" class="md-tabs__link">
+          
+  
+  
+  Deployment
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/sdk/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../mcp/overview/" class="md-tabs__link">
+          
+  
+  
+  Integrations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../architecture/design/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../contributing/" class="md-tabs__link">
+          
+  
+  
+  Contributing
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Titan Orchestrator" class="md-nav__button md-logo" aria-label="Titan Orchestrator" data-md-component="logo">
+      
+  <img src="../screenshots/Titan_logo.png" alt="logo">
+
+    </a>
+    Titan Orchestrator
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ramn51/titan-orchestrator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ramn51/titan-orchestrator
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Defining Pipelines
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Defining Pipelines
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/yaml/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    YAML Pipelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/sdk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python SDK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../constructor/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visual Constructor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP (Natural Language)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dashboard
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Dashboard
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DAG Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monitoring & Logs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/hitl-approval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HITL Approval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/workspace-files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Workspace Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/agent-runs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Runs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DAG Constructor
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    DAG Constructor
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../constructor/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visual Constructor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../constructor/building-dags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Building DAGs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../constructor/hitl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HITL Gates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../constructor/managing-dags/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing DAGs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../constructor/keyboard-shortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/agentic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipelines
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Pipelines
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/yaml/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    YAML Pipelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/comp-intel-pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Analyst Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agentic
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Agentic
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/quickstart-agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build Your First Agent (10 min)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/research-agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Research Agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/code-gen-agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Generation Agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/hitl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Human-in-the-Loop (HITL)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/research-pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multi-Agent Research Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Advanced
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/titan-ci/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Titan CI Pipeline (Dogfooding)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deployment
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/cloud/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multi-VM Cloud Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/remote-gpu-worker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote GPU Worker (SSH Tunnel)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/sdk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python SDK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Titan CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/rpc-spec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Titan RPC Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../javadocs/docs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Java Engine API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integrations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP (Natural Language)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/langchain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LangChain / LangGraph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/internals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TitanStore & IPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How Titan Compares
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How to Contribute
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guide
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#codebase-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Codebase Map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Execution Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-dispatch-loop-schedulerjava" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Dispatch loop (Scheduler.java)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-dag-resolution-schedulerjava" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. DAG resolution (Scheduler.java)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-job-execution-rpcworkerserverjava-scriptexecutorhandlerjava" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Job execution (RpcWorkerServer.java → ScriptExecutorHandler.java)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-state-persistence-titanjredisadapterjava-titanstore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. State persistence (TitanJRedisAdapter.java → TitanStore)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threading-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wire-protocol-titan_proto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wire Protocol (TITAN_PROTO)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-scheduling-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Scheduling Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extension-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extension Points
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extension Points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-new-job-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a new job type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-new-opcode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a new opcode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-new-dashboard-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a new dashboard page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-new-scheduling-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a new scheduling policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sdk-internals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SDK Internals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state-machine-job-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State Machine — Job Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-flow-by-scenario" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code Flow by Scenario
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Code Flow by Scenario">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scenario-1-single-script-job-sdk-submit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 1: Single script job (SDK submit)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-2-dag-with-dependencies-a-b-c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 2: DAG with dependencies (A → B → C)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-3-fan-out-with-fan-in-a-bcd-e" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 3: Fan-out with fan-in (A → [B,C,D] → E)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-4-service-deployment-long-running" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 4: Service deployment (long-running)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-5-hitl-gate-pause-for-human-approval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 5: HITL gate (pause for human approval)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-6-job-failure-with-retry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 6: Job failure with retry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-7-cancel-with-cascade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 7: Cancel with cascade
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-8-worker-crash-and-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 8: Worker crash and recovery
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-9-mcp-submission-natural-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 9: MCP submission (natural language)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-gotchas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Gotchas
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-methods-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Methods Reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#codebase-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Codebase Map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Execution Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-dispatch-loop-schedulerjava" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Dispatch loop (Scheduler.java)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-dag-resolution-schedulerjava" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. DAG resolution (Scheduler.java)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-job-execution-rpcworkerserverjava-scriptexecutorhandlerjava" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Job execution (RpcWorkerServer.java → ScriptExecutorHandler.java)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-state-persistence-titanjredisadapterjava-titanstore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. State persistence (TitanJRedisAdapter.java → TitanStore)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#threading-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Threading Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wire-protocol-titan_proto" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wire Protocol (TITAN_PROTO)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-scheduling-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Scheduling Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extension-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extension Points
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extension Points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-new-job-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a new job type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-new-opcode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a new opcode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-new-dashboard-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a new dashboard page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#adding-a-new-scheduling-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a new scheduling policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sdk-internals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SDK Internals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state-machine-job-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State Machine — Job Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-flow-by-scenario" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code Flow by Scenario
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Code Flow by Scenario">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scenario-1-single-script-job-sdk-submit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 1: Single script job (SDK submit)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-2-dag-with-dependencies-a-b-c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 2: DAG with dependencies (A → B → C)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-3-fan-out-with-fan-in-a-bcd-e" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 3: Fan-out with fan-in (A → [B,C,D] → E)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-4-service-deployment-long-running" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 4: Service deployment (long-running)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-5-hitl-gate-pause-for-human-approval" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 5: HITL gate (pause for human approval)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-6-job-failure-with-retry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 6: Job failure with retry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-7-cancel-with-cascade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 7: Cancel with cascade
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-8-worker-crash-and-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 8: Worker crash and recovery
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-9-mcp-submission-natural-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 9: MCP submission (natural language)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-gotchas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Gotchas
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-methods-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Methods Reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="developer-guide-building-on-titan">Developer Guide — Building on Titan</h1>
+<p>This guide is for developers who want to understand the codebase, add features, or build new capabilities (like SAGA, new execution drivers, or custom schedulers) on top of Titan. It covers the code layout, execution model, extension points, and how the pieces fit together.</p>
+<p>If you're looking for setup instructions and PR process, see <a href="../contributing/">Contributing</a>.</p>
+<hr />
+<h2 id="codebase-map">Codebase Map</h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>titan-orchestrator/
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── src/main/java/titan/           ← Core engine (Java 17+)
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│   ├── scheduler/
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│   │   ├── Scheduler.java         ← The brain: DAG resolution, dispatch loop,
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│   │   │                             state persistence, auto-scaling, HITL
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│   │   ├── Job.java               ← Job model: state machine, metadata, DAG edges
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│   │   ├── Worker.java            ← Worker model: load, capabilities, heartbeat
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│   │   ├── WorkerRegistry.java    ← Tracks workers, capability matching
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│   │   ├── TaskExecution.java     ← Execution record (worker assignment, timing)
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│   │   └── ScheduledJob.java      ← DelayQueue wrapper for timed execution
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│   │
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│   ├── network/
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│   │   ├── TitanProtocol.java     ← Wire format: 8-byte header + payload
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>│   │   ├── SchedulerServer.java   ← Master TCP server: routes opcodes to Scheduler
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>│   │   ├── RpcWorkerServer.java   ← Worker TCP server: receives jobs, runs them
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>│   │   ├── RpcClient.java         ← Client-side TCP connector
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>│   │   └── LogBatcher.java        ← Buffers stdout lines before streaming to Master
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>│   │
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>│   ├── tasks/
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>│   │   ├── ScriptExecutorHandler  ← Spawns job scripts as child processes
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>│   │   ├── ServiceHandler.java    ← Deploys long-running services, auto-restart
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>│   │   ├── ProcessRegistry.java   ← Tracks live child processes for cleanup
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>│   │   ├── FileHandler.java       ← File transfer between Master and workers
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>│   │   └── TaskHandler.java       ← Handler interface (implement this for new types)
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>│   │
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>│   ├── storage/
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>│   │   └── TitanJRedisAdapter.java ← Redis-protocol client to TitanStore
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>│   │
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>│   ├── filesys/
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>│   │   ├── AssetManager.java      ← Manages perm_files/ (persistent scripts)
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>│   │   ├── WorkspaceManager.java  ← Per-job workspace isolation
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>│   │   └── ZipUtils.java          ← File transfer compression
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>│   │
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>│   ├── Main.java                  ← Entry point: SCHEDULER or WORKER mode
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>│   ├── TitanCLI.java             ← Interactive CLI (status, logs, approve, store)
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>│   ├── TitanMaster.java          ← Master bootstrap
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>│   └── TitanWorker.java          ← Worker bootstrap
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>│
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>├── titan_sdk/                     ← Python SDK
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>│   ├── titan_sdk.py              ← TitanClient, TitanJob, HITL injection, KV ops
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>│   ├── titan_cli.py              ← Python CLI entry point
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>│   ├── titan_mcp_server.py       ← MCP server for Claude Desktop / Cursor
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>│   └── titan_yaml_parser.py      ← YAML pipeline parser
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>│
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>├── perm_files/                    ← Persistent file storage on Master
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>│   ├── server_dashboard.py       ← Flask dashboard (routes + API)
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>│   ├── templates/                ← Dashboard HTML templates
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a>│   ├── TitanStore.jar            ← AOF-backed KV store (separate repo)
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a>│   ├── Worker.jar                ← Worker binary (copy of engine JAR)
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a>│   └── hitl_gate.py              ← HITL gate polling script
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>│
+</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a>├── titan_test_suite/              ← All examples and tests
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a>│   └── examples/
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a>│       ├── agents_examples/      ← Multi-agent pipelines (research, code gen, etc.)
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a>│       ├── dynamic_dag_custom/   ← Dynamic DAG, ETL, GPU routing examples
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a>│       ├── hitl_example/         ← HITL demo
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57" href="#__codelineno-0-57"></a>│       └── titan_ci/             ← Titan running CI on itself
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58" href="#__codelineno-0-58"></a>│
+</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59" href="#__codelineno-0-59"></a>└── titan-docs/                    ← MkDocs documentation site
+</span></code></pre></div>
+<hr />
+<h2 id="execution-model">Execution Model</h2>
+<p>Understanding these four loops is enough to work on any part of Titan.</p>
+<h3 id="1-dispatch-loop-schedulerjava">1. Dispatch loop (Scheduler.java)</h3>
+<p>The Master's main loop. Blocks on <code>taskQueue.take()</code>, finds a capable worker, sends the job.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>taskQueue.take() → selectBestWorker() → send to worker via TCP → wait for callback
+</span></code></pre></div>
+<p>All jobs flow through this single loop regardless of how they were submitted (SDK, CLI, YAML, MCP, Constructor). The queue is a <code>PriorityBlockingQueue</code> — higher priority jobs are dispatched first.</p>
+<h3 id="2-dag-resolution-schedulerjava">2. DAG resolution (Scheduler.java)</h3>
+<p>When a job with dependencies is submitted, it enters <code>dagWaitingRoom</code> instead of <code>taskQueue</code>. When a parent completes, <code>unlockChildren()</code> scans the waiting room and moves children whose dependencies are all met into <code>taskQueue</code>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>submitJob() → has parents? → dagWaitingRoom
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>completeJob() → unlockChildren() → all parents done? → taskQueue
+</span></code></pre></div>
+<h3 id="3-job-execution-rpcworkerserverjava-scriptexecutorhandlerjava">3. Job execution (RpcWorkerServer.java → ScriptExecutorHandler.java)</h3>
+<p>The worker receives a job via TCP, spawns a child process (<code>ProcessBuilder</code>), captures stdout via <code>LogBatcher</code>, and sends <code>OP_JOB_COMPLETE</code> back to the Master when the process exits.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>receive OP_RUN → ScriptExecutorHandler.execute()
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  → ProcessBuilder(&quot;python&quot;, script.py).start()
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  → stream stdout to LogBatcher → OP_LOG_BATCH to Master
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  → process exits → OP_JOB_COMPLETE callback to Master
+</span></code></pre></div>
+<h3 id="4-state-persistence-titanjredisadapterjava-titanstore">4. State persistence (TitanJRedisAdapter.java → TitanStore)</h3>
+<p>Every state transition is written to TitanStore via the RESP protocol. The adapter's <code>execute()</code> is <code>synchronized</code> — all writes are serialized. TitanStore appends every write to an AOF file. On Master restart, <code>recoverState()</code> reads back all job states and re-queues incomplete jobs.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>safeRedisSet(&quot;job:X:status&quot;, &quot;RUNNING&quot;) → TitanJRedisAdapter.execute()
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  → RESP SET command → TitanStore → AOF append
+</span></code></pre></div>
+<hr />
+<h2 id="threading-model">Threading Model</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Pool type</th>
+<th>Size</th>
+<th>What it handles</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SchedulerServer</strong></td>
+<td><code>CachedThreadPool</code></td>
+<td>Unbounded</td>
+<td>One thread per TCP connection (SDK, CLI, worker callbacks)</td>
+</tr>
+<tr>
+<td><strong>Scheduler dispatch</strong></td>
+<td>Single thread</td>
+<td>1</td>
+<td>The <code>runDispatchLoop()</code> — all dispatch decisions are single-threaded</td>
+</tr>
+<tr>
+<td><strong>Worker connection handler</strong></td>
+<td><code>CachedThreadPool</code></td>
+<td>Unbounded</td>
+<td>Incoming TCP from Master</td>
+</tr>
+<tr>
+<td><strong>Worker job execution</strong></td>
+<td><code>FixedThreadPool</code></td>
+<td><strong>4</strong> (<code>MAX_THREADS</code>)</td>
+<td>Concurrent job slots — rejects when full</td>
+</tr>
+<tr>
+<td><strong>TitanJRedisAdapter</strong></td>
+<td><code>synchronized</code></td>
+<td>Effectively 1</td>
+<td>All TitanStore access serialized through one lock</td>
+</tr>
+</tbody>
+</table>
+<p>Key implication: the dispatch loop is single-threaded, so it processes one job at a time from the queue. This is simple and safe but means dispatch throughput is bounded by the time to find a worker + send the job.</p>
+<hr />
+<h2 id="wire-protocol-titan_proto">Wire Protocol (TITAN_PROTO)</h2>
+<p>Every message between Master, workers, and clients uses the same format:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>[ Version (1 byte) | OpCode (1 byte) | Flags (1 byte) | Spare (1 byte) | Length (4 bytes) ] + [ Payload ]
+</span></code></pre></div>
+<p>8-byte fixed header + UTF-8 payload. Defined in <code>TitanProtocol.java</code>.</p>
+<p>Key opcodes:</p>
+<table>
+<thead>
+<tr>
+<th>OpCode</th>
+<th>Hex</th>
+<th>Direction</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OP_SUBMIT_DAG</code></td>
+<td>0x04</td>
+<td>Client → Master</td>
+<td>Submit a multi-job DAG</td>
+</tr>
+<tr>
+<td><code>OP_RUN</code></td>
+<td>0x06</td>
+<td>Master → Worker</td>
+<td>Execute a script</td>
+</tr>
+<tr>
+<td><code>OP_DEPLOY</code></td>
+<td>0x05</td>
+<td>Master → Worker</td>
+<td>Deploy a long-running service</td>
+</tr>
+<tr>
+<td><code>OP_JOB_COMPLETE</code></td>
+<td>0x12</td>
+<td>Worker → Master</td>
+<td>Job finished (status + result)</td>
+</tr>
+<tr>
+<td><code>OP_GET_JOB_STATUS</code></td>
+<td>0x55</td>
+<td>Client → Master</td>
+<td>Query job state</td>
+</tr>
+<tr>
+<td><code>OP_GET_LOGS</code></td>
+<td>0x16</td>
+<td>Client → Master</td>
+<td>Fetch job stdout/stderr</td>
+</tr>
+<tr>
+<td><code>OP_KV_SET</code> / <code>OP_KV_GET</code></td>
+<td>0x60/0x61</td>
+<td>Client → Master</td>
+<td>TitanStore read/write</td>
+</tr>
+<tr>
+<td><code>OP_CANCEL_JOB</code></td>
+<td>0x56</td>
+<td>Client → Master</td>
+<td>Cancel job + cascade children</td>
+</tr>
+<tr>
+<td><code>OP_LOG_BATCH</code></td>
+<td>0x17</td>
+<td>Worker → Master</td>
+<td>Streamed stdout lines</td>
+</tr>
+</tbody>
+</table>
+<p>Full list in <code>TitanProtocol.java</code>. To add a new opcode: define it there, handle it in <code>SchedulerServer.clientHandler()</code>, and add the SDK method in <code>titan_sdk.py</code>.</p>
+<hr />
+<h2 id="current-scheduling-model">Current Scheduling Model</h2>
+<p>The dispatch logic in <code>Scheduler.selectBestWorker()</code> is intentionally basic in v1:</p>
+<div class="language-java highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Simplified view of current logic</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">Worker</span><span class="w"> </span><span class="n">worker</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">availableWorkers</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">worker</span><span class="p">.</span><span class="na">isSaturated</span><span class="p">())</span><span class="w"> </span><span class="k">continue</span><span class="p">;</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">worker</span><span class="p">.</span><span class="na">getCurrentLoad</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">minLoad</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">        </span><span class="n">minLoad</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">worker</span><span class="p">.</span><span class="na">getCurrentLoad</span><span class="p">();</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">        </span><span class="n">bestWorker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">worker</span><span class="p">;</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>It picks the worker with the lowest <code>currentLoad</code> counter. If a job has <code>preferredWorkerId</code> set (affinity), it tries that worker first.</p>
+<p>What the current scheduler <strong>does not</strong> consider:</p>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Worker queue depth (jobs waiting locally)</td>
+<td>Not tracked</td>
+</tr>
+<tr>
+<td>Completion velocity (fast vs slow workers)</td>
+<td>Not tracked</td>
+</tr>
+<tr>
+<td>Network latency to worker</td>
+<td>Not measured</td>
+</tr>
+<tr>
+<td>Resource utilization (CPU/memory)</td>
+<td>Not monitored</td>
+</tr>
+<tr>
+<td>Tie-breaking (two workers at same load)</td>
+<td>First in iteration order wins</td>
+</tr>
+</tbody>
+</table>
+<p>This is a known gap. Resource-aware scheduling (factoring in actual CPU/memory usage and completion rates) is planned for a future update. If you're building on the dispatch logic, be aware that <code>currentLoad</code> is an approximation — it's incremented on dispatch and decremented on callback, not based on real worker utilization.</p>
+<p>If you want to improve the scheduler, <code>selectBestWorker()</code> in <code>Scheduler.java</code> is the single method to change. The <code>Worker</code> model already has fields for <code>currentLoad</code>, <code>capabilities</code>, <code>idleDuration</code>, and <code>port</code> — add more fields if your policy needs them (e.g., <code>avgCompletionTime</code>, <code>cpuUsage</code>).</p>
+<hr />
+<h2 id="extension-points">Extension Points</h2>
+<h3 id="adding-a-new-job-type">Adding a new job type</h3>
+<p>Implement <code>TaskHandler</code>:</p>
+<div class="language-java highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyHandler</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TaskHandler</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="nd">@Override</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">payload</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="c1">// payload format: &quot;arg1|arg2|...&quot;</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">        </span><span class="c1">// do work</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;SUCCESS&quot;</span><span class="p">;</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Register it in <code>RpcWorkerServer.addTaskHandler()</code>:</p>
+<div class="language-java highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">taskHanlderMap</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&quot;MY_TYPE&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">MyHandler</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
+</span></code></pre></div>
+<p>Submit jobs with that type by setting the payload prefix to <code>MY_TYPE|...</code>.</p>
+<h3 id="adding-a-new-opcode">Adding a new opcode</h3>
+<ol>
+<li>Define in <code>TitanProtocol.java</code>: <code>public static final byte OP_MY_THING = 0x70;</code></li>
+<li>Handle in <code>SchedulerServer.clientHandler()</code>:
+   <div class="language-java highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">case</span><span class="w"> </span><span class="n">TitanProtocol</span><span class="p">.</span><span class="na">OP_MY_THING</span><span class="p">:</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">scheduler</span><span class="p">.</span><span class="na">myMethod</span><span class="p">(</span><span class="n">payload</span><span class="p">);</span>
+</span></code></pre></div></li>
+<li>Add SDK method in <code>titan_sdk.py</code>:
+   <div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">my_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_request</span><span class="p">(</span><span class="mh">0x70</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+</span></code></pre></div></li>
+<li>Optionally add CLI command in <code>TitanCLI.java</code></li>
+</ol>
+<h3 id="adding-a-new-dashboard-page">Adding a new dashboard page</h3>
+<ol>
+<li>Create <code>perm_files/templates/my_page.html</code></li>
+<li>Add route in <code>server_dashboard.py</code>:
+   <div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/my-page&#39;</span><span class="p">)</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">my_page</span><span class="p">():</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;my_page.html&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">compute_data</span><span class="p">())</span>
+</span></code></pre></div></li>
+</ol>
+<h3 id="adding-a-new-scheduling-policy">Adding a new scheduling policy</h3>
+<p>The dispatch decision lives in <code>Scheduler.selectBestWorker()</code>. Currently it does least-connection with affinity override. To add a new policy (round-robin, weighted, response-time-aware), modify this method. The <code>Worker</code> model tracks <code>currentLoad</code>, <code>capabilities</code>, <code>idleDuration</code>, and <code>port</code> — add more fields if your policy needs them.</p>
+<hr />
+<h2 id="sdk-internals">SDK Internals</h2>
+<p>The <a href="../reference/sdk/">SDK Reference</a> covers the public API. This section covers what happens under the hood.</p>
+<p><strong>Connection model.</strong> <code>TitanClient._send_request(opcode, payload)</code> opens a fresh TCP socket to the Master for every call, sends the 8-byte TITAN_PROTO header + payload, reads the response, and closes the socket. There's no persistent connection or connection pool. This is simple but means high-frequency SDK calls (e.g., polling <code>get_job_status</code> in a tight loop) pay the TCP handshake cost every time.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>_send_request(opcode, payload)
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  └─ Socket(TITAN_HOST, TITAN_PORT)       ← new connection
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  └─ TitanProtocol.send(out, opcode, payload)
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>  └─ TitanProtocol.read(in) → response
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>  └─ socket.close()                       ← connection closed
+</span></code></pre></div>
+<p><strong>HITL injection.</strong> When you set <code>hitl_message</code> on a <code>TitanJob</code>, the SDK rewires the DAG before submission. <code>_inject_hitl_gates(jobs)</code> does this:</p>
+<ol>
+<li>Finds every job with <code>hitl_message</code> set</li>
+<li>Creates a gate job (<code>hitl-gate-{job_id}</code>) that runs <code>hitl_gate.py</code> with the gate ID and message as args</li>
+<li>Rewires all children of the original job to depend on the gate instead</li>
+<li>Clears any stale decision in TitanStore (<code>store_put("titan:hitl:status:{gate_id}", "CLEARED")</code>)</li>
+</ol>
+<p>The engine never knows about HITL — it just sees a regular DAG with an extra script job in the middle.</p>
+<p><strong>Manifest file.</strong> On every <code>submit_dag()</code> call, the SDK writes <code>.titan_dag_manifest.json</code> in the project root. This file maps DAG names to their job IDs and metadata. The dashboard reads this file to discover DAGs and group them in the sidebar. Without the manifest, DAGs are discovered from worker stats only (slower, less metadata).</p>
+<p><strong>YAML submission.</strong> <code>submit_yaml(path)</code> parses a YAML file into <code>TitanJob</code> objects using <code>titan_yaml_parser.py</code>, then calls <code>submit_dag()</code> with the result. The YAML parser handles <code>depends_on</code> fields, requirement tags, priority, and HITL message fields.</p>
+<hr />
+<h2 id="state-machine-job-lifecycle">State Machine — Job Lifecycle</h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>PENDING → RUNNING → COMPLETED
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>                  → FAILED → (retry &lt; 3) → PENDING  (re-queued)
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>                           → (retry &gt;= 3) → DEAD     (dead letter queue)
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>PENDING → CANCELLED (via cancel command, cascades to children)
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>RUNNING → CANCELLED (kill signal sent to worker)
+</span></code></pre></div>
+<p>States are stored in TitanStore as <code>job:{id}:status</code>. The <code>Job.java</code> class has an enum <code>Status</code> with these values.</p>
+<hr />
+<h2 id="code-flow-by-scenario">Code Flow by Scenario</h2>
+<p>Each trace below shows the exact path through the codebase, file by file, method by method. Follow these when debugging or extending a specific flow.</p>
+<hr />
+<h3 id="scenario-1-single-script-job-sdk-submit">Scenario 1: Single script job (SDK submit)</h3>
+<p>The simplest path. User submits one job, it runs on a worker, completes.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant U as titan_sdk.py
+    participant SS as SchedulerServer
+    participant S as Scheduler
+    participant TS as TitanStore
+    participant W as RpcWorkerServer
+    participant SE as ScriptExecutorHandler
+    participant P as Python Process
+
+    U-&gt;&gt;SS: OP_SUBMIT_DAG (TCP 9090)
+    SS-&gt;&gt;S: submitJob(job)
+    S-&gt;&gt;TS: SET job:X:status PENDING
+    S-&gt;&gt;S: taskQueue.add(job)
+    SS--&gt;&gt;U: DAG_ACCEPTED
+
+    S-&gt;&gt;S: runDispatchLoop() → take()
+    S-&gt;&gt;TS: SET job:X:status RUNNING
+    S-&gt;&gt;W: OP_RUN (TCP 8080)
+    W-&gt;&gt;SE: execute(payload)
+    SE-&gt;&gt;P: ProcessBuilder.start()
+    P--&gt;&gt;SE: stdout lines
+    SE--&gt;&gt;SS: OP_LOG_BATCH
+    P--&gt;&gt;SE: exit 0
+    SE--&gt;&gt;W: SUCCESS
+    W-&gt;&gt;SS: OP_JOB_COMPLETE
+    SS-&gt;&gt;S: handleJobCallback()
+    S-&gt;&gt;S: completeJob()
+    S-&gt;&gt;TS: SET job:X:status COMPLETED
+    S-&gt;&gt;S: unlockChildren()</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>titan_sdk.py         TitanClient.submit_dag(name, [job])
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>                       └─ _inject_hitl_gates(jobs)        ← checks for HITL, none here
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>                       └─ _build_dag_payload(name, jobs)   ← serializes to &quot;job_id|file|req|parents&quot;
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>                       └─ _send_request(OP_SUBMIT_DAG, payload)
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>                       └─ _write_dag_manifest()            ← writes .titan_dag_manifest.json for dashboard
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>                              │
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>                              ▼  TCP port 9090
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>SchedulerServer.java clientHandler(socket)
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>                       └─ TitanProtocol.read(in)           ← parse 8-byte header + payload
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>                       └─ case OP_SUBMIT_DAG:
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>                            └─ scheduler.submitDAG(payload) ← parses pipe-delimited jobs
+</span><span id="__span-14-12"><a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>                              │
+</span><span id="__span-14-13"><a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>                              ▼
+</span><span id="__span-14-14"><a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>Scheduler.java       submitJob(job)
+</span><span id="__span-14-15"><a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>                       └─ safeRedisSet(&quot;job:X:status&quot;, &quot;PENDING&quot;)
+</span><span id="__span-14-16"><a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>                       └─ safeRedisSet(&quot;job:X:payload&quot;, ...)
+</span><span id="__span-14-17"><a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>                       └─ no parents → taskQueue.add(job)
+</span><span id="__span-14-18"><a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>                              │
+</span><span id="__span-14-19"><a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a>                              ▼
+</span><span id="__span-14-20"><a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a>                     runDispatchLoop()                      ← blocked on taskQueue.take()
+</span><span id="__span-14-21"><a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a>                       └─ taskQueue.take() → got job
+</span><span id="__span-14-22"><a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a>                       └─ selectBestWorker(job, workers)
+</span><span id="__span-14-23"><a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a>                            └─ WorkerRegistry.getWorkersByCapability(&quot;GENERAL&quot;)
+</span><span id="__span-14-24"><a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a>                            └─ iterate, find lowest currentLoad
+</span><span id="__span-14-25"><a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a>                       └─ safeRedisSet(&quot;job:X:status&quot;, &quot;RUNNING&quot;)
+</span><span id="__span-14-26"><a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a>                       └─ executeJobRequest(job, worker)    ← TCP to worker
+</span><span id="__span-14-27"><a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a>                              │
+</span><span id="__span-14-28"><a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a>                              ▼  TCP port 8080
+</span><span id="__span-14-29"><a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a>RpcWorkerServer.java processCommand(payload)
+</span><span id="__span-14-30"><a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a>                       └─ taskType = &quot;RUN_SCRIPT&quot;
+</span><span id="__span-14-31"><a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a>                       └─ ScriptExecutorHandler.execute(payload)
+</span><span id="__span-14-32"><a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a>                              │
+</span><span id="__span-14-33"><a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a>                              ▼
+</span><span id="__span-14-34"><a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a>ScriptExecutorHandler  ProcessBuilder(&quot;python&quot;, script.py).start()
+</span><span id="__span-14-35"><a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a>                       └─ thread: read stdout line by line
+</span><span id="__span-14-36"><a id="__codelineno-14-36" name="__codelineno-14-36" href="#__codelineno-14-36"></a>                            └─ LogBatcher.addLog(line)
+</span><span id="__span-14-37"><a id="__codelineno-14-37" name="__codelineno-14-37" href="#__codelineno-14-37"></a>                            └─ LogBatcher flushes → OP_LOG_BATCH → SchedulerServer
+</span><span id="__span-14-38"><a id="__codelineno-14-38" name="__codelineno-14-38" href="#__codelineno-14-38"></a>                       └─ process.waitFor() → exit code 0
+</span><span id="__span-14-39"><a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a>                       └─ return &quot;SUCCESS&quot;
+</span><span id="__span-14-40"><a id="__codelineno-14-40" name="__codelineno-14-40" href="#__codelineno-14-40"></a>                              │
+</span><span id="__span-14-41"><a id="__codelineno-14-41" name="__codelineno-14-41" href="#__codelineno-14-41"></a>                              ▼
+</span><span id="__span-14-42"><a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a>RpcWorkerServer.java sendCallback(OP_JOB_COMPLETE, &quot;job-X|COMPLETED|result&quot;)
+</span><span id="__span-14-43"><a id="__codelineno-14-43" name="__codelineno-14-43" href="#__codelineno-14-43"></a>                              │
+</span><span id="__span-14-44"><a id="__codelineno-14-44" name="__codelineno-14-44" href="#__codelineno-14-44"></a>                              ▼  TCP port 9090
+</span><span id="__span-14-45"><a id="__codelineno-14-45" name="__codelineno-14-45" href="#__codelineno-14-45"></a>SchedulerServer.java case OP_JOB_COMPLETE:
+</span><span id="__span-14-46"><a id="__codelineno-14-46" name="__codelineno-14-46" href="#__codelineno-14-46"></a>                       └─ scheduler.handleJobCallback(payload)
+</span><span id="__span-14-47"><a id="__codelineno-14-47" name="__codelineno-14-47" href="#__codelineno-14-47"></a>                              │
+</span><span id="__span-14-48"><a id="__codelineno-14-48" name="__codelineno-14-48" href="#__codelineno-14-48"></a>                              ▼
+</span><span id="__span-14-49"><a id="__codelineno-14-49" name="__codelineno-14-49" href="#__codelineno-14-49"></a>Scheduler.java       handleJobCallback(payload)
+</span><span id="__span-14-50"><a id="__codelineno-14-50" name="__codelineno-14-50" href="#__codelineno-14-50"></a>                       └─ parse jobId, status, result
+</span><span id="__span-14-51"><a id="__codelineno-14-51" name="__codelineno-14-51" href="#__codelineno-14-51"></a>                       └─ completeJob(job, result, record)
+</span><span id="__span-14-52"><a id="__codelineno-14-52" name="__codelineno-14-52" href="#__codelineno-14-52"></a>                            └─ safeRedisSet(&quot;job:X:status&quot;, &quot;COMPLETED&quot;)
+</span><span id="__span-14-53"><a id="__codelineno-14-53" name="__codelineno-14-53" href="#__codelineno-14-53"></a>                            └─ safeRedisSrem(&quot;system:active_jobs&quot;, jobId)
+</span><span id="__span-14-54"><a id="__codelineno-14-54" name="__codelineno-14-54" href="#__codelineno-14-54"></a>                            └─ unlockChildren(jobId)       ← no children, nothing to unlock
+</span></code></pre></div>
+<hr />
+<h3 id="scenario-2-dag-with-dependencies-a-b-c">Scenario 2: DAG with dependencies (A → B → C)</h3>
+<p>Three jobs in a chain. B waits for A, C waits for B.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>titan_sdk.py         submit_dag(&quot;pipeline&quot;, [A, B(parents=[A]), C(parents=[B])])
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>                              │
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>                              ▼
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>Scheduler.java       submitJob(A) → no parents → taskQueue.add(A)
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>                     submitJob(B) → has parent A → dagWaitingRoom.put(B)
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>                     submitJob(C) → has parent B → dagWaitingRoom.put(C)
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>                              │
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>                              ▼
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>                     runDispatchLoop() picks A → dispatches to worker
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>                     ... A executes and completes ...
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>                              │
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>                              ▼
+</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>                     completeJob(A)
+</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>                       └─ unlockChildren(&quot;A&quot;)
+</span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a>                            └─ scan dagWaitingRoom
+</span><span id="__span-15-16"><a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>                            └─ B has parent A → A is done → all parents met
+</span><span id="__span-15-17"><a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a>                            └─ taskQueue.add(B)            ← B is now dispatchable
+</span><span id="__span-15-18"><a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a>                            └─ C has parent B → B not done → stays in waiting room
+</span><span id="__span-15-19"><a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a>                              │
+</span><span id="__span-15-20"><a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a>                              ▼
+</span><span id="__span-15-21"><a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a>                     runDispatchLoop() picks B → dispatches to worker
+</span><span id="__span-15-22"><a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a>                     ... B executes and completes ...
+</span><span id="__span-15-23"><a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a>                              │
+</span><span id="__span-15-24"><a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a>                              ▼
+</span><span id="__span-15-25"><a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a>                     completeJob(B)
+</span><span id="__span-15-26"><a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a>                       └─ unlockChildren(&quot;B&quot;)
+</span><span id="__span-15-27"><a id="__codelineno-15-27" name="__codelineno-15-27" href="#__codelineno-15-27"></a>                            └─ C has parent B → B is done → all parents met
+</span><span id="__span-15-28"><a id="__codelineno-15-28" name="__codelineno-15-28" href="#__codelineno-15-28"></a>                            └─ taskQueue.add(C)
+</span><span id="__span-15-29"><a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a>                              │
+</span><span id="__span-15-30"><a id="__codelineno-15-30" name="__codelineno-15-30" href="#__codelineno-15-30"></a>                              ▼
+</span><span id="__span-15-31"><a id="__codelineno-15-31" name="__codelineno-15-31" href="#__codelineno-15-31"></a>                     runDispatchLoop() picks C → dispatches → completes
+</span></code></pre></div>
+<hr />
+<h3 id="scenario-3-fan-out-with-fan-in-a-bcd-e">Scenario 3: Fan-out with fan-in (A → [B,C,D] → E)</h3>
+<p>Parallel execution with a collector that waits for all branches.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant S as Scheduler
+    participant W1 as Worker 1
+    participant W2 as Worker 2
+
+    Note over S: A completes → unlockChildren()
+    S-&gt;&gt;S: taskQueue.add(B), add(C), add(D)
+
+    par Parallel dispatch
+        S-&gt;&gt;W1: dispatch B
+        S-&gt;&gt;W1: dispatch C
+        S-&gt;&gt;W2: dispatch D
+    end
+
+    W1--&gt;&gt;S: B COMPLETED → unlockChildren(B)
+    Note over S: E needs [B,C,D] — B done, C,D pending → wait
+    W1--&gt;&gt;S: C COMPLETED → unlockChildren(C)
+    Note over S: E needs [B,C,D] — B,C done, D pending → wait
+    W2--&gt;&gt;S: D COMPLETED → unlockChildren(D)
+    Note over S: E needs [B,C,D] — all done → taskQueue.add(E)
+    S-&gt;&gt;W1: dispatch E
+    W1--&gt;&gt;S: E COMPLETED</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>Scheduler.java       submitJob(A) → taskQueue
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>                     submitJob(B) → parent A → dagWaitingRoom
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>                     submitJob(C) → parent A → dagWaitingRoom
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>                     submitJob(D) → parent A → dagWaitingRoom
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>                     submitJob(E) → parents [B,C,D] → dagWaitingRoom
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>                              │
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>                              ▼
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>                     A completes → unlockChildren(&quot;A&quot;)
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>                       └─ B, C, D all have parent A met → taskQueue.add(B), add(C), add(D)
+</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>                       └─ E has parents [B,C,D] → none done yet → stays
+</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>                              │
+</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>                              ▼
+</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>                     runDispatchLoop() picks B → worker 1
+</span><span id="__span-16-14"><a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a>                     runDispatchLoop() picks C → worker 1 (or worker 2 if available)
+</span><span id="__span-16-15"><a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a>                     runDispatchLoop() picks D → worker 2 (least loaded)
+</span><span id="__span-16-16"><a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a>                     ← B, C, D executing in parallel across workers →
+</span><span id="__span-16-17"><a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a>                              │
+</span><span id="__span-16-18"><a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a>                              ▼
+</span><span id="__span-16-19"><a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a>                     B completes → unlockChildren(&quot;B&quot;)
+</span><span id="__span-16-20"><a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a>                       └─ E: parent B done, but C and D still pending → stays
+</span><span id="__span-16-21"><a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>                     C completes → unlockChildren(&quot;C&quot;)
+</span><span id="__span-16-22"><a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a>                       └─ E: parents B,C done, D still pending → stays
+</span><span id="__span-16-23"><a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a>                     D completes → unlockChildren(&quot;D&quot;)
+</span><span id="__span-16-24"><a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a>                       └─ E: parents B,C,D all done → taskQueue.add(E)
+</span><span id="__span-16-25"><a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a>                              │
+</span><span id="__span-16-26"><a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a>                              ▼
+</span><span id="__span-16-27"><a id="__codelineno-16-27" name="__codelineno-16-27" href="#__codelineno-16-27"></a>                     runDispatchLoop() picks E → dispatches → completes
+</span></code></pre></div>
+<hr />
+<h3 id="scenario-4-service-deployment-long-running">Scenario 4: Service deployment (long-running)</h3>
+<p>A service is deployed and stays alive. Different path from script jobs.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant U as CLI / SDK
+    participant SS as SchedulerServer
+    participant S as Scheduler
+    participant W as RpcWorkerServer
+    participant SH as ServiceHandler
+    participant P as Service Process
+
+    U-&gt;&gt;SS: OP_DEPLOY
+    SS-&gt;&gt;S: submitJob(DEPLOY_PAYLOAD)
+    S-&gt;&gt;S: dispatch to worker
+    S-&gt;&gt;W: OP_RUN (TCP 8080)
+    W-&gt;&gt;SH: execute(payload)
+    SH-&gt;&gt;P: ProcessBuilder.start() — detached
+    SH-&gt;&gt;SH: runningServices.put(id, process)
+    SH--&gt;&gt;W: DEPLOYED_SUCCESS
+    Note over P: Process stays alive — no completion callback
+
+    alt Process crashes
+        P--xSH: onExit fires
+        SH-&gt;&gt;SH: not in intentionallyStopped → crash
+        SH-&gt;&gt;SH: sleep 3s
+        SH-&gt;&gt;P: relaunch same command
+    else Intentional stop
+        U-&gt;&gt;SS: OP_STOP
+        SS-&gt;&gt;W: forward stop
+        W-&gt;&gt;SH: stopProcess(id)
+        SH-&gt;&gt;SH: intentionallyStopped.add(id)
+        SH-&gt;&gt;P: destroyForcibly()
+        P--xSH: onExit fires
+        SH-&gt;&gt;SS: OP_UNREGISTER_SERVICE
+    end</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>titan_sdk.py         submit with DEPLOY_PAYLOAD type
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>        or
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>TitanCLI.java        &quot;deploy log_viewer.py 9991&quot;
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>                              │
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>                              ▼
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>SchedulerServer.java case OP_DEPLOY:
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>                       └─ scheduler.submitJob(job)  ← payload starts with &quot;DEPLOY_PAYLOAD&quot;
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>                              │
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>                              ▼
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>Scheduler.java       runDispatchLoop() picks job
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>                       └─ dispatches to worker
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>                              │
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>                              ▼  TCP port 8080
+</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>RpcWorkerServer.java processCommand(payload)
+</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>                       └─ taskType = &quot;DEPLOY_PAYLOAD&quot; or &quot;START_SERVICE&quot;
+</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>                       └─ ServiceHandler.execute(payload)
+</span><span id="__span-17-17"><a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>                              │
+</span><span id="__span-17-18"><a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>                              ▼
+</span><span id="__span-17-19"><a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>ServiceHandler.java  startProcess(filename, serviceId, port)
+</span><span id="__span-17-20"><a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>                       └─ if .jar → ProcessBuilder(&quot;java&quot;, &quot;-jar&quot;, file, port)
+</span><span id="__span-17-21"><a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>                       └─ if .py  → launchDetachedProcess(&quot;python&quot;, file)
+</span><span id="__span-17-22"><a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a>                              │
+</span><span id="__span-17-23"><a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>                              ▼
+</span><span id="__span-17-24"><a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a>                     launchDetachedProcess(serviceId, dir, command)
+</span><span id="__span-17-25"><a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a>                       └─ ProcessBuilder.start()
+</span><span id="__span-17-26"><a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a>                       └─ thread: stdout → LogBatcher → stream to Master
+</span><span id="__span-17-27"><a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a>                       └─ runningServices.put(serviceId, process)
+</span><span id="__span-17-28"><a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a>                       └─ ProcessRegistry.register(serviceId, pid)
+</span><span id="__span-17-29"><a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a>                       └─ process.onExit().thenRun(() → {
+</span><span id="__span-17-30"><a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a>                            if intentionallyStopped → notify Master, done
+</span><span id="__span-17-31"><a id="__codelineno-17-31" name="__codelineno-17-31" href="#__codelineno-17-31"></a>                            else → crash detected → sleep 3s → relaunch same command
+</span><span id="__span-17-32"><a id="__codelineno-17-32" name="__codelineno-17-32" href="#__codelineno-17-32"></a>                          })
+</span><span id="__span-17-33"><a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a>                       └─ return &quot;DEPLOYED_SUCCESS&quot;
+</span><span id="__span-17-34"><a id="__codelineno-17-34" name="__codelineno-17-34" href="#__codelineno-17-34"></a>                              │
+</span><span id="__span-17-35"><a id="__codelineno-17-35" name="__codelineno-17-35" href="#__codelineno-17-35"></a>                              ▼
+</span><span id="__span-17-36"><a id="__codelineno-17-36" name="__codelineno-17-36" href="#__codelineno-17-36"></a>                     ← process stays alive, no OP_JOB_COMPLETE callback →
+</span><span id="__span-17-37"><a id="__codelineno-17-37" name="__codelineno-17-37" href="#__codelineno-17-37"></a>                     ← service appears in dashboard under worker&#39;s Running Services →
+</span></code></pre></div>
+<p>Stopping a service:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>TitanCLI.java        &quot;stop service-id&quot;
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>                              │
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>                              ▼
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>SchedulerServer.java case OP_STOP → forward to worker
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>                              │
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>                              ▼
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>ServiceHandler.java  stopProcess(serviceId)
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>                       └─ intentionallyStopped.add(serviceId)  ← prevents auto-restart
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>                       └─ process.destroyForcibly()
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>                       └─ onExit fires → sees intentionallyStopped → notifyMasterOfServiceStop()
+</span></code></pre></div>
+<hr />
+<h3 id="scenario-5-hitl-gate-pause-for-human-approval">Scenario 5: HITL gate (pause for human approval)</h3>
+<p>A DAG with a human checkpoint mid-execution.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant SDK as titan_sdk.py
+    participant S as Scheduler
+    participant W as Worker
+    participant Gate as hitl_gate.py
+    participant TS as TitanStore
+    participant H as Human (CLI / Dashboard)
+
+    SDK-&gt;&gt;SDK: _inject_hitl_gates() → insert gate job
+    SDK-&gt;&gt;S: submit DAG: preprocess → hitl-gate → train
+
+    Note over S: preprocess completes → unlock gate
+    S-&gt;&gt;W: dispatch hitl-gate-preprocess
+    W-&gt;&gt;Gate: ProcessBuilder.start()
+
+    loop Every 3 seconds
+        Gate-&gt;&gt;TS: GET titan:hitl:status:hitl-gate-preprocess
+        TS--&gt;&gt;Gate: CLEARED (keep waiting)
+    end
+
+    H-&gt;&gt;TS: SET titan:hitl:status:hitl-gate-preprocess APPROVED
+
+    Gate-&gt;&gt;TS: GET titan:hitl:status:hitl-gate-preprocess
+    TS--&gt;&gt;Gate: APPROVED
+    Gate-&gt;&gt;Gate: sys.exit(0)
+    W--&gt;&gt;S: OP_JOB_COMPLETE (COMPLETED)
+    S-&gt;&gt;S: unlockChildren() → train enters taskQueue</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>titan_sdk.py         submit_dag(&quot;pipeline&quot;, [
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>                       TitanJob(&quot;preprocess&quot;, ..., hitl_message=&quot;Review before training&quot;),
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>                       TitanJob(&quot;train&quot;, ..., parents=[&quot;preprocess&quot;])
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>                     ])
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>                       └─ _inject_hitl_gates(jobs)
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>                            └─ detects hitl_message on &quot;preprocess&quot;
+</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>                            └─ creates gate job: &quot;hitl-gate-preprocess&quot;
+</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>                            └─ rewires: train.parents = [&quot;hitl-gate-preprocess&quot;]
+</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>                            └─ store_put(&quot;titan:hitl:status:hitl-gate-preprocess&quot;, &quot;CLEARED&quot;)
+</span><span id="__span-19-10"><a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>                              │
+</span><span id="__span-19-11"><a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>                              ▼
+</span><span id="__span-19-12"><a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a>                     Final DAG: preprocess → hitl-gate-preprocess → train
+</span><span id="__span-19-13"><a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a>                              │
+</span><span id="__span-19-14"><a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a>                              ▼
+</span><span id="__span-19-15"><a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a>Scheduler.java       preprocess runs and completes
+</span><span id="__span-19-16"><a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a>                       └─ unlockChildren → hitl-gate-preprocess enters taskQueue
+</span><span id="__span-19-17"><a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a>                              │
+</span><span id="__span-19-18"><a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a>                              ▼
+</span><span id="__span-19-19"><a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a>                     hitl-gate-preprocess dispatched to worker
+</span><span id="__span-19-20"><a id="__codelineno-19-20" name="__codelineno-19-20" href="#__codelineno-19-20"></a>                              │
+</span><span id="__span-19-21"><a id="__codelineno-19-21" name="__codelineno-19-21" href="#__codelineno-19-21"></a>                              ▼
+</span><span id="__span-19-22"><a id="__codelineno-19-22" name="__codelineno-19-22" href="#__codelineno-19-22"></a>Worker runs:         perm_files/hitl_gate.py
+</span><span id="__span-19-23"><a id="__codelineno-19-23" name="__codelineno-19-23" href="#__codelineno-19-23"></a>                       └─ args: &quot;hitl-gate-preprocess 172800 Review before training&quot;
+</span><span id="__span-19-24"><a id="__codelineno-19-24" name="__codelineno-19-24" href="#__codelineno-19-24"></a>                       └─ store_put(&quot;titan:hitl:queue&quot;, gate_id)   ← dashboard polls this
+</span><span id="__span-19-25"><a id="__codelineno-19-25" name="__codelineno-19-25" href="#__codelineno-19-25"></a>                       └─ loop:
+</span><span id="__span-19-26"><a id="__codelineno-19-26" name="__codelineno-19-26" href="#__codelineno-19-26"></a>                            store_get(&quot;titan:hitl:status:hitl-gate-preprocess&quot;)
+</span><span id="__span-19-27"><a id="__codelineno-19-27" name="__codelineno-19-27" href="#__codelineno-19-27"></a>                            if &quot;APPROVED&quot; → sys.exit(0)           ← job COMPLETED
+</span><span id="__span-19-28"><a id="__codelineno-19-28" name="__codelineno-19-28" href="#__codelineno-19-28"></a>                            if &quot;REJECTED&quot; → sys.exit(1)           ← job FAILED
+</span><span id="__span-19-29"><a id="__codelineno-19-29" name="__codelineno-19-29" href="#__codelineno-19-29"></a>                            else → sleep 3s, keep polling
+</span><span id="__span-19-30"><a id="__codelineno-19-30" name="__codelineno-19-30" href="#__codelineno-19-30"></a>                              │
+</span><span id="__span-19-31"><a id="__codelineno-19-31" name="__codelineno-19-31" href="#__codelineno-19-31"></a>                              ▼  (meanwhile, human reviews)
+</span><span id="__span-19-32"><a id="__codelineno-19-32" name="__codelineno-19-32" href="#__codelineno-19-32"></a>Dashboard            /api/hitl/pending → shows pending gates
+</span><span id="__span-19-33"><a id="__codelineno-19-33" name="__codelineno-19-33" href="#__codelineno-19-33"></a>        or
+</span><span id="__span-19-34"><a id="__codelineno-19-34" name="__codelineno-19-34" href="#__codelineno-19-34"></a>TitanCLI.java        &quot;approve hitl-gate-preprocess&quot;
+</span><span id="__span-19-35"><a id="__codelineno-19-35" name="__codelineno-19-35" href="#__codelineno-19-35"></a>                       └─ OP_KV_SET: &quot;titan:hitl:status:hitl-gate-preprocess|APPROVED&quot;
+</span><span id="__span-19-36"><a id="__codelineno-19-36" name="__codelineno-19-36" href="#__codelineno-19-36"></a>                              │
+</span><span id="__span-19-37"><a id="__codelineno-19-37" name="__codelineno-19-37" href="#__codelineno-19-37"></a>                              ▼
+</span><span id="__span-19-38"><a id="__codelineno-19-38" name="__codelineno-19-38" href="#__codelineno-19-38"></a>hitl_gate.py         next poll sees &quot;APPROVED&quot; → sys.exit(0)
+</span><span id="__span-19-39"><a id="__codelineno-19-39" name="__codelineno-19-39" href="#__codelineno-19-39"></a>                              │
+</span><span id="__span-19-40"><a id="__codelineno-19-40" name="__codelineno-19-40" href="#__codelineno-19-40"></a>                              ▼
+</span><span id="__span-19-41"><a id="__codelineno-19-41" name="__codelineno-19-41" href="#__codelineno-19-41"></a>                     OP_JOB_COMPLETE: hitl-gate-preprocess COMPLETED
+</span><span id="__span-19-42"><a id="__codelineno-19-42" name="__codelineno-19-42" href="#__codelineno-19-42"></a>                       └─ unlockChildren → train enters taskQueue → dispatches → runs
+</span></code></pre></div>
+<p>If rejected: gate exits 1 → job FAILED → train stays in dagWaitingRoom forever (parent never completed).</p>
+<hr />
+<h3 id="scenario-6-job-failure-with-retry">Scenario 6: Job failure with retry</h3>
+<p>A job fails, gets retried up to 3 times, then goes to dead letter queue.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant W as Worker
+    participant S as Scheduler
+    participant TS as TitanStore
+    participant DLQ as Dead Letter Queue
+
+    W-&gt;&gt;S: OP_JOB_COMPLETE (FAILED)
+    S-&gt;&gt;S: handleJobFailure(job)
+    S-&gt;&gt;S: retryCount++ → now 1
+
+    alt retryCount &lt; 3
+        S-&gt;&gt;TS: SET job:X:status PENDING
+        S-&gt;&gt;S: taskQueue.add(job) — re-queued
+        Note over S: dispatch loop picks it up again
+        S-&gt;&gt;W: re-dispatch to worker
+        W-&gt;&gt;S: FAILED again → retry 2 → re-queue
+        S-&gt;&gt;W: re-dispatch
+        W-&gt;&gt;S: FAILED again → retry 3
+    end
+
+    S-&gt;&gt;S: retryCount &gt;= 3
+    S-&gt;&gt;TS: SET job:X:status DEAD
+    S-&gt;&gt;DLQ: deadLetterQueue.add(job)
+    S-&gt;&gt;S: cancel all children in dagWaitingRoom</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>ScriptExecutorHandler  process exits with code 1 (or crashes)
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>                       └─ return &quot;FAILED: ...&quot;
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>                              │
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>                              ▼
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>RpcWorkerServer.java sendCallback(OP_JOB_COMPLETE, &quot;job-X|FAILED|error message&quot;)
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>                              │
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>                              ▼
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>Scheduler.java       handleJobCallback(payload)
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>                       └─ statusStr = &quot;FAILED&quot;
+</span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>                       └─ handleJobFailure(job)
+</span><span id="__span-20-11"><a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a>                            └─ job.incrementRetry()
+</span><span id="__span-20-12"><a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>                            └─ if retryCount &lt; 3:
+</span><span id="__span-20-13"><a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a>                                 job.setStatus(PENDING)
+</span><span id="__span-20-14"><a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a>                                 safeRedisSet(&quot;job:X:status&quot;, &quot;PENDING&quot;)
+</span><span id="__span-20-15"><a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a>                                 taskQueue.add(job)            ← re-queued for another attempt
+</span><span id="__span-20-16"><a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a>                            └─ if retryCount &gt;= 3:
+</span><span id="__span-20-17"><a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a>                                 safeRedisSet(&quot;job:X:status&quot;, &quot;DEAD&quot;)
+</span><span id="__span-20-18"><a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a>                                 deadLetterQueue.add(job)      ← no more retries
+</span><span id="__span-20-19"><a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a>                                 cancel all children in dagWaitingRoom
+</span></code></pre></div>
+<hr />
+<h3 id="scenario-7-cancel-with-cascade">Scenario 7: Cancel with cascade</h3>
+<p>User cancels a running job. All downstream descendants are cancelled too.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>TitanCLI.java        &quot;cancel parent-job&quot;
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>                              │
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>                              ▼
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>SchedulerServer.java case OP_CANCEL_JOB:
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>                       └─ scheduler.cancelJob(&quot;DAG-parent-job&quot;)
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>                              │
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>                              ▼
+</span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>Scheduler.java       cancelJob(jobId)
+</span><span id="__span-21-9"><a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>                       └─ check: is it in taskQueue? → remove, mark CANCELLED
+</span><span id="__span-21-10"><a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>                       └─ check: is it in dagWaitingRoom? → remove, mark CANCELLED
+</span><span id="__span-21-11"><a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>                       └─ check: is it running on a worker?
+</span><span id="__span-21-12"><a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>                            └─ yes → send kill signal to worker
+</span><span id="__span-21-13"><a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>                            └─ worker kills the process
+</span><span id="__span-21-14"><a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a>                       └─ safeRedisSet(&quot;job:X:status&quot;, &quot;CANCELLED&quot;)
+</span><span id="__span-21-15"><a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a>                       └─ cascade: find all jobs in dagWaitingRoom whose ancestors include X
+</span><span id="__span-21-16"><a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a>                            └─ for each descendant:
+</span><span id="__span-21-17"><a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a>                                 safeRedisSet(&quot;job:child:status&quot;, &quot;CANCELLED&quot;)
+</span><span id="__span-21-18"><a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a>                                 remove from dagWaitingRoom
+</span></code></pre></div>
+<hr />
+<h3 id="scenario-8-worker-crash-and-recovery">Scenario 8: Worker crash and recovery</h3>
+<p>A worker dies while running a job. Master detects and reschedules.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>Worker process       killed (kill -9, OOM, hardware failure)
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>                              │
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>                              ▼
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>Scheduler.java       reconcileClusters() runs periodically
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>                       └─ checks heartbeat timestamps for all registered workers
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>                       └─ worker hasn&#39;t sent heartbeat in &gt; threshold
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>                       └─ removes worker from WorkerRegistry
+</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>                       └─ any jobs assigned to that worker:
+</span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>                            └─ handleJobFailure(job) → re-queues with retry increment
+</span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>                              │
+</span><span id="__span-22-11"><a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a>                              ▼
+</span><span id="__span-22-12"><a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a>RpcWorkerServer.java (on the worker side, if worker restarts)
+</span><span id="__span-22-13"><a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a>                       └─ reRegister loop fires every 30s
+</span><span id="__span-22-14"><a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a>                       └─ sends OP_REGISTER to Master
+</span><span id="__span-22-15"><a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a>                       └─ Master re-adds to WorkerRegistry
+</span><span id="__span-22-16"><a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a>                       └─ worker is available for dispatch again
+</span></code></pre></div>
+<hr />
+<h3 id="scenario-9-mcp-submission-natural-language">Scenario 9: MCP submission (natural language)</h3>
+<p>Claude Desktop or Cursor submits a DAG through the MCP server.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant U as User
+    participant C as Claude Desktop
+    participant MCP as titan_mcp_server.py
+    participant SDK as TitanClient
+    participant S as Scheduler
+    participant W as Workers
+
+    U-&gt;&gt;C: "Run 3 analysis jobs in parallel, combine results"
+    C-&gt;&gt;C: generates Python scripts on the fly
+    C-&gt;&gt;MCP: submit_dag_pipeline(name, jobs_json)
+    MCP-&gt;&gt;MCP: auto-generate agent_run_id
+    MCP-&gt;&gt;MCP: prepend _SCRIPT_PREAMBLE to each script
+    MCP-&gt;&gt;MCP: write scripts to perm_files/
+    MCP-&gt;&gt;SDK: submit_dag(name, jobs, agent_run_id)
+    SDK-&gt;&gt;S: OP_SUBMIT_DAG (same path as Scenario 1)
+    S-&gt;&gt;W: dispatch jobs across workers
+
+    loop Poll until done
+        C-&gt;&gt;MCP: get_job_status(job_id)
+        MCP-&gt;&gt;SDK: get_job_status()
+        SDK--&gt;&gt;MCP: COMPLETED
+        MCP--&gt;&gt;C: status
+    end
+
+    C-&gt;&gt;MCP: get_job_logs(job_id)
+    MCP--&gt;&gt;C: logs content
+    C--&gt;&gt;U: rendered results</code></pre>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>Claude Desktop       user types: &quot;Run three analysis jobs in parallel, combine results&quot;
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>                       └─ Claude generates job scripts on the fly
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>                       └─ calls MCP tool: submit_dag_pipeline(dag_name, jobs_json)
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>                              │
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>                              ▼  MCP stdio protocol
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>titan_mcp_server.py  submit_dag_pipeline handler
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>                       └─ generates agent_run_id (auto: &quot;mcp-{name}-{uuid}&quot;)
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>                       └─ for each job: prepend _SCRIPT_PREAMBLE (sys.path fix)
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>                       └─ write scripts to perm_files/
+</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a>                       └─ TitanClient().submit_dag(name, jobs, agent_run_id=run_id)
+</span><span id="__span-23-11"><a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>                              │
+</span><span id="__span-23-12"><a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a>                              ▼
+</span><span id="__span-23-13"><a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a>titan_sdk.py         submit_dag() → same path as Scenario 1
+</span><span id="__span-23-14"><a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a>                       └─ manifest includes agent_run_id → appears in Agent Runs tab
+</span><span id="__span-23-15"><a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a>                              │
+</span><span id="__span-23-16"><a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a>                              ▼
+</span><span id="__span-23-17"><a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a>                     ← jobs execute across workers, logs stream back →
+</span><span id="__span-23-18"><a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a>                              │
+</span><span id="__span-23-19"><a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a>                              ▼
+</span><span id="__span-23-20"><a id="__codelineno-23-20" name="__codelineno-23-20" href="#__codelineno-23-20"></a>Claude Desktop       calls get_job_status, get_job_logs to poll
+</span><span id="__span-23-21"><a id="__codelineno-23-21" name="__codelineno-23-21" href="#__codelineno-23-21"></a>                       └─ reads results, renders response to user
+</span></code></pre></div>
+<hr />
+<h2 id="common-gotchas">Common Gotchas</h2>
+<p><strong>JAR mismatch.</strong> After rebuilding with <code>mvn package</code>, the running Master and Worker still use the old JAR. Restart the cluster or verify the PID matches the new process.</p>
+<p><strong>Worker.jar is a copy.</strong> <code>perm_files/Worker.jar</code> is a copy of the engine JAR used when deploying workers remotely. After a rebuild: <code>cp target/titan-orchestrator-1.0-SNAPSHOT.jar perm_files/Worker.jar</code>.</p>
+<p><strong>TitanStore must start before Master.</strong> The Master connects to TitanStore on startup. If TitanStore isn't running, the Master falls back to in-memory mode (no persistence, no recovery). <code>titan-dev.sh up</code> handles the order correctly.</p>
+<p><strong>Dashboard template changes need restart.</strong> Flask doesn't auto-reload templates in production mode. Kill and restart the dashboard process after editing templates.</p>
+<p><strong>DAG- prefix.</strong> All job IDs submitted via <code>submit_dag()</code> are prefixed with <code>DAG-</code> by the SDK. The CLI auto-adds this prefix for <code>status</code>, <code>logs</code>, and <code>cancel</code> commands, but raw <code>OP_GET_JOB_STATUS</code> calls need it explicitly.</p>
+<p><strong>HITL gates are just scripts.</strong> <code>hitl_gate.py</code> is a regular job that polls <code>titan:hitl:status:{gate_id}</code> in TitanStore. Approving a gate from the CLI (<code>approve hitl-gate-X</code>) simply writes <code>APPROVED</code> to that key. The gate script sees it on its next poll and exits 0.</p>
+<hr />
+<h2 id="key-methods-reference">Key Methods Reference</h2>
+<p>If you're tracing a bug or adding a feature, these are the methods you'll spend the most time in:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>File</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>runDispatchLoop()</code></td>
+<td>Scheduler.java</td>
+<td>Main loop — takes from queue, finds worker, dispatches</td>
+</tr>
+<tr>
+<td><code>selectBestWorker()</code></td>
+<td>Scheduler.java</td>
+<td>Least-loaded worker selection with affinity</td>
+</tr>
+<tr>
+<td><code>submitJob()</code></td>
+<td>Scheduler.java</td>
+<td>Persists job state, routes to queue or waiting room</td>
+</tr>
+<tr>
+<td><code>completeJob()</code></td>
+<td>Scheduler.java</td>
+<td>Marks complete, unlocks children, updates history</td>
+</tr>
+<tr>
+<td><code>handleJobFailure()</code></td>
+<td>Scheduler.java</td>
+<td>Retry or dead-letter decision</td>
+</tr>
+<tr>
+<td><code>handleJobCallback()</code></td>
+<td>Scheduler.java</td>
+<td>Receives worker completion/failure callbacks</td>
+</tr>
+<tr>
+<td><code>unlockChildren()</code></td>
+<td>Scheduler.java</td>
+<td>Moves dependency-met jobs from waiting room to queue</td>
+</tr>
+<tr>
+<td><code>cancelJob()</code></td>
+<td>Scheduler.java</td>
+<td>Cancel + cascade to all descendants</td>
+</tr>
+<tr>
+<td><code>clientHandler()</code></td>
+<td>SchedulerServer.java</td>
+<td>Opcode routing — the switch statement</td>
+</tr>
+<tr>
+<td><code>processCommand()</code></td>
+<td>RpcWorkerServer.java</td>
+<td>Worker-side command dispatch</td>
+</tr>
+<tr>
+<td><code>execute()</code></td>
+<td>ScriptExecutorHandler.java</td>
+<td>Process spawn, stdout capture, exit handling</td>
+</tr>
+<tr>
+<td><code>launchDetachedProcess()</code></td>
+<td>ServiceHandler.java</td>
+<td>Service deploy with auto-restart</td>
+</tr>
+<tr>
+<td><code>submit_dag()</code></td>
+<td>titan_sdk.py</td>
+<td>SDK entry point — HITL injection, manifest write</td>
+</tr>
+<tr>
+<td><code>discover_dags_from_stats()</code></td>
+<td>server_dashboard.py</td>
+<td>Dashboard DAG discovery from Master stats</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Ram Narayanan A S. Released under the <a href="https://github.com/ramn51/titan-orchestrator/blob/main/LICENSE" target="_blank">Apache 2.0 License</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
