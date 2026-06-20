@@ -144,9 +144,12 @@ import titan.network.TitanProtocol.TitanPacket;
                         break;
                 }
 
-//                if (responsePayload.startsWith("ERROR") || responsePayload.startsWith("UNKNOWN")) {
-//                    responseOpCode = TitanProtocol.OP_ERROR;
-//                }
+                // A command that failed must come back as OP_ERROR, not OP_ACK —
+                // otherwise the client cannot distinguish success from failure at the
+                // protocol level and is forced to string-match the payload.
+                if (isErrorResponse(responsePayload)) {
+                    responseOpCode = TitanProtocol.OP_ERROR;
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
                 responsePayload = "SERVER_ERROR: " + t.getMessage();
@@ -478,8 +481,10 @@ import titan.network.TitanProtocol.TitanPacket;
                     File uploadsDir = new File(UPLOADS_DIR);
                     if(!uploadsDir.exists()) uploadsDir.mkdirs();
 
+                    File destFile = resolveSafe(UPLOADS_DIR, assetName);
+                    if (destFile == null) return "ERROR: Invalid asset name (path traversal rejected)";
+
                     byte[] decodedBytes = Base64.getDecoder().decode(assetData);
-                    File destFile = new File(uploadsDir, assetName);
                     Files.write(destFile.toPath(), decodedBytes);
                     System.out.println("[UPLOAD] Saved asset: " + assetName + " (" + decodedBytes.length + " bytes)");
                     return "UPLOAD_SUCCESS";
@@ -501,8 +506,10 @@ import titan.network.TitanProtocol.TitanPacket;
                     File permDir = new File(PERM_FILES_DIR);
                     if(!permDir.exists()) permDir.mkdirs();
 
+                    File destScript = resolveSafe(PERM_FILES_DIR, scriptName);
+                    if (destScript == null) return "ERROR: Invalid script name (path traversal rejected)";
+
                     byte[] scriptBytes = Base64.getDecoder().decode(scriptData);
-                    File destScript = new File(permDir, scriptName);
                     Files.write(destScript.toPath(), scriptBytes);
                     System.out.println("[DEPLOY] Staged script: " + scriptName + " (" + scriptBytes.length + " bytes)");
                     return "DEPLOY_SUCCESS";
@@ -514,9 +521,9 @@ import titan.network.TitanProtocol.TitanPacket;
             case TitanProtocol.OP_FETCH_ASSET:
                 // Payload: "filename" (e.g., "my_project.zip")
                 String requestedFile = payload.trim();
-                File assetFile = new File(UPLOADS_DIR + "/" + requestedFile);
+                File assetFile = resolveSafe(UPLOADS_DIR, requestedFile);
 
-                if (!assetFile.exists()) {
+                if (assetFile == null || !assetFile.exists()) {
                     return "ERROR_NOT_FOUND";
                 }
 
@@ -578,6 +585,48 @@ import titan.network.TitanProtocol.TitanPacket;
  * @return A {@link File} object representing the found file, or {@code null} if the file is not found
  *         or an {@link IOException} occurs during the directory traversal.
  */
+    /**
+ * Resolves {@code name} as a child of {@code baseDir} and verifies the canonical result
+ * stays inside that directory. Guards against path-traversal payloads such as
+ * {@code "../../etc/passwd"} or absolute paths in attacker-controlled file names.
+ *
+ * @param baseDir The directory the file must remain within (e.g. {@code uploads}).
+ * @param name    The client-supplied file name.
+ * @return The resolved {@link File} if it is safely under {@code baseDir}, otherwise {@code null}.
+ */
+    private File resolveSafe(String baseDir, String name) {
+        if (name == null || name.trim().isEmpty()) return null;
+        try {
+            File base = new File(baseDir).getCanonicalFile();
+            File target = new File(base, name).getCanonicalFile();
+            // Must be strictly under base/ — reject base itself and any escape.
+            if (target.getPath().startsWith(base.getPath() + File.separator)) {
+                return target;
+            }
+            return null;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /**
+ * Determines whether a command response represents a failure, so the caller can tag the
+ * reply with {@link TitanProtocol#OP_ERROR} instead of {@link TitanProtocol#OP_ACK}.
+ * Covers the error sentinels used across {@link #processCommand} and its handlers
+ * (e.g. {@code ERROR...}, {@code UNKNOWN_OPCODE}, {@code UPLOAD_FAILED}, {@code DEPLOY_FAILED}).
+ *
+ * @param response The response payload produced by a command handler.
+ * @return {@code true} if the response should be sent as an error, {@code false} otherwise.
+ */
+    private boolean isErrorResponse(String response) {
+        if (response == null) return true;
+        return response.startsWith("ERROR")
+                || response.startsWith("UNKNOWN")
+                || response.startsWith("SERVER_ERROR")
+                || response.startsWith("UPLOAD_FAILED")
+                || response.startsWith("DEPLOY_FAILED");
+    }
+
     private File findFileRecursive(String fileName) {
         File root = new File(PERM_FILES_DIR);
         if (!root.exists()) return null;
