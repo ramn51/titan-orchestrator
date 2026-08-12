@@ -3080,7 +3080,7 @@
 </tbody>
 </table>
 <h3 id="failure-is-a-first-class-concern">Failure is a first-class concern</h3>
-<p>Titan implements <strong>9 distinct failure-handling mechanisms</strong>: heartbeat detection with self-healing reschedule, bounded retry, a dead-letter queue, fail-fast on deterministic errors, orphaned-job recovery on restart, execution timeouts, saturation backpressure, and exponential-backoff callbacks. Handling partial failure (a worker dying mid-job, a Master restart, a lost result) is the part most from-scratch orchestrators skip. Titan treats it as a core transition, not an edge case.</p>
+<p>Titan implements <strong>8 distinct failure-handling mechanisms</strong>: heartbeat detection with self-healing reschedule, bounded retry, a dead-letter queue, fail-fast on deterministic errors, orphaned-job recovery on restart, execution timeouts, saturation backpressure, and exponential-backoff callbacks. Handling partial failure (a worker dying mid-job, a Master restart, a lost result) is the part most from-scratch orchestrators skip. Titan treats it as a core transition, not an edge case.</p>
 <p><a class="md-button" href="architecture/fault-tolerance/">🛡️ Fault Tolerance &amp; Recovery</a>
 <a class="md-button" href="architecture/execution-flows/">🔀 Execution Flows</a>
 <a class="md-button" href="architecture/design/">🧠 System Design</a></p>

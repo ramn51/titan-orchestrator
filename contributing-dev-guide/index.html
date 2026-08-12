@@ -3750,7 +3750,7 @@
 </span><span id="__span-19-41"><a id="__codelineno-19-41" name="__codelineno-19-41" href="#__codelineno-19-41"></a>                     OP_JOB_COMPLETE: hitl-gate-preprocess COMPLETED
 </span><span id="__span-19-42"><a id="__codelineno-19-42" name="__codelineno-19-42" href="#__codelineno-19-42"></a>                       └─ unlockChildren → train enters taskQueue → dispatches → runs
 </span></code></pre></div>
-<p>If rejected: gate exits 1 → job FAILED → train stays in dagWaitingRoom forever (parent never completed).</p>
+<p>If rejected: the gate exits 1 and the job is marked FAILED. It is retried like any failed job, and once it exhausts its retries and goes DEAD, <code>cancelChildren()</code> fires — so the downstream <code>train</code> job is <strong>cancelled</strong>, not left waiting in the dagWaitingRoom.</p>
 <hr />
 <h3 id="scenario-6-job-failure-with-retry">Scenario 6: Job failure with retry</h3>
 <p>A job fails, gets retried up to 3 times, then goes to dead letter queue.</p>

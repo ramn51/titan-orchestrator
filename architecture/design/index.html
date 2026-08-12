@@ -2815,7 +2815,7 @@
 </ul>
 <hr />
 <h2 id="3-state-persistence-data-bus-titanstore">3. State Persistence &amp; Data Bus (TitanStore)</h2>
-<p>To eliminate the Master as a single point of failure and provide a unified state layer, Titan implements a custom in-memory data store backed by Redis primitives (RedisJava).</p>
+<p>To preserve cluster state across a Master restart and provide a unified state layer, Titan implements a custom in-memory data store backed by Redis primitives (<strong>RedisJava</strong> — a from-scratch, Redis-compatible engine maintained in a separate repository). This gives Titan <strong>durability, not high availability</strong>: the Master can rebuild its state after a crash, but the store does <em>not</em> remove the Master as a single point of failure (see the note at the top of this page and §6). Raft-based leader election for true failover is on the v2 roadmap.</p>
 <p><strong>Append-Only File (AOF):</strong> </p>
 <p>Every critical system transition (e.g., Node Locked, Job Dispatched, Worker Registered) is written to a persistent log on disk.</p>
 <blockquote>
