@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../fault-tolerance/">
+        <link rel="prev" href="../design/">
       
       
-        <link rel="next" href="../../comparison/">
+        <link rel="next" href="../fault-tolerance/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>TitanStore & IPC - Titan Orchestrator</title>
+        <title>Execution Flows - Titan Orchestrator</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#internals-protocol-titanstore" class="md-skip">
+        <a href="#execution-flows" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              TitanStore & IPC
+              Execution Flows
             
           </span>
         </div>
@@ -2110,10 +2110,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../execution-flows/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution Flows
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2129,6 +2156,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-dispatch-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dispatch model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flow-1-single-job-the-happy-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 1 — Single job (the happy path)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flow-2-dependency-resolution-a-b-c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2 — Dependency resolution (A → B → C)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flow-3-fan-out-and-fan-in-a-b-c-d-e" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 3 — Fan-out and fan-in (A → [B, C, D] → E)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-other-flows-live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the other flows live
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2166,37 +2268,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    TitanStore & IPC
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../internals/" class="md-nav__link">
         
   
   
@@ -2212,98 +2287,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#1-the-titan-protocol-titan_proto" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. The Titan Protocol (TITAN_PROTO)
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-titanstore-architecture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. TitanStore Architecture
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="2. TitanStore Architecture">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#core-capabilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Core Capabilities
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#advanced-systems-features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Advanced Systems Features
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-supported-data-bus-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Supported Data Bus Commands
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#4-how-titan-uses-the-store" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. How Titan Uses the Store
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2488,10 +2471,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-the-titan-protocol-titan_proto" class="md-nav__link">
+  <a href="#the-dispatch-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. The Titan Protocol (TITAN_PROTO)
+        The dispatch model
       
     </span>
   </a>
@@ -2499,49 +2482,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-titanstore-architecture" class="md-nav__link">
+  <a href="#flow-1-single-job-the-happy-path" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. TitanStore Architecture
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="2. TitanStore Architecture">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#core-capabilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Core Capabilities
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#advanced-systems-features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Advanced Systems Features
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-supported-data-bus-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Supported Data Bus Commands
+        Flow 1 — Single job (the happy path)
       
     </span>
   </a>
@@ -2549,10 +2493,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-how-titan-uses-the-store" class="md-nav__link">
+  <a href="#flow-2-dependency-resolution-a-b-c" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. How Titan Uses the Store
+        Flow 2 — Dependency resolution (A → B → C)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flow-3-fan-out-and-fan-in-a-b-c-d-e" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 3 — Fan-out and fan-in (A → [B, C, D] → E)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-other-flows-live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the other flows live
       
     </span>
   </a>
@@ -2579,128 +2545,124 @@
   
 
 
-<h1 id="internals-protocol-titanstore">⚙️ Internals: Protocol &amp; TitanStore</h1>
-<p>Titan achieves its zero-dependency architecture by implementing its own network communication and state management layers from scratch. This page covers how nodes talk to each other and how cluster state survives failure.</p>
+<h1 id="execution-flows">🔀 Execution Flows</h1>
+<p>How the engine actually moves a job from <em>submitted</em> to <em>done</em>. This page is the conceptual, systems-level view; for the exhaustive line-by-line code traces (file → method → next), see the <a href="../../contributing-dev-guide/#code-flow-by-scenario">Developer Guide → Code Flow by Scenario</a>.</p>
+<h2 id="the-dispatch-model">The dispatch model</h2>
+<p>Every flow below is built from four moving parts in the Master:</p>
+<ul>
+<li><strong><code>taskQueue</code></strong> — a blocking queue of jobs that are <em>ready to run</em> (all dependencies met).</li>
+<li><strong><code>dagWaitingRoom</code></strong> — jobs <em>blocked</em> on unfinished parents. They never enter the active loop until unblocked.</li>
+<li><strong><code>runDispatchLoop()</code></strong> — a thread blocked on <code>taskQueue.take()</code>; when a job appears it selects a worker and dispatches.</li>
+<li><strong><code>unlockChildren()</code></strong> — called when a job completes; it scans the waiting room and promotes any job whose parents are now all satisfied into <code>taskQueue</code>.</li>
+</ul>
+<p>This separation is the heart of Titan's scheduler: <strong>readiness is event-driven, not polled.</strong> A blocked job costs nothing until a parent-completion event unlocks it.</p>
 <hr />
-<h2 id="1-the-titan-protocol-titan_proto">1. The Titan Protocol (<code>TITAN_PROTO</code>)</h2>
-<p>Titan does not rely on HTTP/REST or heavy gRPC layers for internal orchestration. To maximize performance and minimize the memory footprint of the core engine, node-to-node communication happens over simple TCP sockets using a custom binary protocol.</p>
-<p>Every message sent across the cluster uses a fixed-header framing strategy. This ensures payload integrity and prevents the fragmentation issues inherent to plain TCP streams.</p>
+<h2 id="flow-1-single-job-the-happy-path">Flow 1 — Single job (the happy path)</h2>
+<p>The simplest trace: one job, submitted, dispatched, completed.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant U as SDK / CLI
+    participant S as Scheduler
+    participant TS as TitanStore
+    participant W as Worker
+    participant P as Python Process
+
+    U-&gt;&gt;S: OP_SUBMIT_DAG
+    S-&gt;&gt;TS: SET job status = PENDING
+    S-&gt;&gt;S: taskQueue.add(job)
+    S--&gt;&gt;U: DAG_ACCEPTED
+
+    S-&gt;&gt;S: dispatch loop → take()
+    S-&gt;&gt;S: select least-loaded capable worker
+    S-&gt;&gt;TS: SET job status = RUNNING
+    S-&gt;&gt;W: OP_RUN
+    W-&gt;&gt;P: ProcessBuilder.start()
+    P--&gt;&gt;W: stdout (streamed) + exit 0
+    W-&gt;&gt;S: OP_JOB_COMPLETE
+    S-&gt;&gt;TS: SET job status = COMPLETED
+    S-&gt;&gt;S: unlockChildren() → none</code></pre>
+<p>The submission is <strong>acknowledged immediately</strong> (<code>DAG_ACCEPTED</code>) — dispatch happens asynchronously on the loop, so a slow cluster never blocks the submitting client.</p>
+<hr />
+<h2 id="flow-2-dependency-resolution-a-b-c">Flow 2 — Dependency resolution (A → B → C)</h2>
+<p>A chain. <code>B</code> waits for <code>A</code>, <code>C</code> waits for <code>B</code>. This shows the waiting-room / unlock mechanism that makes DAGs work.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant S as Scheduler
+    participant Q as taskQueue
+    participant WR as dagWaitingRoom
+
+    Note over S: submit A, B(parent A), C(parent B)
+    S-&gt;&gt;Q: A — no parents, ready
+    S-&gt;&gt;WR: B, C — unmet parents, blocked
+
+    Q-&gt;&gt;S: dispatch A → runs → COMPLETED
+    S-&gt;&gt;S: unlockChildren(A)
+    S-&gt;&gt;Q: promote B — parent A satisfied
+
+    Q-&gt;&gt;S: dispatch B → runs → COMPLETED
+    S-&gt;&gt;S: unlockChildren(B)
+    S-&gt;&gt;Q: promote C — parent B satisfied
+
+    Q-&gt;&gt;S: dispatch C → runs → COMPLETED</code></pre>
+<p>Only jobs with <strong>zero unmet dependencies</strong> ever reach <code>taskQueue</code>. Everything else sits inertly in the waiting room until a completion event promotes it — no busy-waiting, no dependency polling.</p>
+<hr />
+<h2 id="flow-3-fan-out-and-fan-in-a-b-c-d-e">Flow 3 — Fan-out and fan-in (A → [B, C, D] → E)</h2>
+<p>Parallel branches with a collector that must wait for <strong>all</strong> of them. This is where capability routing and incremental fan-in show up.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant S as Scheduler
+    participant W1 as Worker 1
+    participant W2 as Worker 2
+
+    Note over S: A completes → unlockChildren(A)
+    S-&gt;&gt;S: taskQueue.add(B), add(C), add(D)
+
+    par parallel dispatch (least-loaded routing)
+        S-&gt;&gt;W1: dispatch B
+        S-&gt;&gt;W1: dispatch C
+        S-&gt;&gt;W2: dispatch D
+    end
+
+    W1--&gt;&gt;S: B COMPLETED — E needs [B,C,D], wait
+    W1--&gt;&gt;S: C COMPLETED — E needs [B,C,D], wait
+    W2--&gt;&gt;S: D COMPLETED — all parents met
+    S-&gt;&gt;W1: dispatch E
+    W1--&gt;&gt;S: E COMPLETED</code></pre>
+<p>Fan-in is <strong>incremental</strong>: each branch completion re-checks the collector's parent set. <code>E</code> is promoted only on the completion event that satisfies its <em>last</em> outstanding parent — the Master never scans or polls to discover that the branches are done.</p>
+<hr />
+<h2 id="where-the-other-flows-live">Where the other flows live</h2>
+<p>The Developer Guide covers the full set with code-level traces:</p>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Bytes</th>
-<th style="text-align: left;">Field</th>
-<th style="text-align: left;">Description</th>
+<th>Flow</th>
+<th>Covered in</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code>0</code></td>
-<td style="text-align: left;"><strong>Version</strong></td>
-<td style="text-align: left;">Protocol version (currently <code>0x01</code>).</td>
+<td>Single job · DAG chain · fan-out/fan-in</td>
+<td><em>this page</em> (conceptual) + <a href="../../contributing-dev-guide/#code-flow-by-scenario">Dev Guide</a> (code)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>1</code></td>
-<td style="text-align: left;"><strong>OpCode</strong></td>
-<td style="text-align: left;">The instruction (e.g., <code>0x04</code> = Submit DAG, <code>0x16</code> = Fetch Logs).</td>
+<td>Service deployment (long-running, auto-restart)</td>
+<td><a href="../../contributing-dev-guide/#scenario-4-service-deployment-long-running">Dev Guide — Scenario 4</a></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>2</code></td>
-<td style="text-align: left;"><strong>Flags</strong></td>
-<td style="text-align: left;">Bitmask for modifiers (e.g., Compression, Encryption).</td>
+<td>HITL gate (pause for human approval)</td>
+<td><a href="../../contributing-dev-guide/#scenario-5-hitl-gate-pause-for-human-approval">Dev Guide — Scenario 5</a></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>3</code></td>
-<td style="text-align: left;"><strong>Spare</strong></td>
-<td style="text-align: left;">Reserved for future use.</td>
+<td>Job failure, retry &amp; dead-letter · worker crash recovery</td>
+<td><a href="../fault-tolerance/">Fault Tolerance &amp; Recovery</a></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>4-7</code></td>
-<td style="text-align: left;"><strong>Payload Length</strong></td>
-<td style="text-align: left;">32-bit unsigned integer defining the exact size of the incoming body.</td>
+<td>Cancel with cascade</td>
+<td><a href="../../contributing-dev-guide/#scenario-7-cancel-with-cascade">Dev Guide — Scenario 7</a></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code>8+</code></td>
-<td style="text-align: left;"><strong>Body</strong></td>
-<td style="text-align: left;">The variable-length binary or string payload.</td>
+<td>MCP submission (natural language)</td>
+<td><a href="../../contributing-dev-guide/#scenario-9-mcp-submission-natural-language">Dev Guide — Scenario 9</a></td>
 </tr>
 </tbody>
 </table>
-<p>This header adds exactly 8 bytes of overhead per message, achieving very low latency without JSON serialization overhead.</p>
-<hr />
-<h2 id="2-titanstore-architecture">2. TitanStore Architecture</h2>
-<p>TitanStore is a separate Java project (<a href="https://github.com/ramn51/RedisJava">RedisJava</a>) that ships as a pre-built JAR (<code>perm_files/TitanStore.jar</code>). It is a multi-threaded, persistent Redis-compatible server built from scratch using standard I/O (<code>ServerSocket</code>), requiring no external frameworks like Netty.</p>
-<p>Titan connects to TitanStore via <code>TitanJRedisAdapter.java</code>, which speaks the RESP protocol over TCP (port 6379). TitanStore's source code, issues, and development are managed in its own repository — changes to the store are made there, not in the Titan orchestrator repo.</p>
-<h3 id="core-capabilities">Core Capabilities</h3>
-<ul>
-<li><strong>In-Memory Storage:</strong> Thread-safe key-value and set storage using <code>ConcurrentHashMap</code>.</li>
-<li><strong>RESP Protocol:</strong> Full implementation of the <strong>Redis Serialization Protocol</strong>, making it fully compatible with official Redis clients (<code>redis-cli</code>, <code>Jedis</code>, etc.).</li>
-<li><strong>Concurrent Networking:</strong> Handles multiple concurrent worker connections using a custom Thread Pool architecture.</li>
-</ul>
-<h3 id="advanced-systems-features">Advanced Systems Features</h3>
-<ul>
-<li><strong>Persistence (AOF):</strong> Implements <strong>Append-Only File</strong> logging. Every DAG state transition is flushed to disk. If the Master crashes, data survives and is replayed on startup for zero-loss Crash Recovery.</li>
-<li><strong>Real-Time Pub/Sub:</strong> Implements the Publish/Subscribe messaging pattern using a fan-out architecture with <code>CopyOnWriteArrayList</code> to safely manage concurrent subscribers without blocking publishers.</li>
-<li><strong>Expiry &amp; Eviction (TTL):</strong> Supports millisecond-precision expiration using both Lazy Eviction (checked on access) and Active Eviction (a background probabilistic thread cleans up keys every 100ms).</li>
-<li><strong>Master-Replica Replication:</strong> Supports full PSYNC handshakes and real-time command propagation for distributed high availability.</li>
-</ul>
-<hr />
-<h2 id="3-supported-data-bus-commands">3. Supported Data Bus Commands</h2>
-<p>Tasks running on the cluster can interact with TitanStore using the Python SDK. Under the hood, the store supports the following core RESP commands, including standard Key-Value operations and Set mathematics.</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Command</th>
-<th style="text-align: left;">Usage</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong><code>SET</code></strong></td>
-<td style="text-align: left;"><code>SET key value [PX ms]</code></td>
-<td style="text-align: left;">Stores a string value. Optional <code>PX</code> flag sets an automatic expiration timer.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>GET</code></strong></td>
-<td style="text-align: left;"><code>GET key</code></td>
-<td style="text-align: left;">Retrieves a string value. Returns null if expired or missing.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>SADD</code></strong></td>
-<td style="text-align: left;"><code>SADD key member</code></td>
-<td style="text-align: left;">Adds a member to a Set. Returns <code>1</code> if the member was added, <code>0</code> if it already existed.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>SMEMBERS</code></strong></td>
-<td style="text-align: left;"><code>SMEMBERS key</code></td>
-<td style="text-align: left;">Returns all members currently stored in the specified Set.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>SREM</code></strong></td>
-<td style="text-align: left;"><code>SREM key member</code></td>
-<td style="text-align: left;">Removes a specific member from a Set. Returns <code>1</code> if removed, <code>0</code> if it wasn't there.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>PUBLISH</code></strong></td>
-<td style="text-align: left;"><code>PUBLISH channel msg</code></td>
-<td style="text-align: left;">Broadcasts a message to all workers subscribed to the channel.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>SUBSCRIBE</code></strong></td>
-<td style="text-align: left;"><code>SUBSCRIBE channel</code></td>
-<td style="text-align: left;">Listens for real-time messages on a specific channel.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="4-how-titan-uses-the-store">4. How Titan Uses the Store</h2>
-<p>While you can use TitanStore to pass data between your own Python tasks, the Titan Master heavily relies on it internally:</p>
-<ol>
-<li><strong>Worker Registry:</strong> Heartbeats and node capabilities are stored as ephemeral keys with TTLs. If a worker dies, its key naturally expires, triggering the failure detector.</li>
-<li><strong>DAG Locks:</strong> Dependencies are managed using atomic <code>SET</code> commands. Child tasks constantly check the store to see if their parent's execution flag has been set to <code>COMPLETED</code>.</li>
-<li><strong>Log Streaming:</strong> The web dashboard uses the Pub/Sub architecture to subscribe to specific job IDs, allowing the Master to stream physical stdout/stderr logs directly to the UI in real-time.</li>
-</ol>
 
 
 

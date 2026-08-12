@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../fault-tolerance/">
+        <link rel="prev" href="../execution-flows/">
       
       
-        <link rel="next" href="../../comparison/">
+        <link rel="next" href="../internals/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>TitanStore & IPC - Titan Orchestrator</title>
+        <title>Fault Tolerance & Recovery - Titan Orchestrator</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#internals-protocol-titanstore" class="md-skip">
+        <a href="#fault-tolerance-recovery" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              TitanStore & IPC
+              Fault Tolerance & Recovery
             
           </span>
         </div>
@@ -2138,34 +2138,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../fault-tolerance/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Fault Tolerance & Recovery
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -2185,7 +2157,7 @@
   <span class="md-ellipsis">
     
   
-    TitanStore & IPC
+    Fault Tolerance & Recovery
   
 
     
@@ -2203,7 +2175,7 @@
   <span class="md-ellipsis">
     
   
-    TitanStore & IPC
+    Fault Tolerance & Recovery
   
 
     
@@ -2229,10 +2201,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-the-titan-protocol-titan_proto" class="md-nav__link">
+  <a href="#the-job-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. The Titan Protocol (TITAN_PROTO)
+        The Job Lifecycle
       
     </span>
   </a>
@@ -2240,49 +2212,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-titanstore-architecture" class="md-nav__link">
+  <a href="#worker-failure-detection-self-healing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. TitanStore Architecture
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="2. TitanStore Architecture">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#core-capabilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Core Capabilities
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#advanced-systems-features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Advanced Systems Features
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-supported-data-bus-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Supported Data Bus Commands
+        Worker Failure — Detection &amp; Self-Healing
       
     </span>
   </a>
@@ -2290,10 +2223,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-how-titan-uses-the-store" class="md-nav__link">
+  <a href="#job-failure-retry-fail-fast-dead-letter" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. How Titan Uses the Store
+        Job Failure — Retry, Fail-Fast &amp; Dead-Letter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timeouts-backpressure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeouts &amp; Backpressure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#master-failure-durability-restart-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Master Failure — Durability &amp; Restart Recovery
       
     </span>
   </a>
@@ -2304,6 +2259,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../internals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TitanStore & IPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2488,10 +2471,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-the-titan-protocol-titan_proto" class="md-nav__link">
+  <a href="#the-job-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. The Titan Protocol (TITAN_PROTO)
+        The Job Lifecycle
       
     </span>
   </a>
@@ -2499,49 +2482,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-titanstore-architecture" class="md-nav__link">
+  <a href="#worker-failure-detection-self-healing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. TitanStore Architecture
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="2. TitanStore Architecture">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#core-capabilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Core Capabilities
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#advanced-systems-features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Advanced Systems Features
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-supported-data-bus-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Supported Data Bus Commands
+        Worker Failure — Detection &amp; Self-Healing
       
     </span>
   </a>
@@ -2549,10 +2493,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-how-titan-uses-the-store" class="md-nav__link">
+  <a href="#job-failure-retry-fail-fast-dead-letter" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. How Titan Uses the Store
+        Job Failure — Retry, Fail-Fast &amp; Dead-Letter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timeouts-backpressure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeouts &amp; Backpressure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#master-failure-durability-restart-recovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Master Failure — Durability &amp; Restart Recovery
       
     </span>
   </a>
@@ -2579,128 +2545,54 @@
   
 
 
-<h1 id="internals-protocol-titanstore">⚙️ Internals: Protocol &amp; TitanStore</h1>
-<p>Titan achieves its zero-dependency architecture by implementing its own network communication and state management layers from scratch. This page covers how nodes talk to each other and how cluster state survives failure.</p>
-<hr />
-<h2 id="1-the-titan-protocol-titan_proto">1. The Titan Protocol (<code>TITAN_PROTO</code>)</h2>
-<p>Titan does not rely on HTTP/REST or heavy gRPC layers for internal orchestration. To maximize performance and minimize the memory footprint of the core engine, node-to-node communication happens over simple TCP sockets using a custom binary protocol.</p>
-<p>Every message sent across the cluster uses a fixed-header framing strategy. This ensures payload integrity and prevents the fragmentation issues inherent to plain TCP streams.</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Bytes</th>
-<th style="text-align: left;">Field</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><code>0</code></td>
-<td style="text-align: left;"><strong>Version</strong></td>
-<td style="text-align: left;">Protocol version (currently <code>0x01</code>).</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>1</code></td>
-<td style="text-align: left;"><strong>OpCode</strong></td>
-<td style="text-align: left;">The instruction (e.g., <code>0x04</code> = Submit DAG, <code>0x16</code> = Fetch Logs).</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>2</code></td>
-<td style="text-align: left;"><strong>Flags</strong></td>
-<td style="text-align: left;">Bitmask for modifiers (e.g., Compression, Encryption).</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>3</code></td>
-<td style="text-align: left;"><strong>Spare</strong></td>
-<td style="text-align: left;">Reserved for future use.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>4-7</code></td>
-<td style="text-align: left;"><strong>Payload Length</strong></td>
-<td style="text-align: left;">32-bit unsigned integer defining the exact size of the incoming body.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><code>8+</code></td>
-<td style="text-align: left;"><strong>Body</strong></td>
-<td style="text-align: left;">The variable-length binary or string payload.</td>
-</tr>
-</tbody>
-</table>
-<p>This header adds exactly 8 bytes of overhead per message, achieving very low latency without JSON serialization overhead.</p>
-<hr />
-<h2 id="2-titanstore-architecture">2. TitanStore Architecture</h2>
-<p>TitanStore is a separate Java project (<a href="https://github.com/ramn51/RedisJava">RedisJava</a>) that ships as a pre-built JAR (<code>perm_files/TitanStore.jar</code>). It is a multi-threaded, persistent Redis-compatible server built from scratch using standard I/O (<code>ServerSocket</code>), requiring no external frameworks like Netty.</p>
-<p>Titan connects to TitanStore via <code>TitanJRedisAdapter.java</code>, which speaks the RESP protocol over TCP (port 6379). TitanStore's source code, issues, and development are managed in its own repository — changes to the store are made there, not in the Titan orchestrator repo.</p>
-<h3 id="core-capabilities">Core Capabilities</h3>
+<h1 id="fault-tolerance-recovery">🛡️ Fault Tolerance &amp; Recovery</h1>
+<p>Titan is built on the assumption that workers, jobs, and the Master itself <em>will</em> fail. Failure handling is not an add-on layer — it is wired directly through the scheduler core. Every mechanism below is implemented in the v1 engine.</p>
+<h2 id="the-job-lifecycle">The Job Lifecycle</h2>
+<p>Every job moves through a six-state machine. Failure is a first-class transition, not an exception path — a failed job either loops back for another attempt or lands in the dead-letter queue.</p>
+<pre class="mermaid"><code>stateDiagram-v2
+    [*] --&gt; PENDING
+    PENDING --&gt; RUNNING: dispatched to worker
+    PENDING --&gt; CANCELLED: cancel command
+    RUNNING --&gt; COMPLETED: success
+    RUNNING --&gt; FAILED: error / timeout
+    RUNNING --&gt; CANCELLED: kill signal to worker
+    FAILED --&gt; PENDING: retryCount ≤ 3 · re-queue
+    FAILED --&gt; DEAD: retryCount &gt; 3 · dead-letter
+    COMPLETED --&gt; [*]
+    DEAD --&gt; [*]
+    CANCELLED --&gt; [*]
+    note right of CANCELLED
+        cancel cascades to child jobs
+    end note</code></pre>
+<h2 id="worker-failure-detection-self-healing">Worker Failure — Detection &amp; Self-Healing</h2>
 <ul>
-<li><strong>In-Memory Storage:</strong> Thread-safe key-value and set storage using <code>ConcurrentHashMap</code>.</li>
-<li><strong>RESP Protocol:</strong> Full implementation of the <strong>Redis Serialization Protocol</strong>, making it fully compatible with official Redis clients (<code>redis-cli</code>, <code>Jedis</code>, etc.).</li>
-<li><strong>Concurrent Networking:</strong> Handles multiple concurrent worker connections using a custom Thread Pool architecture.</li>
+<li><strong>Heartbeat failure detector.</strong> The Master runs a dedicated <code>HeartBeatExecutor</code> that dials each registered worker on a fixed interval and tracks its "Last Seen" timestamp. A worker that goes silent past the threshold (~30s) is marked <code>DEAD</code>, and its in-flight jobs are immediately re-queued onto healthy nodes. <em>(The Master initiates the heartbeat — it dials the worker, not the reverse.)</em></li>
+<li><strong>Push-based re-registration.</strong> Workers re-register with the Master every 30s, so a worker that was marked dead — or that came up after a Master restart — rejoins the pool automatically, with no operator action or static configuration.</li>
 </ul>
-<h3 id="advanced-systems-features">Advanced Systems Features</h3>
+<h2 id="job-failure-retry-fail-fast-dead-letter">Job Failure — Retry, Fail-Fast &amp; Dead-Letter</h2>
 <ul>
-<li><strong>Persistence (AOF):</strong> Implements <strong>Append-Only File</strong> logging. Every DAG state transition is flushed to disk. If the Master crashes, data survives and is replayed on startup for zero-loss Crash Recovery.</li>
-<li><strong>Real-Time Pub/Sub:</strong> Implements the Publish/Subscribe messaging pattern using a fan-out architecture with <code>CopyOnWriteArrayList</code> to safely manage concurrent subscribers without blocking publishers.</li>
-<li><strong>Expiry &amp; Eviction (TTL):</strong> Supports millisecond-precision expiration using both Lazy Eviction (checked on access) and Active Eviction (a background probabilistic thread cleans up keys every 100ms).</li>
-<li><strong>Master-Replica Replication:</strong> Supports full PSYNC handshakes and real-time command propagation for distributed high availability.</li>
+<li><strong>Bounded retry.</strong> On failure, <code>handleJobFailure</code> increments the job's retry count and re-queues it. A job is retried while <code>retryCount ≤ 3</code> and marked <code>DEAD</code> once it exceeds that — i.e. <strong>up to 3 retries (4 attempts total)</strong> before it is quarantined, rather than retrying forever.</li>
+<li><strong>Dead-Letter Queue (DLQ) &amp; poison pills.</strong> Jobs that exhaust their retries — "poison pills" that would otherwise crash-loop the cluster (syntax errors, missing libraries) — are quarantined in a dedicated DLQ. Their logs and state are preserved for inspection, and their dependent children are cancelled so the rest of the DAG is not stalled.</li>
+<li><strong>Fail-fast for deployment errors.</strong> Port-conflict (<code>"ALREADY in use"</code>) and rejected-deployment failures skip the retry loop entirely — the job is marked <code>FAILED</code> immediately rather than burning 3 retries on a deterministic error. Auto-scaler worker-spawn jobs (<code>WRK-</code>) are similarly abandoned on failure so the scaler can retry on a fresh port.</li>
+<li><strong>Reliable completion callbacks.</strong> When a worker reports job completion back to the Master (the worker→Master callback path), it retries up to <strong>5 times with exponential backoff (1s → 2s → 4s → 8s)</strong>, so a transient network blip does not silently lose a finished result. <em>(This backoff applies to the completion callback, not to Master→worker dispatch, which re-queues immediately.)</em></li>
 </ul>
+<h2 id="timeouts-backpressure">Timeouts &amp; Backpressure</h2>
+<ul>
+<li><strong>Execution timeouts.</strong> Every running process is bounded by a timeout; on expiry the entire process tree is forcibly terminated (<code>destroyForcibly</code>) and the job is failed, rather than a hung script permanently occupying a worker slot.</li>
+<li><strong>RPC read timeouts.</strong> All Master↔worker socket reads use a 30s timeout, so a stuck peer surfaces as a detectable failure instead of a permanent block.</li>
+<li><strong>Saturation backpressure.</strong> If every capable worker is saturated when a job is popped from the queue, the job is re-queued rather than dropped or force-dispatched — natural backpressure that holds work until capacity frees up.</li>
+</ul>
+<h2 id="master-failure-durability-restart-recovery">Master Failure — Durability &amp; Restart Recovery</h2>
+<ul>
+<li><strong>AOF durability.</strong> Every critical state transition (job dispatched, node locked, worker registered) is appended to TitanStore's on-disk Append-Only File.</li>
+<li><strong>Orphaned-job recovery.</strong> On startup the Master calls <code>recoverState()</code>, which scans TitanStore for jobs that were active but never reached a terminal state and re-queues them into the correct queue (waiting room vs. active) based on their persisted status and scheduled time. This is distinct from raw AOF replay: it specifically rescues <em>in-flight</em> work so a DAG resumes across a Master restart instead of stranding.</li>
+</ul>
+<div class="admonition info">
+<p class="admonition-title">Honest scope: durability, not yet high availability</p>
+<p>These mechanisms give Titan <strong>durability</strong> — no committed state or in-flight job is lost across a crash — and <strong>self-healing</strong> for worker failure. What v1 does <strong>not</strong> yet provide is <strong>availability <em>during</em> a Master outage</strong>: while the Master is down, workers cannot receive new instructions until it reboots and replays state. Zero-downtime failover via Raft leader election is a v2.0 roadmap item (see <a href="../design/#7-limitations-design-constraints">Limitations</a>). In short: the gap is availability-during-failure, not data loss.</p>
+</div>
 <hr />
-<h2 id="3-supported-data-bus-commands">3. Supported Data Bus Commands</h2>
-<p>Tasks running on the cluster can interact with TitanStore using the Python SDK. Under the hood, the store supports the following core RESP commands, including standard Key-Value operations and Set mathematics.</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Command</th>
-<th style="text-align: left;">Usage</th>
-<th style="text-align: left;">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong><code>SET</code></strong></td>
-<td style="text-align: left;"><code>SET key value [PX ms]</code></td>
-<td style="text-align: left;">Stores a string value. Optional <code>PX</code> flag sets an automatic expiration timer.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>GET</code></strong></td>
-<td style="text-align: left;"><code>GET key</code></td>
-<td style="text-align: left;">Retrieves a string value. Returns null if expired or missing.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>SADD</code></strong></td>
-<td style="text-align: left;"><code>SADD key member</code></td>
-<td style="text-align: left;">Adds a member to a Set. Returns <code>1</code> if the member was added, <code>0</code> if it already existed.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>SMEMBERS</code></strong></td>
-<td style="text-align: left;"><code>SMEMBERS key</code></td>
-<td style="text-align: left;">Returns all members currently stored in the specified Set.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>SREM</code></strong></td>
-<td style="text-align: left;"><code>SREM key member</code></td>
-<td style="text-align: left;">Removes a specific member from a Set. Returns <code>1</code> if removed, <code>0</code> if it wasn't there.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>PUBLISH</code></strong></td>
-<td style="text-align: left;"><code>PUBLISH channel msg</code></td>
-<td style="text-align: left;">Broadcasts a message to all workers subscribed to the channel.</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong><code>SUBSCRIBE</code></strong></td>
-<td style="text-align: left;"><code>SUBSCRIBE channel</code></td>
-<td style="text-align: left;">Listens for real-time messages on a specific channel.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="4-how-titan-uses-the-store">4. How Titan Uses the Store</h2>
-<p>While you can use TitanStore to pass data between your own Python tasks, the Titan Master heavily relies on it internally:</p>
-<ol>
-<li><strong>Worker Registry:</strong> Heartbeats and node capabilities are stored as ephemeral keys with TTLs. If a worker dies, its key naturally expires, triggering the failure detector.</li>
-<li><strong>DAG Locks:</strong> Dependencies are managed using atomic <code>SET</code> commands. Child tasks constantly check the store to see if their parent's execution flag has been set to <code>COMPLETED</code>.</li>
-<li><strong>Log Streaming:</strong> The web dashboard uses the Pub/Sub architecture to subscribe to specific job IDs, allowing the Master to stream physical stdout/stderr logs directly to the UI in real-time.</li>
-</ol>
+<p>For step-by-step code traces of these paths — worker crash and recovery, failure with retry and dead-letter, cancel with cascade — see the <a href="../../contributing-dev-guide/#code-flow-by-scenario">Developer Guide → Code Flow by Scenario</a>.</p>
 
 
 
