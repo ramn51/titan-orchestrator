@@ -128,7 +128,7 @@ Nodes display small badges for at-a-glance status:
 | `sticky` (orange) | Affinity enabled |
 | `p:N` (blue) | Priority above 1 |
 
-The node border colour reflects its capability requirement (green = GENERAL, purple = GPU, blue = HIGH_MEM, orange = PYTHON).
+The node border colour reflects its capability requirement (green = GENERAL, purple = GPU, blue = HIGH_MEM).
 
 ---
 

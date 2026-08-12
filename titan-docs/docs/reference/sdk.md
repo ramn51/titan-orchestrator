@@ -76,7 +76,7 @@ These are the constructor parameters:
 | `port` | `int` | `0` | Port number to bind to (Required if deploying a long-running Service). |
 | `is_archive` | `bool` | `False` | Set to `True` if deploying a zipped project folder. |
 | `priority` | `int` | `1` | Queue priority. Higher numbers are scheduled first. |
-| `delay` | `int` | `0` | Artificial delay (in seconds/ms depending on scheduler) before execution. |
+| `delay` | `int` | `0` | Artificial delay in **milliseconds** before execution. (Note: in YAML pipelines the `delay` field is specified in **seconds** and converted to ms by the parser.) |
 | `affinity` | `bool` | `False` | If `True`, Titan attempts to route this task to the exact same physical node as its parent task. |
 | `requirement`| `str` | `"GENERAL"` | Hardware capability routing tag (e.g., `"GPU"`, `"HIGH_MEM"`). |
 | `hitl_message` | `str` | `None` | When set, the SDK automatically injects a Human-in-the-Loop gate after this job. The string is shown to the operator in the Dashboard. See [HITL Pipelines](../examples/hitl.md). |

@@ -64,7 +64,6 @@ Each node has a **Requirement** field that controls which worker receives the jo
 | `GENERAL` | Any available worker |
 | `GPU` | Worker started with GPU capability |
 | `HIGH_MEM` | Worker started with HIGH_MEM capability |
-| `PYTHON` | Any Python-capable worker |
 
 Workers advertise their capability at startup. The master only dispatches a job to a worker that matches its requirement.
 

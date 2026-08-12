@@ -148,20 +148,20 @@ All four paths produce the same result on the cluster, a DAG tracked in the visu
 
 Titan is designed to grow with your system's complexity:
 
-1. **Level 1: Distributed Cron (The "Scheduler")**
+1. **Tier 1: Distributed Cron (The "Scheduler")**
    Execute Python scripts on remote machines in sequence or in parallel. Use the CLI or SDK to dispatch batch jobs, ETL pipelines, or any script-based workload across the cluster.
 
-2. **Level 2: Service Orchestrator (The "Platform")**
+2. **Tier 2: Service Orchestrator (The "Platform")**
    Deploy long-running API servers and keep them alive, restarting them automatically on crash. Port management is handled by Titan.
 
     !!! tip "Levels 1 + 2 work together"
-        A common pattern: deploy an LLM inference server or a data API as a permanent service (Level 2), then run batch scripts as jobs (Level 1) that call that service. Both run inside the same Titan cluster, the service stays alive while jobs come and go around it.
+        A common pattern: deploy an LLM inference server or a data API as a permanent service (Tier 2), then run batch scripts as jobs (Tier 1) that call that service. Both run inside the same Titan cluster, the service stays alive while jobs come and go around it.
 
-3. **Level 3: Agentic Execution Runtime (The "Autonomous Mode")**
+3. **Tier 3: Agentic Execution Runtime (The "Autonomous Mode")**
    Programmatically construct execution graphs at runtime where software agents spawn downstream compute tasks conditionally based on LLM decisions or system states.
 
     !!! tip "All three levels work together"
-        Level 3 doesn't replace the others, it orchestrates them. An agent can keep an LLM inference server running as a permanent service (Level 2), dispatch batch analysis jobs that call it (Level 1), and dynamically spawn further tasks based on what those jobs return, all within a single cluster. Titan manages the services, the jobs, and the agent's execution graph in one runtime.
+        Tier 3 doesn't replace the others, it orchestrates them. An agent can keep an LLM inference server running as a permanent service (Tier 2), dispatch batch analysis jobs that call it (Tier 1), and dynamically spawn further tasks based on what those jobs return, all within a single cluster. Titan manages the services, the jobs, and the agent's execution graph in one runtime.
 
 
 ## Built-In Dashboard

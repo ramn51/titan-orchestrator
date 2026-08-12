@@ -47,7 +47,7 @@ flowchart LR
     style B fill:#1e293b,stroke:#bf360c,stroke-width:2px,color:#ffffff
 ```
 
-## 2. Dynamic Logic (Mode 1.5)
+## 2. Dynamic Logic
 _Best for_: __Conditional logic, real-time load balancing, and dynamic infrastructure.__
 
 Because you are using pure Python, you can use standard if/else logic to decide which execution graph to build based on real-time cluster stats, database queries, or external API calls.
@@ -99,7 +99,7 @@ flowchart LR
     style D9 fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#ffffff
 ```
 
-## 3. Agentic Workflows & LLMs (Mode 2)
+## 3. Agentic Workflows & LLMs
 _Best for_: __AI Agents, Self-Healing loops, and recursive execution.__
 
 In this mode, Titan acts as the physical execution substrate for Software Agents. Because Titan is completely decoupled, an LLM (like Gemini) can evaluate the output of a previous task and dynamically formulate a brand new TitanJob to execute.
@@ -132,7 +132,7 @@ if decision.action == "DEPLOY_PATCH":
         job_id=f"{job_id}_fix", 
         filename="scripts/safe_mode_patch.py",
         # The agent dynamically requests specific capabilities based on the failure!
-        requirement=decision.recommended_hardware # e.g., "HIGH_MEMORY"
+        requirement=decision.recommended_hardware # e.g., "HIGH_MEM"
     )
 
     # 4. Dispatch the new task to the cluster
@@ -147,7 +147,7 @@ flowchart LR
     
     LLM --> Decision{"Action ==<br>'DEPLOY_PATCH'?"}
 
-    Decision -->|Yes: Root Cause Found| Patch["TitanJob(req='HIGH_MEMORY')<br> client.submit_job()"]
+    Decision -->|Yes: Root Cause Found| Patch["TitanJob(req='HIGH_MEM')<br> client.submit_job()"]
     Decision -->|No: Non-Critical| Done["Run Healthy<br> Sequence Complete"]
 
     style Logs fill:#1e293b,stroke:#64748b,stroke-width:2px,color:#ffffff

@@ -81,7 +81,7 @@ flowchart TD
     export GEMINI_API_KEY="your_key_here"
 
     # 3. Make sure Titan is running
-    ./titan-dev up
+    ./titan-dev.sh up
     ```
 
 === "Worker scripts"

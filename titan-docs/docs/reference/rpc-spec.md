@@ -8,6 +8,108 @@ When a client submits a high-level intent, the Master intercepts the payload, in
 
 ---
 
+## 🧬 Wire Format
+
+Every Titan RPC message — client↔Master and Master↔Worker — uses the same length-prefixed binary framing over a raw TCP socket. There is no HTTP, gRPC, or serialization framework; the format is defined entirely in `TitanProtocol.java` and mirrored in the Python SDK.
+
+### Frame layout
+
+Each message is an **8-byte header** followed by a UTF-8 payload:
+
+| Offset | Size | Field | Value |
+|:---|:---|:---|:---|
+| 0 | 1 byte | `version` | Protocol version. Currently `1`. |
+| 1 | 1 byte | `opcode` | Operation code (see table below). |
+| 2 | 1 byte | `flags` | Reserved. Always `0x00`. |
+| 3 | 1 byte | `reserved` | Reserved. Always `0x00`. |
+| 4 | 4 bytes | `length` | Payload length in bytes, unsigned 32-bit **big-endian**. |
+| 8 | `length` | `payload` | UTF-8 encoded payload string. |
+
+The two implementations encode the header identically:
+
+```python
+# Python SDK
+header = struct.pack('>BBBBI', VERSION, op_code, 0, 0, len(payload_bytes))
+sock.sendall(header + payload_bytes)
+```
+
+```java
+// Java engine (TitanProtocol.send)
+out.writeByte(CURRENT_VERSION);  // 1
+out.writeByte(opCode);
+out.writeByte(0x00);             // flags
+out.writeByte(0x00);             // reserved
+out.writeInt(len);               // 4-byte big-endian length
+out.write(payloadBytes);
+```
+
+### Versioning
+
+The receiver compares the header's `version` byte against its own `CURRENT_VERSION` (currently `1`). On mismatch it **rejects the frame** with `Version Mismatch! Server expects v1` instead of attempting to parse it. There is no negotiation handshake — both peers must speak the same protocol version.
+
+### Opcode table
+
+All **32** opcodes defined by the protocol:
+
+| Group | Opcode | Hex | Typical direction |
+|:---|:---|:---|:---|
+| **Cluster** | `OP_HEARTBEAT` | `0x01` | Master → Worker |
+| | `OP_REGISTER` | `0x02` | Worker → Master |
+| | `OP_UNREGISTER_SERVICE` | `0x0A` | Worker → Master |
+| | `OP_KILL_WORKER` | `0x11` | Client → Master → Worker |
+| | `OP_STATS` | `0x08` | Client → Master |
+| | `OP_STATS_JSON` | `0x09` | Client → Master |
+| | `OP_CLEAN_STATS` | `0x0B` | Client → Master |
+| **Job / DAG** | `OP_SUBMIT_JOB` | `0x03` | Client → Master |
+| | `OP_SUBMIT_DAG` | `0x04` | Client → Master |
+| | `OP_DEPLOY` | `0x05` | Client → Master |
+| | `OP_RUN` | `0x06` | Master → Worker |
+| | `OP_RUN_ARCHIVE` | `0x18` | Master → Worker |
+| | `OP_STAGE` | `0x0C` | Master → Worker |
+| | `OP_START_SERVICE` | `0x0D` | Master → Worker |
+| | `OP_START_SERVICE_ARCHIVE` | `0x19` | Master → Worker |
+| | `OP_STOP` | `0x07` | Master → Worker |
+| | `OP_JOB_COMPLETE` | `0x12` | Worker → Master |
+| | `OP_GET_JOB_STATUS` | `0x55` | Client → Master |
+| | `OP_CANCEL_JOB` | `0x56` | Client → Master |
+| **Assets** | `OP_UPLOAD_ASSET` | `0x53` | Client → Master |
+| | `OP_FETCH_ASSET` | `0x54` | Client → Master |
+| | `OP_DEPLOY_SCRIPT` | `0x57` | Client → Master |
+| **Logging** | `OP_LOG_STREAM` | `0x15` | Worker → Master |
+| | `OP_LOG_BATCH` | `0x17` | Worker → Master |
+| | `OP_GET_LOGS` | `0x16` | Client → Master |
+| **TitanStore (KV)** | `OP_KV_SET` | `0x60` | Client → Master |
+| | `OP_KV_GET` | `0x61` | Client → Master |
+| | `OP_KV_SADD` | `0x62` | Client → Master |
+| | `OP_KV_SMEMBERS` | `0x63` | Client → Master |
+| **Responses** | `OP_ACK` | `0x50` | Success |
+| | `OP_DATA` | `0x52` | Success + data payload |
+| | `OP_ERROR` | `0x51` | Failure |
+
+### Payload encoding & the `|` delimiter
+
+Payloads are pipe-delimited UTF-8 strings (for example, `jobId|status|result`). **`|` is a hard delimiter with no escape sequence.** To keep free-text fields from corrupting the framing, the SDK sanitizes them before sending:
+
+| Field | Sanitization |
+|:---|:---|
+| `args` | `\|` replaced with a space |
+| `requirement` | `\|` removed |
+| `hitl_message` | `\|` replaced with a space |
+
+Script and binary content is Base64-encoded, so it is inherently delimiter-safe. Avoid `|` in any raw field you pass through.
+
+### Responses & error model
+
+Responses use the same frame format. The outcome is signalled by the response opcode:
+
+- **`OP_ACK` (`0x50`)** — success; may carry a short status string.
+- **`OP_DATA` (`0x52`)** — success with a data payload (e.g. stats JSON, a KV value).
+- **`OP_ERROR` (`0x51`)** — failure; the payload is a human-readable message.
+
+Titan does **not** define numeric error codes. A failure returns `OP_ERROR` with a descriptive string such as `ERROR: File not found` or `ERROR_INVALID_REGISTRATION`. Callers should treat any `OP_ERROR` response — or an `ERROR`-prefixed string — as a failure.
+
+---
+
 ## 🔄 The Execution Translation Layer
 
 This layer handles the staging and execution of code. For many of these commands, the Master utilizes a **Two-Phase Commit** pattern: it first instructs the worker to stage the file, and only upon success does it send the execution command.
@@ -69,7 +171,7 @@ Every individual job within a DAG must adhere to the following pipe-delimited fo
 | Field | Description | Example |
 | :--- | :--- | :--- |
 | `ID` | The unique identifier for the job. The Master will automatically prefix this with `DAG-` if not provided. | `extract_data` |
-| `SKILL` | The capability required by the Worker to execute this job. | `GENERAL`, `GPU`, `PYTHON` |
+| `SKILL` | The capability tag required to execute this job. Capabilities are free-form strings matched against what each worker advertises; the conventional tags are `GENERAL`, `GPU`, `HIGH_MEM`. | `GENERAL`, `GPU`, `HIGH_MEM` |
 | `<COMMAND_PAYLOAD>` | The standard execution payload. | `RUN_PAYLOAD|calc.py|UEsDBB...` |
 | `PRIORITY` | Integer queue priority on an open scale — **higher numbers are scheduled first** (not a capped 0–2 enum). Default `1`. | `1` |
 | `DELAY_MS` | Time in milliseconds to wait before placing the job in the active queue. | `0` (immediate) |

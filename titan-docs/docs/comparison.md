@@ -75,7 +75,7 @@ Where Titan sits relative to the tools engineers most often consider alongside i
 | **mTLS / auth** | ❌ v2 roadmap | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Container isolation** | ❌ v2 roadmap (process isolation today) | ✅ | ✅ | ✅ | N/A | ⚠️ | ✅ |
 | **External deps to run core** | None (Java + optional Redis-like store) | Postgres, scheduler, webserver | Postgres, daemon | Server, agents | Cassandra / SQL, history service | Head node + workers | Consul (optional) |
-| **Time to first job** | ~1 command (`./titan-dev up`) | High | Medium | Medium | High | Medium | Medium |
+| **Time to first job** | ~1 command (`./titan-dev.sh up`) | High | Medium | Medium | High | Medium | Medium |
 | **Production-ready** | ❌ Research v1.0 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 !!! warning "Read me first"

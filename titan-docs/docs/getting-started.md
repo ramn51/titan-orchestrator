@@ -27,8 +27,8 @@ We have included a unified bootstrap script that handles building the Java binar
 Make the script executable and launch the cluster:
 
 ```bash
-chmod +x titan-dev
-./titan-dev up
+chmod +x titan-dev.sh
+./titan-dev.sh up
 ```
 
 **LOGS OF RUNNING (Started and Stopped)**
@@ -51,7 +51,7 @@ chmod +x titan-dev
 [+] Worker Node:     localhost:8080 (PID: 5991)
 [+] TitanStore:      localhost:6379 (PID: 5944)
 [UI] Dashboard:      http://localhost:5000
-[+] View Logs:       Open a new terminal and run: ./titan-dev logs
+[+] View Logs:       Open a new terminal and run: ./titan-dev.sh logs
 ====================================================
 [INFO] Cluster is running. Press [Ctrl+C] right here to safely shut down everything.
 ^C
@@ -80,11 +80,11 @@ Because the cluster runs cleanly in the background, you can stream the logs at a
 
 ```bash
 # Watch all cluster traffic:
-./titan-dev logs
+./titan-dev.sh logs
 
 # Or filter by specific components:
-./titan-dev logs master
-./titan-dev logs worker
+./titan-dev.sh logs master
+./titan-dev.sh logs worker
 ```
 
 ## 3. Run Your First Task
@@ -143,7 +143,7 @@ If you are developing Titan, simply open the project in IntelliJ IDEA and run th
 
 1. **Master:** Run `titan.TitanMaster`
 2. **Worker:** Run `titan.TitanWorker` (Defaults to Port 8080, Capability: GENERAL, Permanent: False)
-3. **CLI:** Run `titan.TitanCli`
+3. **CLI:** Run `titan.TitanCLI`
 
 ### Option B: Build and run manually
 ```bash
@@ -321,6 +321,6 @@ python titan_sdk/titan_cli.py deploy titan_test_suite/examples/yaml_based_static
 
 ---
 
-> **Note on the dashboard:** If you're running the manual setup (not `titan-dev`), start the dashboard with `python3 ./perm_files/server_dashboard.py`. Flask is required (`pip install flask`). See [Step 4](#4-open-the-dashboard) for the full walkthrough.
+> **Note on the dashboard:** If you're running the manual setup (not `titan-dev.sh`), start the dashboard with `python3 ./perm_files/server_dashboard.py`. Flask is required (`pip install flask`). See [Step 4](#4-open-the-dashboard) for the full walkthrough.
 
 
