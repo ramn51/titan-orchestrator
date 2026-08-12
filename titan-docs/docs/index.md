@@ -7,7 +7,7 @@
 [![GitHub Repo](https://img.shields.io/badge/GitHub-View_Repository-181717?logo=github)](https://github.com/ramn51/titan-orchestrator) ![Status: Experimental](https://img.shields.io/badge/Status-Experimental_Research-blue) ![Built by: 1 Developer](https://img.shields.io/badge/Solo_Project-Ram_Narayanan-brightgreen)
 
 
-**A self-hosted distributed runtime for DAGs, services, and agentic workflows — shipped as a single zero-dependency JAR. Define jobs in YAML or Python, and Titan handles capability routing and dependency execution across your cluster — from a nightly ETL pipeline to a multi-agent LLM workflow.**
+**Titan is a self-hosted distributed runtime for DAGs, services, and agentic workflows, and it ships as a single JAR with zero external dependencies. You can define your jobs in YAML or Python, build them visually in the browser, or even describe them in plain English through an AI client. Titan then handles capability routing and dependency execution across your cluster, running everything from a nightly ETL pipeline to a multi-agent LLM workflow.**
 
 !!! tip "Ready to dive in?"
     Skip the reading and jump straight into the code. Follow our **[5-Minute Quickstart](getting-started.md)** to run your first distributed task, or view the **[Python SDK Reference](reference/sdk.md)**.
@@ -30,9 +30,9 @@
 
 ![Titan Dashboard](screenshots/dashboard_orchestrator.png)
 
-### Live Pipeline Visibility — DAG Pipelines View
+### Live Pipeline Visibility: DAG Pipelines View
 
-Every pipeline submitted to the cluster — via CLI, SDK, YAML, or the visual Constructor — is automatically rendered as a live dependency graph with real-time execution status per node.
+Every pipeline submitted to the cluster, via CLI, SDK, YAML, or the visual Constructor, is automatically rendered as a live dependency graph with real-time execution status per node.
 
 ![DAG Visualizer](screenshots/visualizer_overview.png)
 
@@ -40,7 +40,7 @@ Every pipeline submitted to the cluster — via CLI, SDK, YAML, or the visual Co
 
 ## Architecture Overview
 
-A single Master acts as the control plane — it accepts submissions from clients, routes tasks to workers by load and capability, and uses TitanStore for state and crash recovery. Workers register themselves on startup; the Master holds no static worker config.
+A single Master acts as the control plane. It accepts submissions from clients, routes tasks to workers by load and capability, and uses TitanStore for state and crash recovery. Workers register themselves on startup; the Master holds no static worker config.
 
 ```mermaid
 flowchart LR
@@ -88,11 +88,11 @@ flowchart LR
 
 Titan consists of three components:
 
-- **Control Plane (Master)** — DAG scheduling, dependency resolution, and capability routing
-- **Workers** — Capability-tagged execution nodes that self-register on startup
-- **TitanStore (Optional & Swappable)** — Embedded AOF-backed persistence for crash recovery and shared agent state. No external database required — but not locked in either.
+- **Control Plane (Master)**: DAG scheduling, dependency resolution, and capability routing
+- **Workers**: Capability-tagged execution nodes that self-register on startup
+- **TitanStore (Optional & Swappable)**: Embedded AOF-backed persistence for crash recovery and shared agent state. No external database required, but not locked in either.
 
-> **TitanStore is optional _and_ replaceable.** Titan is fully functional without it — core execution and routing work regardless; you only lose state recovery and SDK-driven KV operations. And because Titan talks to it over the standard **Redis wire protocol (RESP)**, TitanStore is a drop-in: point Titan at **real Redis, KeyDB, or Valkey** instead by setting `TITAN_REDIS_HOST` / `TITAN_REDIS_PORT` (default `localhost:6379`). No adapter code to write — the same RESP client speaks to any of them. TitanStore just ships in the box so you get persistence with zero external dependencies.
+> **TitanStore is optional _and_ replaceable.** Titan is fully functional without it. Core execution and routing work regardless; you only lose state recovery and SDK-driven KV operations. And because Titan talks to it over the standard **Redis wire protocol (RESP)**, TitanStore is a drop-in: point Titan at **real Redis, KeyDB, or Valkey** instead by setting `TITAN_REDIS_HOST` / `TITAN_REDIS_PORT` (default `localhost:6379`). No adapter code to write; the same RESP client speaks to any of them. TitanStore just ships in the box so you get persistence with zero external dependencies.
 
 [🧠 Architecture Deep Dive](architecture/design.md){ .md-button }
 
@@ -100,21 +100,21 @@ Titan consists of three components:
 
 ## Under the Hood
 
-Titan's core is a **distributed execution engine written from scratch** — no orchestration framework, no message broker, no external database. The scheduler, the wire protocol, the failure handling, and the persistence layer are all hand-built and ship as a single zero-dependency JAR.
+Titan's core is a **distributed execution engine written from scratch**: no orchestration framework, no message broker, no external database. The scheduler, the wire protocol, the failure handling, and the persistence layer are all hand-built and ship as a single zero-dependency JAR.
 
-That constraint is the point: every dependency Titan *doesn't* take is a hard problem it solves itself — which is exactly why the engine is worth looking at.
+That constraint is the point: every dependency Titan *doesn't* take is a hard problem it solves itself, which is exactly why the engine is worth looking at.
 
 | Layer | Built from scratch |
 |---|---|
-| **Scheduler** | Dependency resolution, capability + affinity routing, event-driven dispatch — blocked jobs cost nothing until a completion event unlocks them (no polling) |
-| **Transport** | A custom **32-opcode binary RPC protocol** over raw TCP — no gRPC, no Netty |
-| **Execution** | **5 task runners** behind one interface — ephemeral scripts, long-running services (with auto-restart), detached processes, plus file & PDF handlers |
-| **Persistence** | A from-scratch **RESP-compatible store** (AOF, KV, replication) — [swappable for real Redis](#architecture-overview) |
+| **Scheduler** | Dependency resolution, capability + affinity routing, event-driven dispatch, blocked jobs cost nothing until a completion event unlocks them (no polling) |
+| **Transport** | A custom **32-opcode binary RPC protocol** over raw TCP, no gRPC, no Netty |
+| **Execution** | **5 task runners** behind one interface, ephemeral scripts, long-running services (with auto-restart), detached processes, plus file & PDF handlers |
+| **Persistence** | A from-scratch **RESP-compatible store** (AOF, KV, replication), [swappable for real Redis](#architecture-overview) |
 | **Concurrency** | ~3,800 lines of framework-free Java: thread pools, atomics, and synchronized state coordinated across concurrent dispatch, heartbeat, and auto-scale loops |
 
 ### Failure is a first-class concern
 
-Titan implements **9 distinct failure-handling mechanisms** — heartbeat detection with self-healing reschedule, bounded retry, a dead-letter queue, fail-fast on deterministic errors, orphaned-job recovery on restart, execution timeouts, saturation backpressure, and exponential-backoff callbacks. Handling partial failure — a worker dying mid-job, a Master restart, a lost result — is the part most from-scratch orchestrators skip. Titan treats it as a core transition, not an edge case.
+Titan implements **9 distinct failure-handling mechanisms**: heartbeat detection with self-healing reschedule, bounded retry, a dead-letter queue, fail-fast on deterministic errors, orphaned-job recovery on restart, execution timeouts, saturation backpressure, and exponential-backoff callbacks. Handling partial failure (a worker dying mid-job, a Master restart, a lost result) is the part most from-scratch orchestrators skip. Titan treats it as a core transition, not an edge case.
 
 [🛡️ Fault Tolerance & Recovery](architecture/fault-tolerance.md){ .md-button }
 [🔀 Execution Flows](architecture/execution-flows.md){ .md-button }
@@ -124,21 +124,21 @@ Titan implements **9 distinct failure-handling mechanisms** — heartbeat detect
 
 ## Ways to Define a DAG
 
-Titan accepts pipeline definitions in four forms — pick whatever fits your workflow:
+Titan accepts pipeline definitions in four forms. Pick whatever fits your workflow:
 
 | Method | Best for | Where to start |
 |---|---|---|
 | **YAML file** | Repeatable, version-controlled pipelines. Define jobs, dependencies, requirements, and priorities in a declarative file. Commit to git and re-run any time. | [Static YAML Pipelines](examples/yaml.md) |
-| **Python SDK** | Programmatic pipelines where the shape is determined at runtime — agent loops, conditional branching, dynamic fan-out. Full control in code. | [SDK Reference](reference/sdk.md) |
-| **Visual Constructor** | Building pipelines without writing code. Drag nodes, draw edges, set scripts — then deploy directly to the cluster in one click. Auto-generates the equivalent YAML and SDK code. | [DAG Constructor](constructor/overview.md) |
-| **MCP (natural language)** | Controlling Titan from Claude Desktop, Cursor, or any MCP-compatible AI client. Describe what you want — the agent writes the scripts and submits the DAG on your behalf. | [MCP / Agent Access](mcp/overview.md) |
+| **Python SDK** | Programmatic pipelines where the shape is determined at runtime, agent loops, conditional branching, dynamic fan-out. Full control in code. | [SDK Reference](reference/sdk.md) |
+| **Visual Constructor** | Building pipelines without writing code. Drag nodes, draw edges, set scripts, then deploy directly to the cluster in one click. Auto-generates the equivalent YAML and SDK code. | [DAG Constructor](constructor/overview.md) |
+| **MCP (natural language)** | Controlling Titan from Claude Desktop, Cursor, or any MCP-compatible AI client. Describe what you want, the agent writes the scripts and submits the DAG on your behalf. | [MCP / Agent Access](mcp/overview.md) |
 
-All four paths produce the same result on the cluster — a DAG tracked in the visualizer, with per-job logs, status, and workspace files.
+All four paths produce the same result on the cluster, a DAG tracked in the visualizer, with per-job logs, status, and workspace files.
 
 ---
 
 !!! question "Wondering how Titan compares to Airflow, Dagster, Ray, or Temporal?"
-    See the full breakdown — honest scoring, capability tiers, and a "when NOT to use Titan" section.
+    See the full breakdown, honest scoring, capability tiers, and a "when NOT to use Titan" section.
 
     [⚖️ How Titan Compares](comparison.md){ .md-button }
 
@@ -155,13 +155,13 @@ Titan is designed to grow with your system's complexity:
    Deploy long-running API servers and keep them alive, restarting them automatically on crash. Port management is handled by Titan.
 
     !!! tip "Levels 1 + 2 work together"
-        A common pattern: deploy an LLM inference server or a data API as a permanent service (Level 2), then run batch scripts as jobs (Level 1) that call that service. Both run inside the same Titan cluster — the service stays alive while jobs come and go around it.
+        A common pattern: deploy an LLM inference server or a data API as a permanent service (Level 2), then run batch scripts as jobs (Level 1) that call that service. Both run inside the same Titan cluster, the service stays alive while jobs come and go around it.
 
 3. **Level 3: Agentic Execution Runtime (The "Autonomous Mode")**
    Programmatically construct execution graphs at runtime where software agents spawn downstream compute tasks conditionally based on LLM decisions or system states.
 
     !!! tip "All three levels work together"
-        Level 3 doesn't replace the others — it orchestrates them. An agent can keep an LLM inference server running as a permanent service (Level 2), dispatch batch analysis jobs that call it (Level 1), and dynamically spawn further tasks based on what those jobs return — all within a single cluster. Titan manages the services, the jobs, and the agent's execution graph in one runtime.
+        Level 3 doesn't replace the others, it orchestrates them. An agent can keep an LLM inference server running as a permanent service (Level 2), dispatch batch analysis jobs that call it (Level 1), and dynamically spawn further tasks based on what those jobs return, all within a single cluster. Titan manages the services, the jobs, and the agent's execution graph in one runtime.
 
 
 ## Built-In Dashboard
@@ -169,21 +169,21 @@ Titan includes a lightweight Python Flask dashboard to visualize cluster health,
 
 The dashboard ships with three views:
 
-- **DAG Visualizer** — live graph of any running or completed pipeline with real-time status, logs, HITL approval, and workspace file downloads
-- **DAG Constructor** — browser-based drag-and-drop builder for designing and deploying pipelines without writing code
-- **Agent Runs** — groups multi-stage agent invocations into a single timeline row so you can track a full agent loop at a glance instead of hunting through individual DAG entries
+- **DAG Visualizer**: live graph of any running or completed pipeline with real-time status, logs, HITL approval, and workspace file downloads
+- **DAG Constructor**: browser-based drag-and-drop builder for designing and deploying pipelines without writing code
+- **Agent Runs**: groups multi-stage agent invocations into a single timeline row so you can track a full agent loop at a glance instead of hunting through individual DAG entries
 
 > For the dashboard you will need Flask as external dependency (The core engine has zero dependencies, this is an extension)
 
 ### DAG Visualizer
 
-Every pipeline appears here as a live dependency graph — regardless of how it was submitted (CLI, SDK, YAML, or Constructor). Node colors update in real-time as jobs move through `PENDING → RUNNING → COMPLETED / FAILED`.
+Every pipeline appears here as a live dependency graph, regardless of how it was submitted (CLI, SDK, YAML, or Constructor). Node colors update in real-time as jobs move through `PENDING → RUNNING → COMPLETED / FAILED`.
 
-For agentic workflows, the graph grows as the agent submits new work. Use the **[Agent Runs](visualizer/agent-runs.md)** view for the high-level timeline across all stages — then click into any stage to drill down into its node graph and live logs here.
+For agentic workflows, the graph grows as the agent submits new work. Use the **[Agent Runs](visualizer/agent-runs.md)** view for the high-level timeline across all stages, then click into any stage to drill down into its node graph and live logs here.
 
 ### Visual DAG Constructor
 
-Build and deploy pipelines without writing any code. Drag nodes onto the canvas, draw edges to define dependencies, configure each job's script, requirements, and priority — then hit **Deploy** to submit directly to the cluster.
+Build and deploy pipelines without writing any code. Drag nodes onto the canvas, draw edges to define dependencies, configure each job's script, requirements, and priority, then hit **Deploy** to submit directly to the cluster.
 
 The Constructor also auto-generates the equivalent **Python SDK** and **YAML** definitions, which you can copy for reuse in automated pipelines.
 
@@ -202,7 +202,7 @@ Monitor remote worker execution directly from the control plane UI in real-time.
 ## Demos
 
 ### 1. Visual DAG Constructor
-*Build a pipeline by dragging nodes and drawing edges — then deploy directly to the cluster with one click.*
+*Build a pipeline by dragging nodes and drawing edges, then deploy directly to the cluster with one click.*
 
 <video autoplay loop muted playsinline controls width="100%">
   <source src="https://github.com/user-attachments/assets/4f63abbc-e5e9-435e-83cb-bafe6eb9883e" type="video/mp4">
@@ -218,7 +218,7 @@ Monitor remote worker execution directly from the control plane UI in real-time.
 </video>
 
 ### 3. HITL on a Complex Graph
-*HITL gate mid-execution on a multi-branch pipeline — shows how the visualizer reflects the paused state.*
+*HITL gate mid-execution on a multi-branch pipeline, shows how the visualizer reflects the paused state.*
 
 <video autoplay loop muted playsinline controls width="100%">
   <source src="https://github.com/user-attachments/assets/724e3f3d-1d75-407e-a0c2-cd43f2939ad5" type="video/mp4">
@@ -226,7 +226,7 @@ Monitor remote worker execution directly from the control plane UI in real-time.
 </video>
 
 ### 4. Agentic AI Workflow
-*A multi-stage agent loop — each stage is a separate DAG submission, grouped into a single timeline in the Agent Runs view.*
+*A multi-stage agent loop, each stage is a separate DAG submission, grouped into a single timeline in the Agent Runs view.*
 
 <video autoplay loop muted playsinline controls width="100%">
   <source src="https://github.com/user-attachments/assets/d6c40a50-9afc-45f6-abfc-b50c94324363" type="video/mp4">
@@ -260,7 +260,7 @@ The `titan_test_suite/` directory has ready-to-run examples for every capability
 
 | Example | What it shows |
 |---|---|
-| [Build Your First Agent (10 min)](examples/quickstart-agent.md) | Writer → Critic loop — simplest agentic pattern in ~60 lines |
+| [Build Your First Agent (10 min)](examples/quickstart-agent.md) | Writer → Critic loop, simplest agentic pattern in ~60 lines |
 | [Human-in-the-Loop Pipeline](examples/hitl.md) | ML pipeline that pauses for human Approve/Reject before training |
 | [Multi-Agent Research Pipeline](examples/research-pipeline.md) | Parallel agents + HITL gate + synthesis fan-in |
 | [Static YAML Pipelines](examples/yaml.md) | Diamond patterns, GPU routing, parallel fan-out |
@@ -273,25 +273,25 @@ The `titan_test_suite/` directory has ready-to-run examples for every capability
 
 ## MCP / Agent Access
 
-Titan ships with a built-in [MCP server](mcp/overview.md) — connect any MCP-compatible client (Claude Desktop, Cursor) and control your cluster in natural language.
+Titan ships with a built-in [MCP server](mcp/overview.md), connect any MCP-compatible client (Claude Desktop, Cursor) and control your cluster in natural language.
 
 **Why use MCP over the SDK directly?**
 
 | Situation | Use MCP |
 |---|---|
 | You want to submit and monitor pipelines without writing code | Yes |
-| Your pipeline shape isn't known upfront — the agent decides at runtime | Yes |
+| Your pipeline shape isn't known upfront, the agent decides at runtime | Yes |
 | You need a durable HITL approval flow in a chat conversation | Yes |
 | You want to schedule recurring pipelines without a separate cron setup | Yes |
-| You're building automated pipelines in code | No — use the SDK or LangChain directly |
+| You're building automated pipelines in code | No, use the SDK or LangChain directly |
 
-**Real example:** ask Claude Desktop to audit 10 doc pages in parallel, fan results into a consolidation job, and render a rated report — all from one sentence. Titan executed a 12-job DAG; Claude never left the chat window.
+**Real example:** ask Claude Desktop to audit 10 doc pages in parallel, fan results into a consolidation job, and render a rated report, all from one sentence. Titan executed a 12-job DAG; Claude never left the chat window.
 
 [🤖 MCP Setup & Use Cases](mcp/overview.md){ .md-button }
 
 ### LangChain / LangGraph
 
-If you're building agent pipelines in code rather than through an interactive client, wrap the Titan SDK as LangChain tools and use any LLM. No MCP needed — `TitanClient` is called directly.
+If you're building agent pipelines in code rather than through an interactive client, wrap the Titan SDK as LangChain tools and use any LLM. No MCP needed, `TitanClient` is called directly.
 
 ```python
 from langchain_core.tools import tool
@@ -305,7 +305,7 @@ def titan_get_status(job_id: str) -> str:
     return client.get_job_status(prefixed)
 ```
 
-LangChain is optional — not a Titan dependency. A self-contained validation script with all five core tool wrappers is at `examples/langchain_titan.py`.
+LangChain is optional, not a Titan dependency. A self-contained validation script with all five core tool wrappers is at `examples/langchain_titan.py`.
 
 [🔗 LangChain Integration Guide](integrations/langchain.md){ .md-button }
 
@@ -317,16 +317,16 @@ Titan runs locally out of the box. When you're ready to move to the cloud:
 
 | Setup | When to use |
 |---|---|
-| [Multi-VM Cloud Setup](deployment/cloud.md) | Permanent cluster on GCP / AWS / Azure — Master on a VM, workers on VMs |
-| [Remote GPU Worker via SSH Tunnel](deployment/remote-gpu-worker.md) | Keep your local machine as the Master, tunnel a remote GPU (RunPod, cloud VM) as a worker — no open ports needed |
+| [Multi-VM Cloud Setup](deployment/cloud.md) | Permanent cluster on GCP / AWS / Azure, Master on a VM, workers on VMs |
+| [Remote GPU Worker via SSH Tunnel](deployment/remote-gpu-worker.md) | Keep your local machine as the Master, tunnel a remote GPU (RunPod, cloud VM) as a worker, no open ports needed |
 
 ---
 
 ## API & SDK Reference { #api-reference }
 
-* **[Python SDK Reference](reference/sdk.md)** — `TitanClient`, `TitanJob`, TitanStore, artifacts, and agent patterns
-* **[CLI Commands](reference/cli.md)** — Spin up Master, boot Workers, submit jobs from the terminal
-* **[Java Core Engine](javadocs/docs/index.html)** — Internal class docs (`Scheduler`, `RpcWorkerServer`, etc.)
+* **[Python SDK Reference](reference/sdk.md)**: `TitanClient`, `TitanJob`, TitanStore, artifacts, and agent patterns
+* **[CLI Commands](reference/cli.md)**: Spin up Master, boot Workers, submit jobs from the terminal
+* **[Java Core Engine](javadocs/docs/index.html)**: Internal class docs (`Scheduler`, `RpcWorkerServer`, etc.)
 
 ---
 
