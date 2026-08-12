@@ -1,5 +1,9 @@
 # How Titan Compares
 
+Titan occupies an overlapping problem space with workflow engines, schedulers, and cluster orchestrators, but uses a **dynamically mutable DAG** as its primary execution abstraction.
+
+A DAG is a common execution representation across schedulers, workflow engines, and compute frameworks. Titan's bet is that making that DAG mutable *at runtime* collapses static pipelines, dynamic branching, and agentic workflows into a single abstraction, rather than requiring a separate tool for each.
+
 Titan is designed to cover three capability tiers in a single binary — task scheduling, service orchestration, and agentic execution. Most orchestrators specialise in one of these and do it very well; Titan trades depth for breadth. The tables below help you decide whether that tradeoff makes sense for your use case.
 
 !!! tip "TL;DR"

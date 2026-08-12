@@ -1,6 +1,6 @@
 repo_name: ramn51/titan-orchestrator
 repo_url: https://github.com/ramn51/titan-orchestrator
-site_name: Titan Orchestrator
+site_name: Titan
 site_description: A lightweight distributed execution runtime for DAGs, Agents, and Services.
 theme:
   name: material

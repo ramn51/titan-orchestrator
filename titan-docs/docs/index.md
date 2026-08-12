@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="screenshots/Titan_logo.png" alt="Titan Orchestrator Logo" width="350">
+  <img src="screenshots/Titan_logo.png" alt="Titan Logo" width="350">
 </p>
 
-# Titan Orchestrator
+# Titan
 
 [![GitHub Repo](https://img.shields.io/badge/GitHub-View_Repository-181717?logo=github)](https://github.com/ramn51/titan-orchestrator) ![Status: Experimental](https://img.shields.io/badge/Status-Experimental_Research-blue) ![Built by: 1 Developer](https://img.shields.io/badge/Solo_Project-Ram_Narayanan-brightgreen)
 
