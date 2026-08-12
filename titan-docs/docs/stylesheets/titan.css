@@ -116,3 +116,23 @@
 [data-md-color-scheme="slate"] .md-typeset details {
   border-color: #00c853;
 }
+
+/* ── 10. Mermaid diagrams — scale up for legibility ──────────── */
+.md-typeset .mermaid {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+/* Let the rendered SVG grow to the full content width instead of its
+   cramped intrinsic size, so node text is large and readable. */
+.md-typeset .mermaid svg {
+  width: 100%;
+  max-width: 820px;
+  height: auto;
+}
+/* Bump the label text a touch above Mermaid's small default. */
+.md-typeset .mermaid .nodeLabel,
+.md-typeset .mermaid .edgeLabel,
+.md-typeset .mermaid .cluster-label {
+  font-size: 15px;
+}

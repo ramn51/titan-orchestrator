@@ -40,6 +40,52 @@ Every pipeline submitted to the cluster — via CLI, SDK, YAML, or the visual Co
 
 ## Architecture Overview
 
+A single Master acts as the control plane — it accepts submissions from clients, routes tasks to workers by load and capability, and uses TitanStore for state and crash recovery. Workers register themselves on startup; the Master holds no static worker config.
+
+```mermaid
+flowchart LR
+    subgraph Clients["User / Clients"]
+        direction TB
+        SDK["Python SDK Agent"]
+        YAML["YAML Pipeline"]
+        Dash["Web Dashboard"]
+    end
+
+    subgraph ControlPlane["Titan Control Plane"]
+        Master["Titan Master"]
+    end
+
+    subgraph DataLayer["State & Persistence"]
+        Store[("Titan Store<br>(Optional)")]
+    end
+
+    subgraph Grid["Compute Grid"]
+        direction TB
+        W1["Worker Node"]
+        W2["Worker Node"]
+        W3["Worker Node"]
+    end
+
+    SDK -- "Submit Job" --> Master
+    YAML -- "Submit Job" --> Master
+
+    Master -- "Distribute" --> W1
+    Master -- "Distribute" --> W2
+    Master -- "Distribute" --> W3
+
+    W1 -. "Data Bus (IPC)" .-> Master
+    W2 -. "Data Bus (IPC)" .-> Master
+    W3 -. "Data Bus (IPC)" .-> Master
+
+    Master -. "Stream Stats" .-> Dash
+    W1 -. "Live Logs" .-> Master
+
+    Master <-->|"AOF / State / Data Bus"| Store
+
+    classDef optional fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5;
+    class Store optional;
+```
+
 Titan consists of three components:
 
 - **Control Plane (Master)** — DAG scheduling, dependency resolution, and capability routing
