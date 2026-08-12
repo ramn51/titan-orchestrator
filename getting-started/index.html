@@ -2963,8 +2963,8 @@
 <h2 id="2-the-fast-track-recommended">2. The Fast Track (Recommended)</h2>
 <p>We have included a unified bootstrap script that handles building the Java binaries, installing the Python SDK, and launching all background services automatically.</p>
 <p>Make the script executable and launch the cluster:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>chmod<span class="w"> </span>+x<span class="w"> </span>titan-dev
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>./titan-dev<span class="w"> </span>up
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>chmod<span class="w"> </span>+x<span class="w"> </span>titan-dev.sh
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>./titan-dev.sh<span class="w"> </span>up
 </span></code></pre></div>
 <p><strong>LOGS OF RUNNING (Started and Stopped)</strong></p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="o">[</span>INFO<span class="o">]</span><span class="w"> </span>Booting<span class="w"> </span>Titan<span class="w"> </span>Development<span class="w"> </span>Environment...
@@ -2984,7 +2984,7 @@
 </span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="o">[</span>+<span class="o">]</span><span class="w"> </span>Worker<span class="w"> </span>Node:<span class="w">     </span>localhost:8080<span class="w"> </span><span class="o">(</span>PID:<span class="w"> </span><span class="m">5991</span><span class="o">)</span>
 </span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="o">[</span>+<span class="o">]</span><span class="w"> </span>TitanStore:<span class="w">      </span>localhost:6379<span class="w"> </span><span class="o">(</span>PID:<span class="w"> </span><span class="m">5944</span><span class="o">)</span>
 </span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="o">[</span>UI<span class="o">]</span><span class="w"> </span>Dashboard:<span class="w">      </span>http://localhost:5000
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="o">[</span>+<span class="o">]</span><span class="w"> </span>View<span class="w"> </span>Logs:<span class="w">       </span>Open<span class="w"> </span>a<span class="w"> </span>new<span class="w"> </span>terminal<span class="w"> </span>and<span class="w"> </span>run:<span class="w"> </span>./titan-dev<span class="w"> </span><span class="nv">logs</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="o">[</span>+<span class="o">]</span><span class="w"> </span>View<span class="w"> </span>Logs:<span class="w">       </span>Open<span class="w"> </span>a<span class="w"> </span>new<span class="w"> </span>terminal<span class="w"> </span>and<span class="w"> </span>run:<span class="w"> </span>./titan-dev.sh<span class="w"> </span><span class="nv">logs</span>
 </span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="o">====================================================</span>
 </span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="o">[</span>INFO<span class="o">]</span><span class="w"> </span>Cluster<span class="w"> </span>is<span class="w"> </span>running.<span class="w"> </span>Press<span class="w"> </span><span class="o">[</span>Ctrl+C<span class="o">]</span><span class="w"> </span>right<span class="w"> </span>here<span class="w"> </span>to<span class="w"> </span>safely<span class="w"> </span>shut<span class="w"> </span>down<span class="w"> </span>everything.
 </span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>^C
@@ -3015,11 +3015,11 @@
 <h4 id="viewing-live-logs">Viewing Live Logs</h4>
 <p>Because the cluster runs cleanly in the background, you can stream the logs at any time. Open a new terminal tab and use the built-in log viewer:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Watch all cluster traffic:</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./titan-dev<span class="w"> </span>logs
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./titan-dev.sh<span class="w"> </span>logs
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># Or filter by specific components:</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>./titan-dev<span class="w"> </span>logs<span class="w"> </span>master
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>./titan-dev<span class="w"> </span>logs<span class="w"> </span>worker
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>./titan-dev.sh<span class="w"> </span>logs<span class="w"> </span>master
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>./titan-dev.sh<span class="w"> </span>logs<span class="w"> </span>worker
 </span></code></pre></div>
 <h2 id="3-run-your-first-task">3. Run Your First Task</h2>
 <p>Now that your local cluster is live, let's deploy a pre-configured YAML DAG using the Titan CLI.</p>
@@ -3067,7 +3067,7 @@
 <ol>
 <li><strong>Master:</strong> Run <code>titan.TitanMaster</code></li>
 <li><strong>Worker:</strong> Run <code>titan.TitanWorker</code> (Defaults to Port 8080, Capability: GENERAL, Permanent: False)</li>
-<li><strong>CLI:</strong> Run <code>titan.TitanCli</code></li>
+<li><strong>CLI:</strong> Run <code>titan.TitanCLI</code></li>
 </ol>
 <h3 id="option-b-build-and-run-manually">Option B: Build and run manually</h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>mvn<span class="w"> </span>clean<span class="w"> </span>package
@@ -3196,7 +3196,7 @@ You can easily spawn specialized nodes by passing arguments: <code>[Port] [Maste
 </ol>
 <hr />
 <blockquote>
-<p><strong>Note on the dashboard:</strong> If you're running the manual setup (not <code>titan-dev</code>), start the dashboard with <code>python3 ./perm_files/server_dashboard.py</code>. Flask is required (<code>pip install flask</code>). See <a href="#4-open-the-dashboard">Step 4</a> for the full walkthrough.</p>
+<p><strong>Note on the dashboard:</strong> If you're running the manual setup (not <code>titan-dev.sh</code>), start the dashboard with <code>python3 ./perm_files/server_dashboard.py</code>. Flask is required (<code>pip install flask</code>). See <a href="#4-open-the-dashboard">Step 4</a> for the full walkthrough.</p>
 </blockquote>
 
 
