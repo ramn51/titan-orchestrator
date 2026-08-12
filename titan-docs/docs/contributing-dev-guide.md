@@ -671,7 +671,7 @@ hitl_gate.py         next poll sees "APPROVED" → sys.exit(0)
                        └─ unlockChildren → train enters taskQueue → dispatches → runs
 ```
 
-If rejected: gate exits 1 → job FAILED → train stays in dagWaitingRoom forever (parent never completed).
+If rejected: the gate exits 1 and the job is marked FAILED. It is retried like any failed job, and once it exhausts its retries and goes DEAD, `cancelChildren()` fires — so the downstream `train` job is **cancelled**, not left waiting in the dagWaitingRoom.
 
 ---
 

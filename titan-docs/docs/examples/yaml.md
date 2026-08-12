@@ -207,10 +207,10 @@ flowchart LR
 Use the Titan CLI to submit your YAML DAG to the active cluster:
 
 ```
-python titan_sdk/titan_cli.py deploy diamond-flow.yaml
+python titan_sdk/titan_cli.py deploy routing-flow.yaml
 ```
 
-## 3. Deploying a Long-Running Service
+## 4. Deploying a Long-Running Service
 Titan isn't just for ephemeral scripts; it can act as a Micro-PaaS to host APIs. Use type: service to tell the worker to keep the process alive.
 
 ```yaml
@@ -228,7 +228,7 @@ Use the Titan CLI to submit any YAML DAG to the active cluster:
 python titan_sdk/titan_cli.py deploy my_pipeline.yaml
 ```
 
-## 4. Advanced: Combined Essentials version
+## 5. Advanced: Combined Essentials version
 
 If you need fine-grained control over execution timing, hardware locality, and background services, Titan supports advanced scheduling flags. 
 
@@ -319,3 +319,5 @@ python titan_sdk/titan_cli.py deploy comprehensive-flow.yaml
 | `affinity` | Boolean | `false` | If `true`, Titan attempts to route this task to the exact same physical node as its parent task to leverage local file caching. |
 | `port` | Integer | None | **Required** if `type: service`. The network port the service will bind to. |
 | `args` | String | `""` | Command-line arguments appended to the execution command. |
+| `hitl_message` | String | None | If set, inserts a human-in-the-loop gate before this job. The DAG pauses at this step until a human approves or rejects it via the Dashboard or CLI. |
+| `max_wait_seconds` | Integer | `172800` | For a HITL gate, the maximum time (in seconds) to wait for a human decision before the gate times out. Default is 48 hours. |

@@ -141,7 +141,7 @@ The Constructor also auto-generates the equivalent **Python SDK** and **YAML** c
 
 If you are developing Titan, simply open the project in IntelliJ IDEA and run the Main classes directly:
 
-1. **Master:** Run `titan.TitanScheduler`
+1. **Master:** Run `titan.TitanMaster`
 2. **Worker:** Run `titan.TitanWorker` (Defaults to Port 8080, Capability: GENERAL, Permanent: False)
 3. **CLI:** Run `titan.TitanCli`
 

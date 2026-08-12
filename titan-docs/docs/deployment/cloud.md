@@ -46,13 +46,28 @@ The SDK and CLI run **locally** and submit jobs to the remote Master over TCP. T
 - A local build of Titan (`mvn clean package -DskipTests`)
 
 ### GCP firewall rule
+
+!!! danger "Never open Titan's ports to the public internet"
+    Titan's protocol has **no authentication and no encryption** (see [Architecture → Limitations](../architecture/design.md#7-limitations-design-constraints)). Ports **9090** (Master) and **8080** (Worker) accept job submissions that execute arbitrary code on your nodes — opening them to `0.0.0.0/0` exposes an **unauthenticated remote-code-execution endpoint to the entire internet.** Always scope `--source-ranges` to your private VPC CIDR, and lock the dashboard (5000) to your own IP.
+
+Scope Master and Worker traffic to your VPC's internal range so only cluster nodes can reach them, and expose the dashboard only to your own address:
+
 ```bash
-gcloud compute firewall-rules create allow-titan \
-  --allow tcp:9090,tcp:8080,tcp:5000 \
-  --source-ranges 0.0.0.0/0
+# Master + Worker: internal VPC traffic only (replace with your VPC CIDR)
+gcloud compute firewall-rules create allow-titan-internal \
+  --allow tcp:9090,tcp:8080 \
+  --source-ranges 10.0.0.0/8
+
+# Dashboard (5000): your own IP only (replace with your public IP)
+gcloud compute firewall-rules create allow-titan-dashboard \
+  --allow tcp:5000 \
+  --source-ranges YOUR.PUBLIC.IP/32
 ```
 
-For AWS/Azure, open the same three ports in your Security Group / NSG inbound rules.
+!!! tip "Master on your laptop? Skip open ports entirely"
+    If you run the Master locally and only need a remote worker, use the **[Remote GPU Worker via SSH Tunnel](remote-gpu-worker.md)** pattern instead — it tunnels all traffic over SSH and needs **no inbound firewall rules at all**. It's the recommended path for untrusted networks.
+
+For AWS/Azure, apply the same principle in your Security Group / NSG: restrict inbound **9090/8080** to your VPC CIDR and **5000** to your IP. Never use `0.0.0.0/0`.
 
 ---
 

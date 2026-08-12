@@ -71,7 +71,7 @@ Every individual job within a DAG must adhere to the following pipe-delimited fo
 | `ID` | The unique identifier for the job. The Master will automatically prefix this with `DAG-` if not provided. | `extract_data` |
 | `SKILL` | The capability required by the Worker to execute this job. | `GENERAL`, `GPU`, `PYTHON` |
 | `<COMMAND_PAYLOAD>` | The standard execution payload. | `RUN_PAYLOAD|calc.py|UEsDBB...` |
-| `PRIORITY` | Integer defining queue priority (0 = Low, 1 = Normal, 2 = High). | `1` |
+| `PRIORITY` | Integer queue priority on an open scale — **higher numbers are scheduled first** (not a capped 0–2 enum). Default `1`. | `1` |
 | `DELAY_MS` | Time in milliseconds to wait before placing the job in the active queue. | `0` (immediate) |
 | `[DEPENDENCIES]` | A comma-separated list of parent Job IDs wrapped in brackets. | `[extract_data, clean_data]` |
 | `OPTIONAL_FLAGS` | System modifiers. Currently supports `AFFINITY` or `STICKY`. | `AFFINITY` |

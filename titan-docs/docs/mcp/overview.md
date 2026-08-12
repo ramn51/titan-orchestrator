@@ -90,13 +90,15 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
       "args": ["/path/to/titan-orchestrator/titan_sdk/titan_mcp_server.py"],
       "env": {
         "TITAN_HOST": "127.0.0.1",
-        "TITAN_PORT": "9090",
-        "GEMINI_API_KEY": "your-key-here"
+        "TITAN_PORT": "9090"
       }
     }
   }
 }
 ```
+
+!!! note "About the `env` block"
+    `TITAN_HOST` and `TITAN_PORT` point the MCP server at your running Master — that's all it needs. The MCP server itself requires no API keys. If the **job scripts** you submit call an external LLM (Gemini, OpenAI, etc.), add that provider's key to this `env` block (e.g. `"GEMINI_API_KEY": "..."`) so it reaches the worker at execution time.
 
 ### 3. Start your cluster
 

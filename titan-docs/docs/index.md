@@ -114,7 +114,7 @@ That constraint is the point: every dependency Titan *doesn't* take is a hard pr
 
 ### Failure is a first-class concern
 
-Titan implements **9 distinct failure-handling mechanisms**: heartbeat detection with self-healing reschedule, bounded retry, a dead-letter queue, fail-fast on deterministic errors, orphaned-job recovery on restart, execution timeouts, saturation backpressure, and exponential-backoff callbacks. Handling partial failure (a worker dying mid-job, a Master restart, a lost result) is the part most from-scratch orchestrators skip. Titan treats it as a core transition, not an edge case.
+Titan implements **8 distinct failure-handling mechanisms**: heartbeat detection with self-healing reschedule, bounded retry, a dead-letter queue, fail-fast on deterministic errors, orphaned-job recovery on restart, execution timeouts, saturation backpressure, and exponential-backoff callbacks. Handling partial failure (a worker dying mid-job, a Master restart, a lost result) is the part most from-scratch orchestrators skip. Titan treats it as a core transition, not an edge case.
 
 [🛡️ Fault Tolerance & Recovery](architecture/fault-tolerance.md){ .md-button }
 [🔀 Execution Flows](architecture/execution-flows.md){ .md-button }

@@ -106,7 +106,7 @@ The Master Node: The Master acts as the Scheduler and Control Plane. It utilizes
 
 ## 3. State Persistence & Data Bus (TitanStore)
 
-To eliminate the Master as a single point of failure and provide a unified state layer, Titan implements a custom in-memory data store backed by Redis primitives (RedisJava).
+To preserve cluster state across a Master restart and provide a unified state layer, Titan implements a custom in-memory data store backed by Redis primitives (**RedisJava** — a from-scratch, Redis-compatible engine maintained in a separate repository). This gives Titan **durability, not high availability**: the Master can rebuild its state after a crash, but the store does *not* remove the Master as a single point of failure (see the note at the top of this page and §6). Raft-based leader election for true failover is on the v2 roadmap.
 
 **Append-Only File (AOF):** 
 
