@@ -64,8 +64,12 @@ Tasks running on the cluster can interact with TitanStore using the Python SDK. 
 
 ## 4. How Titan Uses the Store
 
-While you can use TitanStore to pass data between your own Python tasks, the Titan Master heavily relies on it internally:
+TitanStore *supports* Pub/Sub, TTL-based expiry, and atomic sets (see the capabilities above). The Titan Master, however, deliberately keeps its **control-plane logic in-memory and event-driven** — it uses the store for durable state and cross-node data passing, not as the mechanism for liveness, scheduling, or log delivery. The distinction matters, so here is what the Master actually does:
 
-1. **Worker Registry:** Heartbeats and node capabilities are stored as ephemeral keys with TTLs. If a worker dies, its key naturally expires, triggering the failure detector.
-2. **DAG Locks:** Dependencies are managed using atomic `SET` commands. Child tasks constantly check the store to see if their parent's execution flag has been set to `COMPLETED`.
-3. **Log Streaming:** The web dashboard uses the Pub/Sub architecture to subscribe to specific job IDs, allowing the Master to stream physical stdout/stderr logs directly to the UI in real-time.
+1. **Worker liveness — active heartbeat, not TTL expiry.** The Master runs a `HeartBeatExecutor` that periodically **dials each registered worker** (`OP_HEARTBEAT`) and tracks a "Last Seen" timestamp. If a worker fails to respond, the Master marks it dead and re-queues its jobs. Worker state is *mirrored* into the store for the dashboard, but the failure detector is the Master's dial loop — it does **not** rely on a key expiring.
+
+2. **DAG readiness — event-driven, not polling.** Jobs with unmet dependencies sit in an in-memory `dagWaitingRoom` and cost nothing until their parents finish. When a job completes, `unlockChildren()` promotes any newly-ready children into the active queue. Child tasks do **not** poll the store for a parent's status; readiness is pushed by the completion event. (Job statuses *are* written to the store, but for durability and status queries, not as a scheduling poll loop.)
+
+3. **Log streaming — worker push + dashboard poll, not Pub/Sub.** Workers stream stdout/stderr to the Master over `OP_LOG_STREAM` / `OP_LOG_BATCH` into an in-memory buffer. The web dashboard retrieves them by **polling** the Master's log endpoints (roughly every 2 seconds). TitanStore's Pub/Sub is available for user tasks, but it is **not** the path Titan uses to deliver logs to the UI.
+
+Where the Master *does* lean on the store: persisting job/DAG state for **crash recovery** (see [Fault Tolerance &amp; Recovery](fault-tolerance.md)), and exposing the SDK's `store_put`/`store_get` key-value bus for tasks to pass data across nodes.

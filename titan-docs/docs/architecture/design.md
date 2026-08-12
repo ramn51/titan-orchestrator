@@ -205,4 +205,6 @@ Titan is a research runtime designed to explore the **primitives of orchestratio
 
 **Containerization:** Support for Docker execution drivers for true filesystem isolation (currently uses Process-Level isolation).
 
+**Opt-in TTL heartbeat:** An alternative worker-liveness model using TitanStore TTL keys — the worker refreshes an expiring key and the Master detects its absence, aligning with the push-based discovery philosophy. Requires exposing a `SETEX`-style command over the wire (TTL exists inside TitanStore but is not yet reachable via the adapter/SDK). Would make TitanStore required for liveness, so the current Master-dial loop remains the store-less default.
+
 **Cluster Autoscaler Webhooks:** Allow Titan to trigger external APIs (e.g., Azure VM Scale Sets) to provision bare metal automatically when queues saturate.

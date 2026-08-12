@@ -337,6 +337,7 @@ Titan runs locally out of the box. When you're ready to move to the cloud:
 - [ ] **Security & Auth:** Implement mTLS (Mutual TLS) for encrypted, authenticated cluster communication.
 - [ ] **Containerized Execution:** Add support for Docker execution drivers to provide true filesystem isolation (currently utilizing Process-Level isolation).
 - [ ] **Cluster Autoscaler Webhooks:** Allow Titan to trigger external APIs (e.g., Azure VM Scale Sets, AWS EC2) to provision bare-metal compute automatically when queues saturate.
+- [ ] **Opt-in TTL heartbeat:** Offer push-style worker liveness via TitanStore TTL keys (worker refreshes an expiring key; Master detects absence) as an alternative to the current Master-dial loop. Requires exposing a `SETEX`-style command over the wire, and would make TitanStore required for liveness — so it stays opt-in, with the dial loop remaining the store-less default.
 - [x] **Human-in-the-Loop (HITL):** Pause DAG execution and wait for human Approve/Reject via the Dashboard. Supports per-gate timeouts and automatic gate injection via the SDK. See [HITL Pipelines](examples/hitl.md).
 
 
