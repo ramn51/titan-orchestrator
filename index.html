@@ -2993,6 +2993,48 @@
 <p><img alt="DAG Visualizer" src="screenshots/visualizer_overview.png" /></p>
 <hr />
 <h2 id="architecture-overview">Architecture Overview</h2>
+<p>A single Master acts as the control plane — it accepts submissions from clients, routes tasks to workers by load and capability, and uses TitanStore for state and crash recovery. Workers register themselves on startup; the Master holds no static worker config.</p>
+<pre class="mermaid"><code>flowchart LR
+    subgraph Clients["User / Clients"]
+        direction TB
+        SDK["Python SDK Agent"]
+        YAML["YAML Pipeline"]
+        Dash["Web Dashboard"]
+    end
+
+    subgraph ControlPlane["Titan Control Plane"]
+        Master["Titan Master"]
+    end
+
+    subgraph DataLayer["State &amp; Persistence"]
+        Store[("Titan Store&lt;br&gt;(Optional)")]
+    end
+
+    subgraph Grid["Compute Grid"]
+        direction TB
+        W1["Worker Node"]
+        W2["Worker Node"]
+        W3["Worker Node"]
+    end
+
+    SDK -- "Submit Job" --&gt; Master
+    YAML -- "Submit Job" --&gt; Master
+
+    Master -- "Distribute" --&gt; W1
+    Master -- "Distribute" --&gt; W2
+    Master -- "Distribute" --&gt; W3
+
+    W1 -. "Data Bus (IPC)" .-&gt; Master
+    W2 -. "Data Bus (IPC)" .-&gt; Master
+    W3 -. "Data Bus (IPC)" .-&gt; Master
+
+    Master -. "Stream Stats" .-&gt; Dash
+    W1 -. "Live Logs" .-&gt; Master
+
+    Master &lt;--&gt;|"AOF / State / Data Bus"| Store
+
+    classDef optional fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5;
+    class Store optional;</code></pre>
 <p>Titan consists of three components:</p>
 <ul>
 <li><strong>Control Plane (Master)</strong> — DAG scheduling, dependency resolution, and capability routing</li>
