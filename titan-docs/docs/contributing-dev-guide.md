@@ -295,6 +295,9 @@ States are stored in TitanStore as `job:{id}:status`. The `Job.java` class has a
 
 Each trace below shows the exact path through the codebase, file by file, method by method. Follow these when debugging or extending a specific flow.
 
+!!! tip "Just want the conceptual picture?"
+    For the systems-level view of how jobs move through the scheduler — without the code-level detail — see [Architecture → Execution Flows](architecture/execution-flows.md). The traces below are the contributor's deep-dive.
+
 ---
 
 ### Scenario 1: Single script job (SDK submit)
@@ -687,7 +690,7 @@ sequenceDiagram
     S->>S: handleJobFailure(job)
     S->>S: retryCount++ → now 1
 
-    alt retryCount < 3
+    alt retryCount ≤ 3
         S->>TS: SET job:X:status PENDING
         S->>S: taskQueue.add(job) — re-queued
         Note over S: dispatch loop picks it up again
@@ -697,7 +700,7 @@ sequenceDiagram
         W->>S: FAILED again → retry 3
     end
 
-    S->>S: retryCount >= 3
+    S->>S: retryCount > 3
     S->>TS: SET job:X:status DEAD
     S->>DLQ: deadLetterQueue.add(job)
     S->>S: cancel all children in dagWaitingRoom
@@ -715,11 +718,11 @@ Scheduler.java       handleJobCallback(payload)
                        └─ statusStr = "FAILED"
                        └─ handleJobFailure(job)
                             └─ job.incrementRetry()
-                            └─ if retryCount < 3:
+                            └─ if retryCount ≤ 3:
                                  job.setStatus(PENDING)
                                  safeRedisSet("job:X:status", "PENDING")
                                  taskQueue.add(job)            ← re-queued for another attempt
-                            └─ if retryCount >= 3:
+                            └─ if retryCount > 3:
                                  safeRedisSet("job:X:status", "DEAD")
                                  deadLetterQueue.add(job)      ← no more retries
                                  cancel all children in dagWaitingRoom

@@ -31,6 +31,7 @@ OP_KV_GET = 0x61
 OP_KV_SADD = 0x62
 OP_KV_SMEMBERS = 0x63
 OP_GET_JOB_STATUS = 0x55
+OP_STOP = 0x07
 
 class TitanJob:
     def __init__(self, job_id, filename, job_type="RUN_PAYLOAD", args=None,
@@ -363,6 +364,26 @@ class TitanClient:
     def get_job_status(self, job_id):
         """Securely queries the Master for a job's internal system status."""
         return self._send_request(OP_GET_JOB_STATUS, job_id)
+
+    def stop_service(self, service_id):
+        """Tear down a running service by the job id it was deployed under.
+
+        Sends OP_STOP to the Master, which forwards it to the worker hosting the
+        service and forcibly terminates the service's process tree, then removes
+        it from the live service registry.
+
+        service_id: the job id used when the SERVICE / DEPLOY_PAYLOAD job was
+                    submitted. The "DAG-" prefix is added automatically if absent
+                    (services submitted via submit_dag / submit_job are keyed as
+                    "DAG-<job_id>" on the Master).
+
+        Returns the Master's response string (contains "STOPPED"/"SUCCESS" on
+        success, or an "ERROR"/"COMMUNICATION_ERROR" message on failure).
+        """
+        if not service_id:
+            raise ValueError("stop_service requires a non-empty service_id")
+        prefixed = service_id if service_id.startswith("DAG-") else f"DAG-{service_id}"
+        return self._send_request(OP_STOP, prefixed)
 
     def publish_artifact(self, key, filename):
         """Upload a local file to master and register it under key.

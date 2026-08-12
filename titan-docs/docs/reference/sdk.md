@@ -128,6 +128,72 @@ client.submit_dag("EXECUTE", executor_jobs,   agent_run_id=run_id)
 client.submit_dag("SYNTH",   [synthesis_job], agent_run_id=run_id)
 ```
 
+### Submitting a YAML pipeline (`submit_yaml`)
+
+If your pipeline is already defined in a [Titan YAML file](../examples/yaml.md), `submit_yaml` parses it and submits it as a DAG — no need to build `TitanJob` objects by hand. It is also the one SDK call with a **built-in blocking wait**.
+
+```python
+result = client.submit_yaml(
+    "pipeline.yaml",
+    agent_run_id=None,   # optional — links this DAG to an Agent Run in the Dashboard
+    wait=False,          # if True, block until every job reaches a terminal state
+    poll_interval=2,     # seconds between status polls (only used when wait=True)
+    timeout=300,         # max seconds to wait before giving up (only used when wait=True)
+)
+```
+
+| Parameter | Default | Description |
+|---|---|---|
+| `yaml_path` | *(required)* | Path to a Titan YAML pipeline file. |
+| `agent_run_id` | `None` | Links this DAG to a logical agent run in the Dashboard's **Agent Runs** view. |
+| `wait` | `False` | If `True`, blocks until all jobs reach a terminal state (`COMPLETED`, `FAILED`, `REJECTED`, `ERROR`). |
+| `poll_interval` | `2` | Seconds between status polls. Only used when `wait=True`. |
+| `timeout` | `300` | Maximum seconds to wait before giving up. Only used when `wait=True`. |
+
+**Returns** the master's submit-response string — or `False` if `wait=True` and the DAG did not finish within `timeout`.
+
+!!! note "`wait=True` is poll-based, and blocks the calling thread"
+    Under the hood this polls `get_job_status` every `poll_interval` seconds until each job is terminal — there is no async future. Because it waits for *terminal* states, an unapproved [HITL gate](../examples/hitl.md) will keep it blocking, so set `timeout` generously (e.g. `timeout=3600`) when a human decision is in the loop.
+
+```python
+# Sequential agentic loop — each stage blocks until the previous one finishes
+run_id = uuid.uuid4().hex[:12]
+client.submit_yaml("bootstrap.yaml",     agent_run_id=run_id, wait=True)
+client.submit_yaml("arena_cycle.yaml",   agent_run_id=run_id, wait=True)
+client.submit_yaml("export_deploy.yaml", agent_run_id=run_id, wait=True)
+```
+
+### Tearing down a service (`stop_service`)
+
+A job submitted with `job_type="SERVICE"` (or `"DEPLOY_PAYLOAD"`) is **long-running** — it deploys and stays alive until you stop it. `stop_service` tears it down: the Master forwards an `OP_STOP` to the worker hosting the service, which forcibly terminates the service's process tree (and does **not** trigger the auto-restart supervisor, since the stop is intentional).
+
+```python
+client = TitanClient()
+
+# Deploy a long-running service on port 8099
+svc = TitanJob(job_id="my-api", filename="api_server.py",
+               job_type="SERVICE", port=8099)
+client.submit_job(svc)
+
+# ... later, tear it down ...
+resp = client.stop_service("my-api")   # -> "STOPPED: DAG-my-api"
+```
+
+- **`service_id`** is the job id you deployed under. The `DAG-` prefix is added automatically (services are keyed as `DAG-<job_id>` on the Master), so `"my-api"` and `"DAG-my-api"` are equivalent.
+- **Returns** the Master's response — `"STOPPED: DAG-<id>"` on success, or an `"ERROR: ... not found"` string if the id isn't a live service.
+
+!!! warning "Wait for the deploy to register before stopping"
+    A service is only added to the Master's live registry **after** its post-deploy port verification completes — a couple of seconds *after* the port first becomes reachable. Stopping in that window returns `not found`. If you deploy and tear down programmatically in the same script, wait until the deploy job reports `COMPLETED` first:
+
+    ```python
+    client.submit_job(svc)
+    while (client.get_job_status("DAG-my-api") or "").upper() != "COMPLETED":
+        time.sleep(1)
+    client.stop_service("my-api")
+    ```
+
+    In a DAG, model teardown as a final job that depends on the work jobs, so the graph sequences it for you.
+
 ---
 
 ## 3. Using the Distributed Data Bus (TitanStore)

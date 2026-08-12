@@ -69,11 +69,24 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
 
-  - Defining Pipelines:
-      - YAML Pipelines: examples/yaml.md
-      - Python SDK: reference/sdk.md
-      - Visual Constructor: constructor/overview.md
-      - MCP (Natural Language): mcp/overview.md
+  - Using Titan:
+      - Ways to Define a Pipeline:
+          - YAML Pipelines: examples/yaml.md
+          - Programmatic (Python SDK): examples/agentic.md
+          - Visual Constructor: constructor/overview.md
+          - MCP (Natural Language): mcp/overview.md
+      - Examples:
+          - Pipelines:
+              - Parallel Analyst Pipeline: examples/comp-intel-pipeline.md
+              - Dagster Integration: examples/dagster.md
+          - Agentic:
+              - Build Your First Agent (10 min): examples/quickstart-agent.md
+              - Research Agent: examples/research-agent.md
+              - Code Generation Agent: examples/code-gen-agent.md
+              - Human-in-the-Loop (HITL): examples/hitl.md
+              - Multi-Agent Research Pipeline: examples/research-pipeline.md
+          - Advanced:
+              - Titan CI Pipeline (Dogfooding): examples/titan-ci.md
 
   - Dashboard:
       - DAG Visualizer: visualizer/overview.md
@@ -87,21 +100,6 @@ nav:
           - HITL Gates: constructor/hitl.md
           - Managing DAGs: constructor/managing-dags.md
           - Keyboard Shortcuts: constructor/keyboard-shortcuts.md
-
-  - Examples:
-      - Overview: examples/agentic.md
-      - Pipelines:
-          - Static Pipelines (YAML): examples/yaml.md
-          - Parallel Analyst Pipeline: examples/comp-intel-pipeline.md
-          - Dagster Integration: examples/dagster.md
-      - Agentic:
-          - Build Your First Agent (10 min): examples/quickstart-agent.md
-          - Research Agent: examples/research-agent.md
-          - Code Generation Agent: examples/code-gen-agent.md
-          - Human-in-the-Loop (HITL): examples/hitl.md
-          - Multi-Agent Research Pipeline: examples/research-pipeline.md
-      - Advanced:
-          - Titan CI Pipeline (Dogfooding): examples/titan-ci.md
 
   - Deployment:
       - Multi-VM Cloud Setup: deployment/cloud.md
@@ -119,6 +117,8 @@ nav:
 
   - Architecture:
       - System Design: architecture/design.md
+      - Execution Flows: architecture/execution-flows.md
+      - Fault Tolerance & Recovery: architecture/fault-tolerance.md
       - TitanStore & IPC: architecture/internals.md
       - How Titan Compares: comparison.md
 

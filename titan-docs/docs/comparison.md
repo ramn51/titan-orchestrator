@@ -100,7 +100,7 @@ Where Titan sits relative to the tools engineers most often consider alongside i
 | **Backend engineer** exploring distributed systems | Architecture deep-dive, TITAN_PROTO, AOF | [Architecture → System Design](architecture/design.md) |
 | **ML engineer** running training / inference pipelines | YAML DAGs, GPU routing, HITL gates | [Examples → Static Pipelines](examples/yaml.md), [HITL](examples/hitl.md) |
 | **AI / agent developer** building autonomous workflows | Python SDK, dynamic DAGs, multi-agent example | [Examples → Multi-Agent Research](examples/research-pipeline.md) |
-| **Platform engineer** evaluating orchestrators | This page, limitations, roadmap | [Architecture → Limitations](architecture/design.md#6-limitations--design-constraints) |
+| **Platform engineer** evaluating orchestrators | This page, limitations, roadmap | [Architecture → Limitations](architecture/design.md#6-limitations-design-constraints) |
 | **Researcher / learner** wanting to read clean code | Java engine docs, Architecture | [Architecture → Internals](architecture/internals.md), [JavaDocs](javadocs/docs/index.html) |
 | **First-time visitor** just curious | 5-minute quickstart | [Getting Started](getting-started.md) |
 

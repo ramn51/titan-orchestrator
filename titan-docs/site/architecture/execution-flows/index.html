@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../../examples/titan-ci/">
+        <link rel="prev" href="../design/">
       
       
-        <link rel="next" href="../monitoring/">
+        <link rel="next" href="../fault-tolerance/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>DAG Visualizer - Titan Orchestrator</title>
+        <title>Execution Flows - Titan Orchestrator</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#dag-visualizer-overview" class="md-skip">
+        <a href="#execution-flows" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              DAG Visualizer
+              Execution Flows
             
           </span>
         </div>
@@ -288,13 +288,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../visualizer/overview/" class="md-tabs__link">
           
   
   
@@ -370,11 +368,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../architecture/design/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../design/" class="md-tabs__link">
           
   
   
@@ -1215,31 +1215,28 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
@@ -1257,7 +1254,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1272,37 +1269,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    DAG Visualizer
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../visualizer/overview/" class="md-nav__link">
         
   
   
@@ -1318,70 +1288,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#how-to-open-it" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How to open it
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#layout" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Layout
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#live-polling" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Live polling
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sections" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Sections
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1394,7 +1300,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../monitoring/" class="md-nav__link">
+      <a href="../../visualizer/monitoring/" class="md-nav__link">
         
   
   
@@ -1422,7 +1328,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../hitl-approval/" class="md-nav__link">
+      <a href="../../visualizer/hitl-approval/" class="md-nav__link">
         
   
   
@@ -1450,7 +1356,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../workspace-files/" class="md-nav__link">
+      <a href="../../visualizer/workspace-files/" class="md-nav__link">
         
   
   
@@ -1478,7 +1384,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../agent-runs/" class="md-nav__link">
+      <a href="../../visualizer/agent-runs/" class="md-nav__link">
         
   
   
@@ -1512,13 +1418,10 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
@@ -1527,7 +1430,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4_6" >
         
           
-          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
             
   
   
@@ -2122,28 +2025,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
-        
-          
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
             
   
   
@@ -2161,7 +2067,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2179,7 +2085,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/design/" class="md-nav__link">
+      <a href="../design/" class="md-nav__link">
         
   
   
@@ -2204,10 +2110,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../architecture/execution-flows/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution Flows
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2223,6 +2156,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-dispatch-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The dispatch model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flow-1-single-job-the-happy-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 1 — Single job (the happy path)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flow-2-dependency-resolution-a-b-c" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2 — Dependency resolution (A → B → C)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flow-3-fan-out-and-fan-in-a-b-c-d-e" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 3 — Fan-out and fan-in (A → [B, C, D] → E)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-other-flows-live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the other flows live
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2235,7 +2243,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/fault-tolerance/" class="md-nav__link">
+      <a href="../fault-tolerance/" class="md-nav__link">
         
   
   
@@ -2263,7 +2271,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/internals/" class="md-nav__link">
+      <a href="../internals/" class="md-nav__link">
         
   
   
@@ -2463,10 +2471,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#how-to-open-it" class="md-nav__link">
+  <a href="#the-dispatch-model" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How to open it
+        The dispatch model
       
     </span>
   </a>
@@ -2474,10 +2482,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#layout" class="md-nav__link">
+  <a href="#flow-1-single-job-the-happy-path" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Layout
+        Flow 1 — Single job (the happy path)
       
     </span>
   </a>
@@ -2485,10 +2493,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#live-polling" class="md-nav__link">
+  <a href="#flow-2-dependency-resolution-a-b-c" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Live polling
+        Flow 2 — Dependency resolution (A → B → C)
       
     </span>
   </a>
@@ -2496,10 +2504,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#sections" class="md-nav__link">
+  <a href="#flow-3-fan-out-and-fan-in-a-b-c-d-e" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Sections
+        Flow 3 — Fan-out and fan-in (A → [B, C, D] → E)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-other-flows-live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the other flows live
       
     </span>
   </a>
@@ -2526,41 +2545,124 @@
   
 
 
-<h1 id="dag-visualizer-overview">DAG Visualizer — Overview</h1>
-<p>The DAG Visualizer is the live operational view for a submitted DAG. It shows the pipeline graph, real-time job status, logs, HITL approval controls, and output files — all in one place.</p>
-<p><img alt="DAG Visualizer" src="../../screenshots/visualizer_overview.png" /></p>
-<hr />
-<h2 id="how-to-open-it">How to open it</h2>
-<p><strong>From the constructor</strong> — after a successful deploy, click <strong>"✓ Deployed — View DAG →"</strong> in the topbar.</p>
-<p><strong>From the dashboard</strong> — go to <code>http://127.0.0.1:5000/dags</code>, find your DAG in the list, click its name.</p>
-<p><strong>Direct URL</strong> — <code>http://127.0.0.1:5000/dags/DAG-&lt;your-pipeline-name&gt;</code></p>
-<p><strong>From the CLI</strong> — after <code>titan submit</code>, the CLI prints the DAG name. Append it to the dashboard URL.</p>
-<p><strong>From the SDK</strong> — after <code>client.submit_dag(...)</code>, the DAG name is the prefix <code>DAG-</code> + the name you passed.</p>
-<hr />
-<h2 id="layout">Layout</h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌────────────────────────────────────────────────┐
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│  DAG header — name, overall status, back link  │
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├──────────────────┬─────────────────────────────┤
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│                  │                             │
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│  Pipeline graph  │  Job log panel              │
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│  (SVG)           │  (appears on node click)    │
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│                  │                             │
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>├──────────────────┴─────────────────────────────┤
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│  HITL approval banner  (appears when pending)  │
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>├────────────────────────────────────────────────┤
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│  Workspace Files panel                         │
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>└────────────────────────────────────────────────┘
-</span></code></pre></div>
-<hr />
-<h2 id="live-polling">Live polling</h2>
-<p>The visualizer polls the master every <strong>2 seconds</strong> for job status updates. Node colors update in place without a page reload. You do not need to manually refresh.</p>
-<hr />
-<h2 id="sections">Sections</h2>
+<h1 id="execution-flows">🔀 Execution Flows</h1>
+<p>How the engine actually moves a job from <em>submitted</em> to <em>done</em>. This page is the conceptual, systems-level view; for the exhaustive line-by-line code traces (file → method → next), see the <a href="../../contributing-dev-guide/#code-flow-by-scenario">Developer Guide → Code Flow by Scenario</a>.</p>
+<h2 id="the-dispatch-model">The dispatch model</h2>
+<p>Every flow below is built from four moving parts in the Master:</p>
 <ul>
-<li><a href="../monitoring/">Monitoring &amp; Logs</a> — job status colors, clicking nodes to view logs</li>
-<li><a href="../hitl-approval/">HITL Approval</a> — approving and rejecting gates at runtime</li>
-<li><a href="../workspace-files/">Workspace Files</a> — downloading output files generated by jobs</li>
+<li><strong><code>taskQueue</code></strong> — a blocking queue of jobs that are <em>ready to run</em> (all dependencies met).</li>
+<li><strong><code>dagWaitingRoom</code></strong> — jobs <em>blocked</em> on unfinished parents. They never enter the active loop until unblocked.</li>
+<li><strong><code>runDispatchLoop()</code></strong> — a thread blocked on <code>taskQueue.take()</code>; when a job appears it selects a worker and dispatches.</li>
+<li><strong><code>unlockChildren()</code></strong> — called when a job completes; it scans the waiting room and promotes any job whose parents are now all satisfied into <code>taskQueue</code>.</li>
 </ul>
+<p>This separation is the heart of Titan's scheduler: <strong>readiness is event-driven, not polled.</strong> A blocked job costs nothing until a parent-completion event unlocks it.</p>
+<hr />
+<h2 id="flow-1-single-job-the-happy-path">Flow 1 — Single job (the happy path)</h2>
+<p>The simplest trace: one job, submitted, dispatched, completed.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant U as SDK / CLI
+    participant S as Scheduler
+    participant TS as TitanStore
+    participant W as Worker
+    participant P as Python Process
+
+    U-&gt;&gt;S: OP_SUBMIT_DAG
+    S-&gt;&gt;TS: SET job status = PENDING
+    S-&gt;&gt;S: taskQueue.add(job)
+    S--&gt;&gt;U: DAG_ACCEPTED
+
+    S-&gt;&gt;S: dispatch loop → take()
+    S-&gt;&gt;S: select least-loaded capable worker
+    S-&gt;&gt;TS: SET job status = RUNNING
+    S-&gt;&gt;W: OP_RUN
+    W-&gt;&gt;P: ProcessBuilder.start()
+    P--&gt;&gt;W: stdout (streamed) + exit 0
+    W-&gt;&gt;S: OP_JOB_COMPLETE
+    S-&gt;&gt;TS: SET job status = COMPLETED
+    S-&gt;&gt;S: unlockChildren() → none</code></pre>
+<p>The submission is <strong>acknowledged immediately</strong> (<code>DAG_ACCEPTED</code>) — dispatch happens asynchronously on the loop, so a slow cluster never blocks the submitting client.</p>
+<hr />
+<h2 id="flow-2-dependency-resolution-a-b-c">Flow 2 — Dependency resolution (A → B → C)</h2>
+<p>A chain. <code>B</code> waits for <code>A</code>, <code>C</code> waits for <code>B</code>. This shows the waiting-room / unlock mechanism that makes DAGs work.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant S as Scheduler
+    participant Q as taskQueue
+    participant WR as dagWaitingRoom
+
+    Note over S: submit A, B(parent A), C(parent B)
+    S-&gt;&gt;Q: A — no parents, ready
+    S-&gt;&gt;WR: B, C — unmet parents, blocked
+
+    Q-&gt;&gt;S: dispatch A → runs → COMPLETED
+    S-&gt;&gt;S: unlockChildren(A)
+    S-&gt;&gt;Q: promote B — parent A satisfied
+
+    Q-&gt;&gt;S: dispatch B → runs → COMPLETED
+    S-&gt;&gt;S: unlockChildren(B)
+    S-&gt;&gt;Q: promote C — parent B satisfied
+
+    Q-&gt;&gt;S: dispatch C → runs → COMPLETED</code></pre>
+<p>Only jobs with <strong>zero unmet dependencies</strong> ever reach <code>taskQueue</code>. Everything else sits inertly in the waiting room until a completion event promotes it — no busy-waiting, no dependency polling.</p>
+<hr />
+<h2 id="flow-3-fan-out-and-fan-in-a-b-c-d-e">Flow 3 — Fan-out and fan-in (A → [B, C, D] → E)</h2>
+<p>Parallel branches with a collector that must wait for <strong>all</strong> of them. This is where capability routing and incremental fan-in show up.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant S as Scheduler
+    participant W1 as Worker 1
+    participant W2 as Worker 2
+
+    Note over S: A completes → unlockChildren(A)
+    S-&gt;&gt;S: taskQueue.add(B), add(C), add(D)
+
+    par parallel dispatch (least-loaded routing)
+        S-&gt;&gt;W1: dispatch B
+        S-&gt;&gt;W1: dispatch C
+        S-&gt;&gt;W2: dispatch D
+    end
+
+    W1--&gt;&gt;S: B COMPLETED — E needs [B,C,D], wait
+    W1--&gt;&gt;S: C COMPLETED — E needs [B,C,D], wait
+    W2--&gt;&gt;S: D COMPLETED — all parents met
+    S-&gt;&gt;W1: dispatch E
+    W1--&gt;&gt;S: E COMPLETED</code></pre>
+<p>Fan-in is <strong>incremental</strong>: each branch completion re-checks the collector's parent set. <code>E</code> is promoted only on the completion event that satisfies its <em>last</em> outstanding parent — the Master never scans or polls to discover that the branches are done.</p>
+<hr />
+<h2 id="where-the-other-flows-live">Where the other flows live</h2>
+<p>The Developer Guide covers the full set with code-level traces:</p>
+<table>
+<thead>
+<tr>
+<th>Flow</th>
+<th>Covered in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Single job · DAG chain · fan-out/fan-in</td>
+<td><em>this page</em> (conceptual) + <a href="../../contributing-dev-guide/#code-flow-by-scenario">Dev Guide</a> (code)</td>
+</tr>
+<tr>
+<td>Service deployment (long-running, auto-restart)</td>
+<td><a href="../../contributing-dev-guide/#scenario-4-service-deployment-long-running">Dev Guide — Scenario 4</a></td>
+</tr>
+<tr>
+<td>HITL gate (pause for human approval)</td>
+<td><a href="../../contributing-dev-guide/#scenario-5-hitl-gate-pause-for-human-approval">Dev Guide — Scenario 5</a></td>
+</tr>
+<tr>
+<td>Job failure, retry &amp; dead-letter · worker crash recovery</td>
+<td><a href="../fault-tolerance/">Fault Tolerance &amp; Recovery</a></td>
+</tr>
+<tr>
+<td>Cancel with cascade</td>
+<td><a href="../../contributing-dev-guide/#scenario-7-cancel-with-cascade">Dev Guide — Scenario 7</a></td>
+</tr>
+<tr>
+<td>MCP submission (natural language)</td>
+<td><a href="../../contributing-dev-guide/#scenario-9-mcp-submission-natural-language">Dev Guide — Scenario 9</a></td>
+</tr>
+</tbody>
+</table>
 
 
 

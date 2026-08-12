@@ -102,14 +102,6 @@ The Master Node: The Master acts as the Scheduler and Control Plane. It utilizes
 
     A background ScalerExecutor runs every 15 seconds to compare the ActiveJobQueue against WorkerCapacity. If the delta is too high, it triggers the Auto-Scaler. It calculates saturation per capability pool (e.g., GENERAL vs. GPU) to ensure scaling only happens when a specific resource type is exhausted.
     
-- **The Failure Detector (Heartbeats)**
-
-    The Master maintains a dedicated HeartBeatExecutor. It tracks the "Last Seen" timestamp of every worker. If a worker goes silent for >30s, it is marked DEAD, and its active jobs are immediately re-queued to healthy nodes to guarantee execution resilience.
-
-- **Dead Letter Queue (DLQ) & Poison Pills**
-
-    If a task repeatedly crashes a worker or fails beyond its maximum retry threshold (e.g., due to a syntax error or a missing system library), it is safely removed from the execution loop to prevent infinite crash-looping. The Master quarantines these "poison pill" tasks in a Dead Letter Queue (DLQ), preserving their logs and state for operator inspection without stalling the rest of the cluster.
-
 ---
 
 ## 3. State Persistence & Data Bus (TitanStore)
@@ -120,9 +112,7 @@ To eliminate the Master as a single point of failure and provide a unified state
 
 Every critical system transition (e.g., Node Locked, Job Dispatched, Worker Registered) is written to a persistent log on disk.
 
-**Crash Recovery:** 
-
-If the Master process is killed abruptly, it does not lose the cluster state. Upon restart, it reads the AOF, reconstructs the ActiveJobQueue, and resumes the DAG exactly where it left off.
+> **Crash recovery** — how the AOF is replayed and orphaned jobs are rescued on restart — is covered under [Fault Tolerance &amp; Recovery](fault-tolerance.md).
 
 **Distributed Data Passing:** 
 

@@ -44,13 +44,35 @@ Titan consists of three components:
 
 - **Control Plane (Master)** — DAG scheduling, dependency resolution, and capability routing
 - **Workers** — Capability-tagged execution nodes that self-register on startup
-- **TitanStore (Optional)** — Embedded AOF-backed persistence for crash recovery and shared agent state. No external database required.
+- **TitanStore (Optional & Swappable)** — Embedded AOF-backed persistence for crash recovery and shared agent state. No external database required — but not locked in either.
 
-> Titan is fully functional without TitanStore — core execution and routing work without it, but you lose state recovery and SDK-driven KV operations.
+> **TitanStore is optional _and_ replaceable.** Titan is fully functional without it — core execution and routing work regardless; you only lose state recovery and SDK-driven KV operations. And because Titan talks to it over the standard **Redis wire protocol (RESP)**, TitanStore is a drop-in: point Titan at **real Redis, KeyDB, or Valkey** instead by setting `TITAN_REDIS_HOST` / `TITAN_REDIS_PORT` (default `localhost:6379`). No adapter code to write — the same RESP client speaks to any of them. TitanStore just ships in the box so you get persistence with zero external dependencies.
 
 [🧠 Architecture Deep Dive](architecture/design.md){ .md-button }
 
 ---
+
+## Under the Hood
+
+Titan's core is a **distributed execution engine written from scratch** — no orchestration framework, no message broker, no external database. The scheduler, the wire protocol, the failure handling, and the persistence layer are all hand-built and ship as a single zero-dependency JAR.
+
+That constraint is the point: every dependency Titan *doesn't* take is a hard problem it solves itself — which is exactly why the engine is worth looking at.
+
+| Layer | Built from scratch |
+|---|---|
+| **Scheduler** | Dependency resolution, capability + affinity routing, event-driven dispatch — blocked jobs cost nothing until a completion event unlocks them (no polling) |
+| **Transport** | A custom **32-opcode binary RPC protocol** over raw TCP — no gRPC, no Netty |
+| **Execution** | **5 task runners** behind one interface — ephemeral scripts, long-running services (with auto-restart), detached processes, plus file & PDF handlers |
+| **Persistence** | A from-scratch **RESP-compatible store** (AOF, KV, replication) — [swappable for real Redis](#architecture-overview) |
+| **Concurrency** | ~3,800 lines of framework-free Java: thread pools, atomics, and synchronized state coordinated across concurrent dispatch, heartbeat, and auto-scale loops |
+
+### Failure is a first-class concern
+
+Titan implements **9 distinct failure-handling mechanisms** — heartbeat detection with self-healing reschedule, bounded retry, a dead-letter queue, fail-fast on deterministic errors, orphaned-job recovery on restart, execution timeouts, saturation backpressure, and exponential-backoff callbacks. Handling partial failure — a worker dying mid-job, a Master restart, a lost result — is the part most from-scratch orchestrators skip. Titan treats it as a core transition, not an edge case.
+
+[🛡️ Fault Tolerance & Recovery](architecture/fault-tolerance.md){ .md-button }
+[🔀 Execution Flows](architecture/execution-flows.md){ .md-button }
+[🧠 System Design](architecture/design.md){ .md-button }
 
 ---
 
