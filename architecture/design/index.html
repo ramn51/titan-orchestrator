@@ -2912,6 +2912,7 @@
 <p><strong>Security &amp; Auth:</strong> Implement mTLS (Mutual TLS) for encrypted, authenticated communication.</p>
 <p><strong>Distributed Consensus:</strong> Implement Raft/Paxos for Leader Election (Removing Master SPOF).</p>
 <p><strong>Containerization:</strong> Support for Docker execution drivers for true filesystem isolation (currently uses Process-Level isolation).</p>
+<p><strong>Opt-in TTL heartbeat:</strong> An alternative worker-liveness model using TitanStore TTL keys — the worker refreshes an expiring key and the Master detects its absence, aligning with the push-based discovery philosophy. Requires exposing a <code>SETEX</code>-style command over the wire (TTL exists inside TitanStore but is not yet reachable via the adapter/SDK). Would make TitanStore required for liveness, so the current Master-dial loop remains the store-less default.</p>
 <p><strong>Cluster Autoscaler Webhooks:</strong> Allow Titan to trigger external APIs (e.g., Azure VM Scale Sets) to provision bare metal automatically when queues saturate.</p>
 
 

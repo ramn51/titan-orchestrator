@@ -3340,6 +3340,7 @@
 <li class="task-list-item"><input type="checkbox" disabled/> <strong>Security &amp; Auth:</strong> Implement mTLS (Mutual TLS) for encrypted, authenticated cluster communication.</li>
 <li class="task-list-item"><input type="checkbox" disabled/> <strong>Containerized Execution:</strong> Add support for Docker execution drivers to provide true filesystem isolation (currently utilizing Process-Level isolation).</li>
 <li class="task-list-item"><input type="checkbox" disabled/> <strong>Cluster Autoscaler Webhooks:</strong> Allow Titan to trigger external APIs (e.g., Azure VM Scale Sets, AWS EC2) to provision bare-metal compute automatically when queues saturate.</li>
+<li class="task-list-item"><input type="checkbox" disabled/> <strong>Opt-in TTL heartbeat:</strong> Offer push-style worker liveness via TitanStore TTL keys (worker refreshes an expiring key; Master detects absence) as an alternative to the current Master-dial loop. Requires exposing a <code>SETEX</code>-style command over the wire, and would make TitanStore required for liveness — so it stays opt-in, with the dial loop remaining the store-less default.</li>
 <li class="task-list-item"><input type="checkbox" disabled checked/> <strong>Human-in-the-Loop (HITL):</strong> Pause DAG execution and wait for human Approve/Reject via the Dashboard. Supports per-gate timeouts and automatic gate injection via the SDK. See <a href="examples/hitl/">HITL Pipelines</a>.</li>
 </ul>
 <hr />
