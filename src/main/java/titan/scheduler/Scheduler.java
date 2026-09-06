@@ -81,6 +81,24 @@ import titan.storage.TitanJRedisAdapter;
     // Remember bad ports for avoiding during scaling
     private final Set<Integer> portBlacklist = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
+    // Dispatch backpressure. The single-threaded dispatch loop parks here when every
+    // capable worker is saturated, and is woken the moment a slot frees. The wait()
+    // timeouts are a safety net for a missed notify (a slot freeing between the
+    // saturation check and the wait) — that case degrades to the old poll interval
+    // rather than deadlocking. Never held while any Worker monitor is taken.
+    // Capacity is signalled through a 1-slot queue rather than wait/notify: a token
+    // offered BEFORE the dispatch loop starts waiting is RETAINED, so a slot that
+    // frees between the saturation check and the wait still wakes the loop. A bare
+    // notifyAll() lands on an empty wait set in that window and is lost, which makes
+    // the loop sit out its full timeout — measurably, on most cycles.
+    // Capacity 1 coalesces bursts: N releases wake the loop once, which is all it needs.
+    private final BlockingQueue<Object> capacitySignal = new LinkedBlockingQueue<>(1);
+    private static final Object CAPACITY_TOKEN = new Object();
+
+    private void signalCapacity() {
+        capacitySignal.offer(CAPACITY_TOKEN);   // non-blocking; drops if one is pending
+    }
+
     // This is related to log streaming
     private final Map<String, List<String>> liveLogBuffer = new ConcurrentHashMap<>();
     private static final int MAX_LOG_LINES = 100;
@@ -405,6 +423,7 @@ import titan.storage.TitanJRedisAdapter;
         this.workerRegistry.addWorker(host, port, capability, isPermanent);
         this.scalingInProgress = false;
         this.portBlacklist.remove(port);
+        signalCapacity();
 
 //        System.out.println("[DEBUG] Attempting promotion for incoming worker at " + host + ":" + port);
         System.out.println("[INFO] New Worker Registered: " + host + ":" + port +
@@ -817,7 +836,7 @@ import titan.storage.TitanJRedisAdapter;
                     // Re-queue the job to try again later (Backpressure)
                     job.setStatus(Job.Status.PENDING);
                     taskQueue.add(job);
-                    Thread.sleep(2000);
+                    capacitySignal.poll(2000, TimeUnit.MILLISECONDS);
                     continue;
                 }
 
@@ -827,7 +846,7 @@ import titan.storage.TitanJRedisAdapter;
                     System.out.println("All workers SATURATED or unavailable. Re-queueing job.");
                     job.setStatus(Job.Status.PENDING);
                     taskQueue.put(job); // Use put for blocking
-                    Thread.sleep(1000);
+                    capacitySignal.poll(1000, TimeUnit.MILLISECONDS);
                     continue;
                 }
                 selectedWorker.incrementCurrentLoad();
@@ -853,6 +872,7 @@ import titan.storage.TitanJRedisAdapter;
                             // NOTE: For Sync jobs (Deploy), we complete and decrement immediately here
                             // because they don't trigger the handleJobCallback.
                             selectedWorker.decrementCurrentLoad();
+                            signalCapacity();
                         }
 
                 } catch (Exception e){
@@ -864,6 +884,7 @@ import titan.storage.TitanJRedisAdapter;
                     if (selectedWorker != null) {
                         selectedWorker.currentJobId = null;
                         selectedWorker.decrementCurrentLoad();
+                        signalCapacity();
                         String wKey = String.valueOf(selectedWorker.port());
                         java.util.Deque<Job> errHist = workerRecentHistory.computeIfAbsent(wKey, k -> new java.util.concurrent.ConcurrentLinkedDeque<>());
                         errHist.removeIf(j -> j.getId().equals(job.getId()));
@@ -991,6 +1012,7 @@ import titan.storage.TitanJRedisAdapter;
             if (record.assignedWorker != null) {
                 record.assignedWorker.currentJobId = null;
                 record.assignedWorker.decrementCurrentLoad();
+                signalCapacity();
                 try {
                     schedulerClient.sendRequest(
                             record.assignedWorker.host(),
@@ -1060,6 +1082,7 @@ import titan.storage.TitanJRedisAdapter;
 
                     if (record.assignedWorker != null) {
                         record.assignedWorker.decrementCurrentLoad();
+                        signalCapacity();
                     }
 //                    if(job != null) job.setStatus(Job.Status.COMPLETED);
 //                }
