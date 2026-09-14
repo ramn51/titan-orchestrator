@@ -119,6 +119,8 @@ nav:
       - System Design: architecture/design.md
       - Execution Flows: architecture/execution-flows.md
       - Fault Tolerance & Recovery: architecture/fault-tolerance.md
+      - Service Health (Phase 2): architecture/service-health.md
+      - Service Discovery (Phase 3): architecture/service-discovery.md
       - TitanStore & IPC: architecture/internals.md
       - How Titan Compares: comparison.md
 

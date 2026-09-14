@@ -115,6 +115,15 @@ import java.nio.charset.StandardCharsets;
  */
     public static final byte OP_DEPLOY_SCRIPT     = 0x57;
     /**
+ * OpCode for resolving a deployed service to the host and port it is actually listening on.
+ * Payload: the service (job) ID, or {@code *} to list every live service ID.
+ * Reply: {@code host|port}, a CSV of service IDs for {@code *}, or {@code NULL}.
+ * <p>
+ * This is a system-namespaced read. The generic KV opcodes sandbox SDK keys under {@code user:},
+ * so they cannot serve discovery data without making it user-writable.
+ */
+    public static final byte OP_RESOLVE_SERVICE   = 0x58;
+    /**
  * OpCode for sending a batch of log entries.
  */
     public static final byte OP_LOG_BATCH        = 0x17;

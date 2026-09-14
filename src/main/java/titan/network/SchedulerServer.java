@@ -568,6 +568,20 @@ import titan.network.TitanProtocol.TitanPacket;
                 String status = scheduler.redisKVGet("job:" + payload + ":status");
                 return status == null ? "NULL" : status;
 
+            case TitanProtocol.OP_RESOLVE_SERVICE: {
+                String svcId = payload.trim();
+                if (svcId.equals("*")) {
+                    java.util.Set<String> live = scheduler.safeRedisSMembers("system:live_services");
+                    return (live == null || live.isEmpty()) ? "" : String.join(",", live);
+                }
+                String svcHost = scheduler.redisKVGet("service:" + svcId + ":host");
+                String svcPort = scheduler.redisKVGet("service:" + svcId + ":port");
+                if (svcHost == null || svcPort == null || svcHost.isEmpty() || svcPort.isEmpty()) {
+                    return "NULL";
+                }
+                return svcHost + "|" + svcPort;
+            }
+
             case TitanProtocol.OP_CANCEL_JOB:
                 return scheduler.cancelJob(payload.trim());
 

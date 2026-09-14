@@ -26,6 +26,7 @@ OP_LOG_BATCH = 0x17
 OP_GET_LOGS = 0x16
 OP_UPLOAD_ASSET  = 0x53
 OP_DEPLOY_SCRIPT = 0x57
+OP_RESOLVE_SERVICE = 0x58
 OP_KV_SET = 0x60
 OP_KV_GET = 0x61
 OP_KV_SADD = 0x62
@@ -364,6 +365,39 @@ class TitanClient:
     def get_job_status(self, job_id):
         """Securely queries the Master for a job's internal system status."""
         return self._send_request(OP_GET_JOB_STATUS, job_id)
+
+    def get_service_address(self, service_id):
+        """Resolve a deployed service to the (host, port) it is actually listening on.
+
+        A worker registers its own RPC port with the Master; a service it hosts listens on a
+        different port entirely. This reads the address the Master recorded once the service
+        passed its readiness check, so consumer jobs do not have to hard-code it.
+
+        Returns:
+            (host, port) tuple, or None if the service is unknown or has no listening port.
+        """
+        resp = self._send_request(OP_RESOLVE_SERVICE, service_id)
+        if not resp or resp.strip() in ("NULL", ""):
+            return None
+        try:
+            host, port = resp.strip().split("|", 1)
+            return (host.strip(), int(port.strip()))
+        except (ValueError, AttributeError):
+            return None
+
+    def get_service_url(self, service_id, scheme="http"):
+        """Convenience wrapper over get_service_address returning a URL string, or None."""
+        addr = self.get_service_address(service_id)
+        if addr is None:
+            return None
+        return f"{scheme}://{addr[0]}:{addr[1]}"
+
+    def list_services(self):
+        """Return the IDs of all services the Master currently considers live."""
+        resp = self._send_request(OP_RESOLVE_SERVICE, "*")
+        if not resp or resp.strip() in ("NULL", ""):
+            return []
+        return [x for x in (v.strip() for v in resp.split(",")) if x]
 
     def stop_service(self, service_id):
         """Tear down a running service by the job id it was deployed under.

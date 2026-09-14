@@ -222,6 +222,22 @@ jobs:
     args: "--host 0.0.0.0 --reload"
 ```
 
+!!! tip "Downstream jobs wait for the port, not just the process"
+    A `service` node reports `COMPLETED` only once its port accepts connections — not when the process is spawned. So a job that declares the service as a parent is dispatched only after the service is genuinely reachable, and never races a slow-booting server:
+
+    ```yaml
+    jobs:
+      - id: "api"
+        type: "service"
+        file: "src/server.py"
+        port: 8000
+      - id: "smoke_test"     # dispatched only after :8000 answers
+        file: "src/probe.py"
+        parents: ["api"]
+    ```
+
+    Inside `probe.py`, resolve the address at runtime instead of hardcoding it — see [`get_service_url`](../reference/sdk.md#finding-a-services-address-get_service_address).
+
 ### Deploying the Pipeline
 Use the Titan CLI to submit any YAML DAG to the active cluster:
 ```bash

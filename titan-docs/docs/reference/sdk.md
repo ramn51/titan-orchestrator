@@ -194,6 +194,60 @@ resp = client.stop_service("my-api")   # -> "STOPPED: DAG-my-api"
 
     In a DAG, model teardown as a final job that depends on the work jobs, so the graph sequences it for you.
 
+### Finding a service's address (`get_service_address`)
+
+A worker registers its **own RPC port** with the Master (`:8080`, `:8081`). A service it hosts listens on a **different** port entirely (`:8099`). Knowing which worker runs a service therefore does not tell you where to connect — so the Master records the service's real address once it passes its readiness check, and these methods read it back.
+
+```python
+client.get_service_address("DAG-my-api")   # -> ("127.0.0.1", 8099)  or None
+client.get_service_url("DAG-my-api")       # -> "http://127.0.0.1:8099"  or None
+client.list_services()                     # -> ["DAG-my-api", "DAG-embeddings"]
+```
+
+The point is that a **consumer job no longer hardcodes a port**:
+
+```python
+# producer: deploy the service
+client.submit_job(TitanJob(job_id="my-api", filename="api_server.py",
+                           job_type="SERVICE", port=8099))
+
+# consumer: resolve at runtime instead of sharing a constant
+url = client.get_service_url("DAG-my-api")
+requests.get(f"{url}/predict")
+```
+
+- **Returns `None`** if the service is unknown, was never ready, or has been stopped. Always check before using.
+- **Portless services** (a daemon with no listener) are never recorded and always resolve to `None`.
+- `list_services()` returns only services the Master currently considers live; `stop_service` removes the entry.
+
+!!! note "Resolution is by instance id, not by a logical name"
+    Service ids are `DAG-<job_id>`, so a redeploy under a new job id resolves to a different key. Stable logical names — and automatic injection of `TITAN_SVC_<NAME>_HOST/PORT` into a consumer's environment — are Phase 3 on the roadmap.
+
+### Readiness: what `COMPLETED` means for a service
+
+A service deploy job reports `COMPLETED` only once the Master has **opened a TCP connection to the service's port**. It does not mean "the process was spawned" — it means "the service is accepting connections."
+
+That matters most inside a DAG: a child node that depends on a service deploy will not be dispatched until the service is actually reachable, so consumer jobs never race a slow-booting server. There is nowhere in a downstream node to put a `sleep`, which is why the guarantee lives in the scheduler.
+
+```yaml
+jobs:
+  - id: api
+    type: service
+    script: api_server.py
+    port: 8099
+  - id: consumer          # dispatched only after :8099 answers
+    script: call_api.py
+    parents: [api]
+```
+
+If the port never becomes reachable within the readiness window (10 attempts × 2s by default), the deploy **fails** rather than reporting success — and it fails fast, without retrying, since a service that never bound will not bind on a second attempt.
+
+| Setting | Default | Meaning |
+|:---|:---|:---|
+| `titan.service.ready.attempts` | `10` | Probe attempts before the deploy fails |
+| `titan.service.ready.interval.ms` | `2000` | Delay between probes |
+| `titan.service.ready.threads` | `4` | Probe pool size; probes run off the dispatch loop |
+
 ---
 
 ## 3. Using the Distributed Data Bus (TitanStore)

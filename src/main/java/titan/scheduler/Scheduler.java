@@ -78,6 +78,22 @@ import titan.storage.TitanJRedisAdapter;
     int MAX_WORKERS = 5;
     private volatile boolean scalingInProgress = false;
     private final ScheduledExecutorService scalerExecutor = Executors.newSingleThreadScheduledExecutor();
+
+    /**
+     * Runs service readiness probes off the dispatch thread.
+     * <p>
+     * {@link #runDispatchLoop()} is single-threaded, so probing inline stalls every other job in
+     * the cluster for the length of the probe. Deploys hand the wait here and return
+     * {@code JOB_ACCEPTED}; this pool owns the completion, exactly as {@link #handleJobCallback}
+     * owns it for async task callbacks.
+     */
+    private final ScheduledExecutorService readinessExecutor = Executors.newScheduledThreadPool(
+            TitanConfig.getInt("titan.service.ready.threads", 4),
+            r -> {
+                Thread t = new Thread(r, "titan-readiness");
+                t.setDaemon(true);
+                return t;
+            });
     // Remember bad ports for avoiding during scaling
     private final Set<Integer> portBlacklist = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
@@ -899,9 +915,18 @@ import titan.storage.TitanJRedisAdapter;
 
 
                     // We fail the job here and not give it retry if its a deployment issue
-                    if (e.getMessage().contains("ALREADY in use") || e.getMessage().contains("Deployment Rejected")) {
+                    // A service that never bound its port will not bind on a retry either, and each
+                    // attempt burns the full readiness window. Treat it as deterministic.
+                    if (e.getMessage().contains("ALREADY in use") || e.getMessage().contains("Deployment Rejected")
+                            || e.getMessage().contains("never became reachable")) {
                         System.err.println("[FAIL-FAST] Non-recoverable error. Cancelling retries.");
                         job.setStatus(Job.Status.FAILED);
+                        // Persist it: the dispatch loop already wrote RUNNING to the store, and
+                        // skipping handleJobFailure() means nothing else will ever overwrite it.
+                        // Without this the job reports RUNNING forever to get_job_status().
+                        safeRedisSet("job:" + job.getId() + ":status", "FAILED");
+                        safeRedisSrem("system:active_jobs", job.getId());
+                        cancelChildren(job.getId());
                         // We do NOT call handleJobFailure(job) here, so it won't retry/become DEAD.
                     } else{
                         handleJobFailure(job);
@@ -1336,6 +1361,10 @@ import titan.storage.TitanJRedisAdapter;
             String startPayload = filename + "|" + job.getId() + "|" + safePortArg;
 
             String startResp = sendExecuteCommand(worker, TitanProtocol.OP_START_SERVICE, startPayload);
+            if (startResp.contains("SERVICE_ALREADY_RUNNING")) {
+                throw new RuntimeException("Deployment Rejected: a service with ID " + job.getId()
+                        + " is already running on " + worker.host() + ". Stop it before redeploying.");
+            }
             if (!startResp.contains("DEPLOYED_SUCCESS")) {
                 throw new RuntimeException("Start failed. Expected DEPLOYED_SUCCESS, got: " + startResp);
             }
@@ -1343,30 +1372,15 @@ import titan.storage.TitanJRedisAdapter;
             String pid = startResp.contains("PID:") ? startResp.split("PID:")[1].trim() : "UNKNOWN";
 
             if (targetPort != -1) {
-                boolean alive = false;
-
-                // Try 10 times, once every 2 seconds
-                for (int i = 1; i <= 10; i++) {
-                    Thread.sleep(2000);
-                    if (isWorkerAlive(worker.host(), targetPort)) {
-                        alive = true;
-                        System.out.println("[OK] Worker port " + targetPort + " detected on attempt " + i);
-                        break;
-                    }
-                    System.out.println("[DEPLOY] Port " + targetPort + " not ready... (Attempt " + i + "/10)");
-                }
-
-                if (!alive) {
-                    // LOCK RESET:  before throwing exception
-                    if (job.getId().startsWith("WRK-")) {
-                        this.scalingInProgress = false;
-                    }
-                    throw new RuntimeException("Deployment Failed: Process started (PID " + pid + ") but port " + targetPort
-                            + " never became reachable after 20s.");
-                }
+                // Hand the wait to the readiness pool and release the dispatch thread. Children
+                // still unlock only once the port answers - that now happens from that pool.
+                awaitServiceReadyAsync(job, worker, targetPort, pid);
+                return "JOB_ACCEPTED";
             }
 
+            // Portless deploy: nothing to probe, so complete inline as before.
             liveServiceMap.put(job.getId(), worker);
+            recordServiceAddress(job.getId(), worker.host(), targetPort);
             // Since deploy tasks are synchronous (kind of) so we clear it off and say its completed.
             worker.currentJobId = null;
             return "DEPLOYED_SUCCESS PID:" + pid;
@@ -1397,6 +1411,167 @@ import titan.storage.TitanJRedisAdapter;
         } catch (IOException e) {
             return false;
         }
+    }
+
+    /**
+     * The total window {@link #awaitServiceReady} will wait, in seconds. Derived from the
+     * configured attempt count and interval so log/error messages stay truthful if either is tuned.
+     *
+     * @return The readiness window in seconds.
+     */
+    private int readyWindowSeconds() {
+        return (TitanConfig.getInt("titan.service.ready.attempts", 10)
+                * TitanConfig.getInt("titan.service.ready.interval.ms", 2000)) / 1000;
+    }
+
+    /**
+     * Blocks until a freshly started service is accepting TCP connections on {@code port}.
+     * <p>
+     * A worker returns {@code DEPLOYED_SUCCESS} as soon as the child process is spawned, which is
+     * before the service has bound its port. Completing the deploy job at that moment would unlock
+     * downstream DAG nodes that then race the service's startup. Gating on an actual connect makes
+     * "deployed" mean "reachable".
+     *
+     * @param host  Host the service was started on.
+     * @param port  Port the service is expected to listen on.
+     * @param label Service/job ID, used only for logging.
+     * @return {@code true} if the port became reachable within the window, {@code false} otherwise.
+     */
+    private boolean awaitServiceReady(String host, int port, String label) {
+        int attempts = TitanConfig.getInt("titan.service.ready.attempts", 10);
+        int intervalMs = TitanConfig.getInt("titan.service.ready.interval.ms", 2000);
+
+        for (int i = 1; i <= attempts; i++) {
+            try {
+                Thread.sleep(intervalMs);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+            if (isWorkerAlive(host, port)) {
+                System.out.println("[OK] Service " + label + " reachable on port " + port
+                        + " (attempt " + i + "/" + attempts + ")");
+                return true;
+            }
+            System.out.println("[DEPLOY] Port " + port + " not ready... (Attempt " + i + "/" + attempts + ")");
+        }
+        return false;
+    }
+
+    /**
+     * Records where a live service is reachable so consumer jobs can resolve it at runtime
+     * instead of hard-coding a host and port.
+     * <p>
+     * The worker's own RPC port is not the service's listening port, so {@code liveServiceMap}
+     * alone cannot answer "where is service X?". These keys close that gap.
+     *
+     * @param serviceId The service (job) ID.
+     * @param host      Host the service is reachable on.
+     * @param port      Port the service is listening on. Values &lt;= 0 are ignored (portless daemons).
+     */
+    private void recordServiceAddress(String serviceId, String host, int port) {
+        if (port <= 0) return;
+        safeRedisSet("service:" + serviceId + ":host", host);
+        safeRedisSet("service:" + serviceId + ":port", String.valueOf(port));
+        safeRedisSadd("system:live_services", serviceId);
+        System.out.println("[DISCOVERY] Registered " + serviceId + " -> " + host + ":" + port);
+    }
+
+    /**
+     * Removes a service's discovery record once it is no longer live.
+     *
+     * @param serviceId The service (job) ID.
+     */
+    /**
+     * Waits for a freshly started service to become reachable on a background thread, then
+     * completes or fails the deploy job.
+     * <p>
+     * The caller must return {@code JOB_ACCEPTED} so the dispatch loop leaves the job alone.
+     * Ownership of the worker's load counter and the capacity signal transfers to this task.
+     *
+     * @param job        The deploy job awaiting readiness.
+     * @param worker     The worker hosting the service.
+     * @param targetPort The port the service must bind.
+     * @param pid        PID string reported by the worker, for the result message.
+     */
+    private void awaitServiceReadyAsync(Job job, Worker worker, int targetPort, String pid) {
+        readinessExecutor.submit(() -> {
+            TaskExecution record = executionHistory.get(job.getId());
+            try {
+                if (awaitServiceReady(worker.host(), targetPort, job.getId())) {
+                    liveServiceMap.put(job.getId(), worker);
+                    recordServiceAddress(job.getId(), worker.host(), targetPort);
+                    worker.currentJobId = null;
+                    runningJobs.remove(job.getId());
+
+                    if (record != null) {
+                        completeJob(job, "DEPLOYED_SUCCESS PID:" + pid, record);
+                    }
+                    worker.decrementCurrentLoad();
+                    signalCapacity();
+                } else {
+                    failServiceDeploy(job, worker, record, "Deployment Failed: " + job.getId()
+                            + " started but port " + targetPort + " never became reachable after "
+                            + readyWindowSeconds() + "s.");
+                }
+            } catch (Exception e) {
+                failServiceDeploy(job, worker, record,
+                        "Deployment Failed: readiness check errored for " + job.getId() + ": " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Terminal-fails a deploy from the readiness thread, mirroring what the dispatch loop's catch
+     * block would have done synchronously: release the worker, unblock the scaler, persist the
+     * status, and cascade to children.
+     * <p>
+     * A service that never bound its port will not bind on a retry, so this is deliberately
+     * terminal rather than routed through {@link #handleJobFailure}.
+     *
+     * @param job    The failed deploy job.
+     * @param worker The worker it was dispatched to.
+     * @param record Its execution record, may be {@code null}.
+     * @param msg    Human-readable failure reason.
+     */
+    private void failServiceDeploy(Job job, Worker worker, TaskExecution record, String msg) {
+        System.err.println("[FAIL] " + msg);
+
+        if (record != null) record.fail(msg);
+        runningJobs.remove(job.getId());
+
+        if (worker != null) {
+            worker.currentJobId = null;
+            worker.decrementCurrentLoad();
+            signalCapacity();
+        }
+
+        // Let the scaler pick a different port next cycle instead of deadlocking on the lock.
+        if (job.getId().startsWith("WRK-")) {
+            this.scalingInProgress = false;
+        }
+
+        job.setStatus(Job.Status.FAILED);
+        safeRedisSet("job:" + job.getId() + ":status", "FAILED");
+        safeRedisSrem("system:active_jobs", job.getId());
+
+        // Surface it in the dashboard's per-worker history, same as completeJob does on success.
+        if (worker != null) {
+            String wKey = String.valueOf(worker.port());
+            java.util.Deque<Job> hist = workerRecentHistory.computeIfAbsent(
+                    wKey, k -> new java.util.concurrent.ConcurrentLinkedDeque<>());
+            hist.removeIf(j -> j.getId().equals(job.getId()));
+            hist.add(job);
+            if (hist.size() > 10) hist.removeFirst();
+        }
+
+        cancelChildren(job.getId());
+    }
+
+    private void forgetServiceAddress(String serviceId) {
+        safeRedisSrem("system:live_services", serviceId);
+        safeRedisSet("service:" + serviceId + ":host", "");
+        safeRedisSet("service:" + serviceId + ":port", "");
     }
 
 
@@ -1503,11 +1678,39 @@ import titan.storage.TitanJRedisAdapter;
         // Worker Protocol for Service Archive: SERVICE_ID | ENTRY_FILE | PORT | BASE64_ZIP
         String workerPayload = job.getId() + "|" + fileInfo.entryPoint + "|" + port + "|" + fileInfo.base64Content;
 
+        int declaredPort = -1;
+        try {
+            declaredPort = Integer.parseInt(port.trim());
+        } catch (NumberFormatException ignored) {
+            // Portless service - nothing to reserve or probe.
+        }
+
+        // Reject a collision BEFORE starting anything. Without this the readiness probe below
+        // would connect to whatever already owns the port and report a success that never happened.
+        if (declaredPort > 0 && isWorkerAlive(worker.host(), declaredPort)) {
+            throw new RuntimeException("Deployment Rejected: Port " + declaredPort
+                    + " is ALREADY in use by another service.");
+        }
+
         System.out.println("🚀 [ARCHIVE] Starting Service " + job.getId() + " on Port " + port);
 
         String response = sendExecuteCommand(worker, TitanProtocol.OP_START_SERVICE_ARCHIVE, workerPayload);
 
+        // The worker refuses to start a second process under an existing service ID. That is not a
+        // success - without this the Master would complete the job and unlock children regardless.
+        if (response.contains("SERVICE_ALREADY_RUNNING")) {
+            throw new RuntimeException("Deployment Rejected: a service with ID " + job.getId()
+                    + " is already running on " + worker.host() + ". Stop it before redeploying.");
+        }
+
         if (response.contains("DEPLOYED_SUCCESS")) {
+            if (declaredPort > 0) {
+                // DEPLOYED_SUCCESS here means "process spawned", not "service listening". Gate on a
+                // real connect, off the dispatch thread.
+                awaitServiceReadyAsync(job, worker, declaredPort, "DETACHED");
+                return "JOB_ACCEPTED";
+            }
+
             liveServiceMap.put(job.getId(), worker);
             worker.currentJobId = null; // Since the Services are detached
         }
@@ -1554,6 +1757,7 @@ import titan.storage.TitanJRedisAdapter;
             String response = sendExecuteCommand(targetWorker, TitanProtocol.OP_STOP, serviceId);
             if (response.contains("SUCCESS") || response.contains("STOPPED")) {
                 liveServiceMap.remove(serviceId);
+                forgetServiceAddress(serviceId);
             }
             return response;
         } catch (Exception e) {

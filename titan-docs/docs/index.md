@@ -107,7 +107,7 @@ That constraint is the point: every dependency Titan *doesn't* take is a hard pr
 | Layer | Built from scratch |
 |---|---|
 | **Scheduler** | Dependency resolution, capability + affinity routing, event-driven dispatch, blocked jobs cost nothing until a completion event unlocks them (no polling) |
-| **Transport** | A custom **32-opcode binary RPC protocol** over raw TCP, no gRPC, no Netty |
+| **Transport** | A custom **33-opcode binary RPC protocol** over raw TCP, no gRPC, no Netty |
 | **Execution** | **5 task runners** behind one interface, ephemeral scripts, long-running services (with auto-restart), detached processes, plus file & PDF handlers |
 | **Persistence** | A from-scratch **RESP-compatible store** (AOF, KV, replication), [swappable for real Redis](#architecture-overview) |
 | **Concurrency** | ~3,800 lines of framework-free Java: thread pools, atomics, and synchronized state coordinated across concurrent dispatch, heartbeat, and auto-scale loops |
@@ -336,6 +336,10 @@ Titan runs locally out of the box. When you're ready to move to the cloud:
 - [ ] **Distributed Consensus:** Implement Raft or Paxos for Leader Election to remove the Master node as a Single Point of Failure (SPOF).
 - [ ] **Security & Auth:** Implement mTLS (Mutual TLS) for encrypted, authenticated cluster communication.
 - [ ] **Containerized Execution:** Add support for Docker execution drivers to provide true filesystem isolation (currently utilizing Process-Level isolation).
+- [x] **Service readiness gate:** A service deploy completes only once its port accepts connections, so downstream DAG nodes never race a slow-booting server. Fails fast if the port never binds.
+- [x] **Service discovery (address):** The Master records each live service's real host and port; `get_service_address()` / `get_service_url()` / `list_services()` resolve it at runtime instead of hardcoding.
+- [ ] **Service health checking:** Periodic TCP/HTTP probes per service, crash-loop backoff with a restart ceiling, and restart state surfaced to the dashboard. See [Phase 2 spec](architecture/service-health.md).
+- [ ] **Logical service names & env injection:** Stable names that survive redeploys, plus `TITAN_SVC_<NAME>_HOST/PORT` injected into any job that declares `needs_services`. See [Phase 3 spec](architecture/service-discovery.md).
 - [ ] **Cluster Autoscaler Webhooks:** Allow Titan to trigger external APIs (e.g., Azure VM Scale Sets, AWS EC2) to provision bare-metal compute automatically when queues saturate.
 - [ ] **Opt-in TTL heartbeat:** Offer push-style worker liveness via TitanStore TTL keys (worker refreshes an expiring key; Master detects absence) as an alternative to the current Master-dial loop. Requires exposing a `SETEX`-style command over the wire, and would make TitanStore required for liveness — so it stays opt-in, with the dial loop remaining the store-less default.
 - [x] **Human-in-the-Loop (HITL):** Pause DAG execution and wait for human Approve/Reject via the Dashboard. Supports per-gate timeouts and automatic gate injection via the SDK. See [HITL Pipelines](examples/hitl.md).

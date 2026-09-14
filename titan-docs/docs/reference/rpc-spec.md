@@ -49,7 +49,7 @@ The receiver compares the header's `version` byte against its own `CURRENT_VERSI
 
 ### Opcode table
 
-All **32** opcodes defined by the protocol:
+All **33** opcodes defined by the protocol:
 
 | Group | Opcode | Hex | Typical direction |
 |:---|:---|:---|:---|
@@ -75,6 +75,7 @@ All **32** opcodes defined by the protocol:
 | **Assets** | `OP_UPLOAD_ASSET` | `0x53` | Client → Master |
 | | `OP_FETCH_ASSET` | `0x54` | Client → Master |
 | | `OP_DEPLOY_SCRIPT` | `0x57` | Client → Master |
+| **Service discovery** | `OP_RESOLVE_SERVICE` | `0x58` | Client → Master |
 | **Logging** | `OP_LOG_STREAM` | `0x15` | Worker → Master |
 | | `OP_LOG_BATCH` | `0x17` | Worker → Master |
 | | `OP_GET_LOGS` | `0x16` | Client → Master |
