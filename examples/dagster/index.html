@@ -2268,6 +2268,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/internals/" class="md-nav__link">
         
   
@@ -2550,68 +2606,68 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span><span class="p">,</span> <span class="n">TitanJob</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">TitanEngine</span><span class="p">(</span><span class="n">dg</span><span class="o">.</span><span class="n">ConfigurableResource</span><span class="p">):</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="sd">"""</span>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="sd">    The official bridge to the Titan Distributed Engine.</span>
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="sd">    Handles TCP dispatch and synchronous polling.</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">run_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">dg</span><span class="o">.</span><span class="n">AssetExecutionContext</span><span class="p">,</span> <span class="n">script_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">requirement</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;GENERAL&quot;</span><span class="p">,</span> <span class="n">affinity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="sd">    """</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">run_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">dg</span><span class="o">.</span><span class="n">AssetExecutionContext</span><span class="p">,</span> <span class="n">script_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">requirement</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"GENERAL"</span><span class="p">,</span> <span class="n">affinity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="c1"># Extract the logical asset name (e.g., &quot;raw_data&quot;)</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="c1"># Extract the logical asset name (e.g., "raw_data")</span>
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        <span class="n">step_name</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">asset_key</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>        <span class="n">t_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>            <span class="n">job_id</span><span class="o">=</span><span class="n">step_name</span><span class="p">,</span>
 </span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>            <span class="n">filename</span><span class="o">=</span><span class="n">script_path</span><span class="p">,</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>            <span class="n">job_type</span><span class="o">=</span><span class="s2">&quot;RUN_PAYLOAD&quot;</span><span class="p">,</span> 
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>            <span class="n">job_type</span><span class="o">=</span><span class="s2">"RUN_PAYLOAD"</span><span class="p">,</span> 
 </span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>            <span class="n">requirement</span><span class="o">=</span><span class="n">requirement</span><span class="p">,</span>
 </span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>            <span class="n">affinity</span><span class="o">=</span><span class="n">affinity</span><span class="p">,</span> 
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>            <span class="n">is_archive</span><span class="o">=</span><span class="kc">False</span> 
 </span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>        <span class="p">)</span>
 </span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>        <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;🚀 Routing &#39;</span><span class="si">{</span><span class="n">step_name</span><span class="si">}</span><span class="s2">&#39; to Titan (Req: </span><span class="si">{</span><span class="n">requirement</span><span class="si">}</span><span class="s2">, Affinity: </span><span class="si">{</span><span class="n">affinity</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>        <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"🚀 Routing '</span><span class="si">{</span><span class="n">step_name</span><span class="si">}</span><span class="s2">' to Titan (Req: </span><span class="si">{</span><span class="n">requirement</span><span class="si">}</span><span class="s2">, Affinity: </span><span class="si">{</span><span class="n">affinity</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
 </span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>        <span class="n">client</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="n">t_job</span><span class="p">)</span>
 </span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>        <span class="c1"># Synchronous Polling Loop via Titan&#39;s Status API</span>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>        <span class="n">master_job_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;DAG-</span><span class="si">{</span><span class="n">step_name</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>        <span class="c1"># Synchronous Polling Loop via Titan's Status API</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>        <span class="n">master_job_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"DAG-</span><span class="si">{</span><span class="n">step_name</span><span class="si">}</span><span class="s2">"</span>
 </span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>            <span class="n">status</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_job_status</span><span class="p">(</span><span class="n">master_job_id</span><span class="p">)</span>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>            <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;COMPLETED&quot;</span><span class="p">:</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>            <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">"COMPLETED"</span><span class="p">:</span>
 </span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>                <span class="c1"># Fetch logs on success for full visibility</span>
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>                <span class="n">worker_logs</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">fetch_logs</span><span class="p">(</span><span class="n">master_job_id</span><span class="p">)</span>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>                <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Titan Worker Logs:</span><span class="se">\n</span><span class="si">{</span><span class="n">worker_logs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>                <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✅ Titan finished physical execution of &#39;</span><span class="si">{</span><span class="n">step_name</span><span class="si">}</span><span class="s2">&#39;!&quot;</span><span class="p">)</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>                <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"✅ Titan Worker Logs:</span><span class="se">\n</span><span class="si">{</span><span class="n">worker_logs</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>                <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"✅ Titan finished physical execution of '</span><span class="si">{</span><span class="n">step_name</span><span class="si">}</span><span class="s2">'!"</span><span class="p">)</span>
 </span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>                <span class="k">return</span> <span class="kc">True</span>
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>            <span class="k">elif</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;FAILED&quot;</span><span class="p">:</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>            <span class="k">elif</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">"FAILED"</span><span class="p">:</span>
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>                <span class="c1"># Fetch logs on failure to debug within Dagster</span>
 </span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>                <span class="n">worker_logs</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">fetch_logs</span><span class="p">(</span><span class="n">master_job_id</span><span class="p">)</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>                <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Titan Worker failed. Remote Logs:</span><span class="se">\n</span><span class="si">{</span><span class="n">worker_logs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;❌ Titan Worker failed on &#39;</span><span class="si">{</span><span class="n">step_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a>                <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"❌ Titan Worker failed. Remote Logs:</span><span class="se">\n</span><span class="si">{</span><span class="n">worker_logs</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">"❌ Titan Worker failed on '</span><span class="si">{</span><span class="n">step_name</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
 </span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a>
 </span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 </span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>
 </span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a><span class="c1"># --- The Logical Assets ---</span>
 </span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a><span class="nd">@dg</span><span class="o">.</span><span class="n">asset</span>
 </span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a><span class="k">def</span><span class="w"> </span><span class="nf">raw_data</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">dg</span><span class="o">.</span><span class="n">AssetExecutionContext</span><span class="p">,</span> <span class="n">titan</span><span class="p">:</span> <span class="n">TitanEngine</span><span class="p">):</span>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Step 1: General extraction task.&quot;&quot;&quot;</span>
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>    <span class="n">titan</span><span class="o">.</span><span class="n">run_task</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">script_path</span><span class="o">=</span><span class="s2">&quot;extract.py&quot;</span><span class="p">,</span> <span class="n">requirement</span><span class="o">=</span><span class="s2">&quot;GENERAL&quot;</span><span class="p">,</span> <span class="n">affinity</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a><span class="w">    </span><span class="sd">"""Step 1: General extraction task."""</span>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>    <span class="n">titan</span><span class="o">.</span><span class="n">run_task</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">script_path</span><span class="o">=</span><span class="s2">"extract.py"</span><span class="p">,</span> <span class="n">requirement</span><span class="o">=</span><span class="s2">"GENERAL"</span><span class="p">,</span> <span class="n">affinity</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a>
 </span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a><span class="nd">@dg</span><span class="o">.</span><span class="n">asset</span>
 </span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a><span class="k">def</span><span class="w"> </span><span class="nf">trained_model</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">dg</span><span class="o">.</span><span class="n">AssetExecutionContext</span><span class="p">,</span> <span class="n">titan</span><span class="p">:</span> <span class="n">TitanEngine</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">):</span>
-</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Step 2: Heavy GPU task. Forced to same node as Step 1.&quot;&quot;&quot;</span>
-</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a>    <span class="n">titan</span><span class="o">.</span><span class="n">run_task</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">script_path</span><span class="o">=</span><span class="s2">&quot;train.py&quot;</span><span class="p">,</span> <span class="n">requirement</span><span class="o">=</span><span class="s2">&quot;GPU&quot;</span><span class="p">,</span> <span class="n">affinity</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a><span class="w">    </span><span class="sd">"""Step 2: Heavy GPU task. Forced to same node as Step 1."""</span>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a>    <span class="n">titan</span><span class="o">.</span><span class="n">run_task</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">script_path</span><span class="o">=</span><span class="s2">"train.py"</span><span class="p">,</span> <span class="n">requirement</span><span class="o">=</span><span class="s2">"GPU"</span><span class="p">,</span> <span class="n">affinity</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57" href="#__codelineno-0-57"></a>
 </span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58" href="#__codelineno-0-58"></a><span class="nd">@dg</span><span class="o">.</span><span class="n">asset</span>
 </span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59" href="#__codelineno-0-59"></a><span class="k">def</span><span class="w"> </span><span class="nf">evaluation_metrics</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">dg</span><span class="o">.</span><span class="n">AssetExecutionContext</span><span class="p">,</span> <span class="n">titan</span><span class="p">:</span> <span class="n">TitanEngine</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">):</span>
-</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60" href="#__codelineno-0-60"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Step 3: Lightweight CPU task. No affinity needed.&quot;&quot;&quot;</span>
-</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61" href="#__codelineno-0-61"></a>    <span class="n">titan</span><span class="o">.</span><span class="n">run_task</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">script_path</span><span class="o">=</span><span class="s2">&quot;eval.py&quot;</span><span class="p">,</span> <span class="n">requirement</span><span class="o">=</span><span class="s2">&quot;GENERAL&quot;</span><span class="p">,</span> <span class="n">affinity</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60" href="#__codelineno-0-60"></a><span class="w">    </span><span class="sd">"""Step 3: Lightweight CPU task. No affinity needed."""</span>
+</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61" href="#__codelineno-0-61"></a>    <span class="n">titan</span><span class="o">.</span><span class="n">run_task</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">script_path</span><span class="o">=</span><span class="s2">"eval.py"</span><span class="p">,</span> <span class="n">requirement</span><span class="o">=</span><span class="s2">"GENERAL"</span><span class="p">,</span> <span class="n">affinity</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62" href="#__codelineno-0-62"></a>
 </span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63" href="#__codelineno-0-63"></a><span class="c1"># --- Workspace Configuration ---</span>
 </span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64" href="#__codelineno-0-64"></a><span class="n">defs</span> <span class="o">=</span> <span class="n">dg</span><span class="o">.</span><span class="n">Definitions</span><span class="p">(</span>
 </span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65" href="#__codelineno-0-65"></a>    <span class="n">assets</span><span class="o">=</span><span class="p">[</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">evaluation_metrics</span><span class="p">],</span>
 </span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66" href="#__codelineno-0-66"></a>    <span class="c1"># We bind the Titan engine to the workspace here</span>
-</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67" href="#__codelineno-0-67"></a>    <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;titan&quot;</span><span class="p">:</span> <span class="n">TitanEngine</span><span class="p">()}</span> 
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67" href="#__codelineno-0-67"></a>    <span class="n">resources</span><span class="o">=</span><span class="p">{</span><span class="s2">"titan"</span><span class="p">:</span> <span class="n">TitanEngine</span><span class="p">()}</span> 
 </span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68" href="#__codelineno-0-68"></a><span class="p">)</span>
 </span></code></pre></div></p>
 <h3 id="dagster-execution-dashboard">Dagster Execution Dashboard</h3>

@@ -2330,6 +2330,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/internals/" class="md-nav__link">
         
   
@@ -2669,22 +2725,22 @@
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># 1. Define the Root Task</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">task_a</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">job_id</span><span class="o">=</span><span class="s2">&quot;extract_data&quot;</span><span class="p">,</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;etl/extract.py&quot;</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">job_id</span><span class="o">=</span><span class="s2">"extract_data"</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">"etl/extract.py"</span><span class="p">,</span>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">priority</span><span class="o">=</span><span class="mi">5</span>
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># 2. Define a Dependent Task</span>
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="n">task_b</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">job_id</span><span class="o">=</span><span class="s2">&quot;train_model&quot;</span><span class="p">,</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;ml/train.py&quot;</span><span class="p">,</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">requirement</span><span class="o">=</span><span class="s2">&quot;GPU&quot;</span><span class="p">,</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;extract_data&quot;</span><span class="p">]</span> <span class="c1"># &lt;--- Defines the dependency</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">job_id</span><span class="o">=</span><span class="s2">"train_model"</span><span class="p">,</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">"ml/train.py"</span><span class="p">,</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">requirement</span><span class="o">=</span><span class="s2">"GPU"</span><span class="p">,</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">"extract_data"</span><span class="p">]</span> <span class="c1"># &lt;--- Defines the dependency</span>
 </span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="p">)</span>
 </span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
 </span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="c1"># 3. Submit them as a unified DAG</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;nightly_pipeline&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">task_a</span><span class="p">,</span> <span class="n">task_b</span><span class="p">])</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DAG Submitted Successfully!&quot;</span><span class="p">)</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">"nightly_pipeline"</span><span class="p">,</span> <span class="p">[</span><span class="n">task_a</span><span class="p">,</span> <span class="n">task_b</span><span class="p">])</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"DAG Submitted Successfully!"</span><span class="p">)</span>
 </span></code></pre></div>
 <pre class="mermaid"><code>flowchart LR
     A[extract_data: extract.py&lt;br&gt; Priority: 5] --&gt; B[train_model: train.py&lt;br&gt; Requirement: GPU]
@@ -2702,17 +2758,17 @@
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">traffic_load</span> <span class="o">=</span> <span class="n">get_current_traffic</span><span class="p">()</span> <span class="c1"># Your custom monitoring logic</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="k">if</span> <span class="n">traffic_load</span> <span class="o">&gt;</span> <span class="mi">80</span><span class="p">:</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[HIGH] High Traffic. Switching to lightweight &#39;FAST&#39; pipeline.&quot;</span><span class="p">)</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">fast_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="s2">&quot;fast_scan&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;fast_path.py&quot;</span><span class="p">)</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"[HIGH] High Traffic. Switching to lightweight 'FAST' pipeline."</span><span class="p">)</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">fast_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="s2">"fast_scan"</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"fast_path.py"</span><span class="p">)</span>
 </span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="n">fast_job</span><span class="p">)</span>
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="k">else</span><span class="p">:</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[LOW] Normal Traffic. Generating distributed &#39;DEEP&#39; analysis DAG.&quot;</span><span class="p">)</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"[LOW] Normal Traffic. Generating distributed 'DEEP' analysis DAG."</span><span class="p">)</span>
 </span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="c1"># Programmatically generate 10 parallel tasks</span>
 </span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">deep_tasks</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        <span class="n">TitanJob</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;deep_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;deep_path.py&quot;</span><span class="p">)</span> 
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        <span class="n">TitanJob</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"deep_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"deep_path.py"</span><span class="p">)</span> 
 </span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="p">]</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;DEEP_PIPELINE&quot;</span><span class="p">,</span> <span class="n">deep_tasks</span><span class="p">)</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">"DEEP_PIPELINE"</span><span class="p">,</span> <span class="n">deep_tasks</span><span class="p">)</span>
 </span></code></pre></div>
 <pre class="mermaid"><code>flowchart LR
     Traffic{"Traffic &gt; 80?"}
@@ -2743,30 +2799,30 @@
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span><span class="p">,</span> <span class="n">TitanJob</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">job_id</span> <span class="o">=</span> <span class="s2">&quot;flaky_training_run&quot;</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">job_id</span> <span class="o">=</span> <span class="s2">"flaky_training_run"</span>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># 1. Fetch remote execution logs via Titan&#39;s protocol</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># 1. Fetch remote execution logs via Titan's protocol</span>
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">logs</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">fetch_logs</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
 </span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1"># 2. AI Evaluation: An LLM Agent analyzes the physical execution logs</span>
 </span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">decision</span> <span class="o">=</span> <span class="n">llm_agent</span><span class="o">.</span><span class="n">analyze_failure</span><span class="p">(</span><span class="n">logs</span><span class="p">)</span>
 </span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># 3. Act on the LLM&#39;s dynamic decision</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;DEPLOY_PATCH&quot;</span><span class="p">:</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[AGENT] Root cause: </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">. Deploying patch...&quot;</span><span class="p">)</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># 3. Act on the LLM's dynamic decision</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">"DEPLOY_PATCH"</span><span class="p">:</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[AGENT] Root cause: </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">. Deploying patch..."</span><span class="p">)</span>
 </span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
 </span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="c1"># Programmatically create a remediation job on the fly</span>
 </span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">fix_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>        <span class="n">job_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">_fix&quot;</span><span class="p">,</span> 
-</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>        <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;scripts/safe_mode_patch.py&quot;</span><span class="p">,</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>        <span class="n">job_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">_fix"</span><span class="p">,</span> 
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>        <span class="n">filename</span><span class="o">=</span><span class="s2">"scripts/safe_mode_patch.py"</span><span class="p">,</span>
 </span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>        <span class="c1"># The agent dynamically requests specific capabilities based on the failure!</span>
-</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>        <span class="n">requirement</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">recommended_hardware</span> <span class="c1"># e.g., &quot;HIGH_MEM&quot;</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>        <span class="n">requirement</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">recommended_hardware</span> <span class="c1"># e.g., "HIGH_MEM"</span>
 </span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>    <span class="p">)</span>
 </span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>
 </span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>    <span class="c1"># 4. Dispatch the new task to the cluster</span>
 </span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="n">fix_job</span><span class="p">)</span>
 </span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="k">else</span><span class="p">:</span>
-</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[AGENT] Run healthy or failure is non-critical. Sequence complete.&quot;</span><span class="p">)</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"[AGENT] Run healthy or failure is non-critical. Sequence complete."</span><span class="p">)</span>
 </span></code></pre></div>
 <pre class="mermaid"><code>flowchart LR
     Logs["fetch_logs('flaky_run')&lt;br&gt; Get Execution Logs"] --&gt; LLM["llm_agent.analyze(logs)&lt;br&gt; AI Evaluation"]
@@ -2794,31 +2850,31 @@
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># 1. Agent wakes up and checks its global memory</span>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># (Defaults to 0 if this is the first time running)</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">current_attempts</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="s2">&quot;agent_retry_count&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">current_attempts</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="s2">"agent_retry_count"</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
 </span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[INFO] Agent Booting... (Attempt </span><span class="si">{</span><span class="n">current_attempts</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> of 3)&quot;</span><span class="p">)</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[INFO] Agent Booting... (Attempt </span><span class="si">{</span><span class="n">current_attempts</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> of 3)"</span><span class="p">)</span>
 </span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
 </span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="k">if</span> <span class="n">current_attempts</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[ESCALATION] Task failed 3 times. Halting recursion and alerting human.&quot;</span><span class="p">)</span>
-</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="s2">&quot;agent_retry_count&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">)</span> <span class="c1"># Reset for future runs</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"[ESCALATION] Task failed 3 times. Halting recursion and alerting human."</span><span class="p">)</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="s2">"agent_retry_count"</span><span class="p">,</span> <span class="s2">"0"</span><span class="p">)</span> <span class="c1"># Reset for future runs</span>
 </span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>
 </span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="c1"># 2. Attempt the fragile task (e.g., calling an unstable API)</span>
 </span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="n">api_success</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">])</span>
 </span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>
 </span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="k">if</span> <span class="n">api_success</span><span class="p">:</span>
-</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[SUCCESS] Task completed! Agent terminating.&quot;</span><span class="p">)</span>
-</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>    <span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="s2">&quot;agent_retry_count&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">)</span> <span class="c1"># Reset memory</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"[SUCCESS] Task completed! Agent terminating."</span><span class="p">)</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>    <span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="s2">"agent_retry_count"</span><span class="p">,</span> <span class="s2">"0"</span><span class="p">)</span> <span class="c1"># Reset memory</span>
 </span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="k">else</span><span class="p">:</span>
-</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[WARNING] Task failed. Agent logging failure and respawning...&quot;</span><span class="p">)</span>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"[WARNING] Task failed. Agent logging failure and respawning..."</span><span class="p">)</span>
 </span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>
 </span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>    <span class="c1"># 3. Update global memory so the NEXT clone knows what happened</span>
-</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>    <span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="s2">&quot;agent_retry_count&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">current_attempts</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>    <span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="s2">"agent_retry_count"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">current_attempts</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
 </span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>
 </span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>    <span class="c1"># 4. Agent dynamically spawns a clone of itself to try again!</span>
 </span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>    <span class="n">retry_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>        <span class="n">job_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;agent_retry_</span><span class="si">{</span><span class="n">current_attempts</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> 
-</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>        <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;autonomous_agent.py&quot;</span>
+</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>        <span class="n">job_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"agent_retry_</span><span class="si">{</span><span class="n">current_attempts</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> 
+</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>        <span class="n">filename</span><span class="o">=</span><span class="s2">"autonomous_agent.py"</span>
 </span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>    <span class="p">)</span>
 </span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="n">retry_job</span><span class="p">)</span>
 </span></code></pre></div></p>

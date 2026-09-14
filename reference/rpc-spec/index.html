@@ -2499,6 +2499,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/internals/" class="md-nav__link">
         
   
@@ -3059,7 +3115,7 @@
 </table>
 <p>The two implementations encode the header identically:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Python SDK</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">header</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;&gt;BBBBI&#39;</span><span class="p">,</span> <span class="n">VERSION</span><span class="p">,</span> <span class="n">op_code</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload_bytes</span><span class="p">))</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">header</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">'&gt;BBBBI'</span><span class="p">,</span> <span class="n">VERSION</span><span class="p">,</span> <span class="n">op_code</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload_bytes</span><span class="p">))</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">sock</span><span class="o">.</span><span class="n">sendall</span><span class="p">(</span><span class="n">header</span> <span class="o">+</span> <span class="n">payload_bytes</span><span class="p">)</span>
 </span></code></pre></div>
 <div class="language-java highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// Java engine (TitanProtocol.send)</span>
@@ -3073,7 +3129,7 @@
 <h3 id="versioning">Versioning</h3>
 <p>The receiver compares the header's <code>version</code> byte against its own <code>CURRENT_VERSION</code> (currently <code>1</code>). On mismatch it <strong>rejects the frame</strong> with <code>Version Mismatch! Server expects v1</code> instead of attempting to parse it. There is no negotiation handshake — both peers must speak the same protocol version.</p>
 <h3 id="opcode-table">Opcode table</h3>
-<p>All <strong>32</strong> opcodes defined by the protocol:</p>
+<p>All <strong>33</strong> opcodes defined by the protocol:</p>
 <table>
 <thead>
 <tr>
@@ -3214,6 +3270,12 @@
 <td style="text-align: left;"></td>
 <td style="text-align: left;"><code>OP_DEPLOY_SCRIPT</code></td>
 <td style="text-align: left;"><code>0x57</code></td>
+<td style="text-align: left;">Client → Master</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Service discovery</strong></td>
+<td style="text-align: left;"><code>OP_RESOLVE_SERVICE</code></td>
+<td style="text-align: left;"><code>0x58</code></td>
 <td style="text-align: left;">Client → Master</td>
 </tr>
 <tr>

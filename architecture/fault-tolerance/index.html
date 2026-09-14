@@ -14,7 +14,7 @@
         <link rel="prev" href="../execution-flows/">
       
       
-        <link rel="next" href="../internals/">
+        <link rel="next" href="../service-health/">
       
       
         
@@ -2271,6 +2271,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../internals/" class="md-nav__link">
         
   
@@ -2573,7 +2629,8 @@
 <ul>
 <li><strong>Bounded retry.</strong> On failure, <code>handleJobFailure</code> increments the job's retry count and re-queues it. A job is retried while <code>retryCount ≤ 3</code> and marked <code>DEAD</code> once it exceeds that — i.e. <strong>up to 3 retries (4 attempts total)</strong> before it is quarantined, rather than retrying forever.</li>
 <li><strong>Dead-Letter Queue (DLQ) &amp; poison pills.</strong> Jobs that exhaust their retries — "poison pills" that would otherwise crash-loop the cluster (syntax errors, missing libraries) — are quarantined in a dedicated DLQ. Their logs and state are preserved for inspection, and their dependent children are cancelled so the rest of the DAG is not stalled.</li>
-<li><strong>Fail-fast for deployment errors.</strong> Port-conflict (<code>"ALREADY in use"</code>) and rejected-deployment failures skip the retry loop entirely — the job is marked <code>FAILED</code> immediately rather than burning 3 retries on a deterministic error. Auto-scaler worker-spawn jobs (<code>WRK-</code>) are similarly abandoned on failure so the scaler can retry on a fresh port.</li>
+<li><strong>Fail-fast for deployment errors.</strong> Port-conflict (<code>"ALREADY in use"</code>), duplicate-service-ID, unreachable-after-start (<code>"never became reachable"</code>) and rejected-deployment failures skip the retry loop entirely — the job is marked <code>FAILED</code> immediately rather than burning 3 retries on a deterministic error. A service that never bound its port will not bind on a retry, so retrying would only multiply the readiness window. Auto-scaler worker-spawn jobs (<code>WRK-</code>) are similarly abandoned on failure so the scaler can retry on a fresh port.</li>
+<li><strong>Service readiness is a failure mode, not a race.</strong> A service deploy completes only once the Master can open a TCP connection to the service's port. If the port never answers within the readiness window (10 × 2s by default), the deploy fails rather than reporting a success that downstream nodes would act on. The probe runs on a dedicated pool, so a slow-booting service does not stall dispatch for the rest of the cluster.</li>
 <li><strong>Reliable completion callbacks.</strong> When a worker reports job completion back to the Master (the worker→Master callback path), it retries up to <strong>5 times with exponential backoff (1s → 2s → 4s → 8s)</strong>, so a transient network blip does not silently lose a finished result. <em>(This backoff applies to the completion callback, not to Master→worker dispatch, which re-queues immediately.)</em></li>
 </ul>
 <h2 id="timeouts-backpressure">Timeouts &amp; Backpressure</h2>

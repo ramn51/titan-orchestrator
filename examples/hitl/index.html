@@ -2323,6 +2323,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/internals/" class="md-nav__link">
         
   
@@ -2664,20 +2720,20 @@
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Stage 1 — any job that needs a human review before the next stage runs</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">preprocess</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">job_id</span>       <span class="o">=</span> <span class="s2">&quot;preprocess&quot;</span><span class="p">,</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">filename</span>     <span class="o">=</span> <span class="s2">&quot;scripts/preprocess.py&quot;</span><span class="p">,</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">hitl_message</span> <span class="o">=</span> <span class="s2">&quot;Data looks good? Approve to start training.&quot;</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">job_id</span>       <span class="o">=</span> <span class="s2">"preprocess"</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">filename</span>     <span class="o">=</span> <span class="s2">"scripts/preprocess.py"</span><span class="p">,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">hitl_message</span> <span class="o">=</span> <span class="s2">"Data looks good? Approve to start training."</span><span class="p">,</span>
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="c1"># Stage 2 — depends on preprocess; the SDK automatically re-wires this</span>
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1">#            to depend on the injected gate instead.</span>
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="n">train</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;scripts/train.py&quot;</span><span class="p">,</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">parents</span>  <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;preprocess&quot;</span><span class="p">],</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="s2">"scripts/train.py"</span><span class="p">,</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>    <span class="n">parents</span>  <span class="o">=</span> <span class="p">[</span><span class="s2">"preprocess"</span><span class="p">],</span>
 </span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="p">)</span>
 </span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;ml-pipeline&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">preprocess</span><span class="p">,</span> <span class="n">train</span><span class="p">])</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">"ml-pipeline"</span><span class="p">,</span> <span class="p">[</span><span class="n">preprocess</span><span class="p">,</span> <span class="n">train</span><span class="p">])</span>
 </span></code></pre></div>
 <p>That is the complete user-facing API. You do not reference <code>hitl_gate.py</code> directly.</p>
 <p>The <code>submit_dag</code> call prints what the SDK injected:</p>
@@ -2689,7 +2745,7 @@
 <p>Open <strong>DAG Pipelines</strong> (<code>/dags</code>) and select the pipeline.</p>
 <p>Once <code>preprocess</code> completes and the gate starts running, an <strong>amber banner</strong> appears at the top of the pipeline detail panel:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>⏳  Awaiting Human Approval
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    &quot;Data looks good? Approve to start training.&quot;
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    "Data looks good? Approve to start training."
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    [ ✅ Approve ]  [ ❌ Reject ]
 </span></code></pre></div>
 <p>The gate node itself is also highlighted amber in the graph while it is waiting.</p>
@@ -2715,9 +2771,9 @@
 <h2 id="setting-a-timeout">Setting a Timeout</h2>
 <p>By default a gate will wait up to <strong>48 hours</strong> before auto-failing. Override this per job with <code>max_wait_seconds</code>:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">preprocess</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">job_id</span>           <span class="o">=</span> <span class="s2">&quot;preprocess&quot;</span><span class="p">,</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">filename</span>         <span class="o">=</span> <span class="s2">&quot;scripts/preprocess.py&quot;</span><span class="p">,</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">hitl_message</span>     <span class="o">=</span> <span class="s2">&quot;Approve before deploying to production.&quot;</span><span class="p">,</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">job_id</span>           <span class="o">=</span> <span class="s2">"preprocess"</span><span class="p">,</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">filename</span>         <span class="o">=</span> <span class="s2">"scripts/preprocess.py"</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">hitl_message</span>     <span class="o">=</span> <span class="s2">"Approve before deploying to production."</span><span class="p">,</span>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">max_wait_seconds</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">3600</span><span class="p">,</span>   <span class="c1"># 4-hour SLA; fail if nobody responds</span>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">)</span>
 </span></code></pre></div>
@@ -2733,26 +2789,26 @@
 <h2 id="multiple-gates-in-one-pipeline">Multiple Gates in One Pipeline</h2>
 <p>You can add a gate after any job. Each gate is independent and must be approved separately.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">ingest</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">job_id</span>       <span class="o">=</span> <span class="s2">&quot;ingest&quot;</span><span class="p">,</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">filename</span>     <span class="o">=</span> <span class="s2">&quot;scripts/ingest.py&quot;</span><span class="p">,</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">hitl_message</span> <span class="o">=</span> <span class="s2">&quot;Raw data ingested. Approve to run validation.&quot;</span><span class="p">,</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">job_id</span>       <span class="o">=</span> <span class="s2">"ingest"</span><span class="p">,</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">filename</span>     <span class="o">=</span> <span class="s2">"scripts/ingest.py"</span><span class="p">,</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">hitl_message</span> <span class="o">=</span> <span class="s2">"Raw data ingested. Approve to run validation."</span><span class="p">,</span>
 </span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">)</span>
 </span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
 </span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="n">validate</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="n">job_id</span>       <span class="o">=</span> <span class="s2">&quot;validate&quot;</span><span class="p">,</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="n">filename</span>     <span class="o">=</span> <span class="s2">&quot;scripts/validate.py&quot;</span><span class="p">,</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    <span class="n">parents</span>      <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ingest&quot;</span><span class="p">],</span>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    <span class="n">hitl_message</span> <span class="o">=</span> <span class="s2">&quot;Validation complete. Approve to start training.&quot;</span><span class="p">,</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="n">job_id</span>       <span class="o">=</span> <span class="s2">"validate"</span><span class="p">,</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="n">filename</span>     <span class="o">=</span> <span class="s2">"scripts/validate.py"</span><span class="p">,</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    <span class="n">parents</span>      <span class="o">=</span> <span class="p">[</span><span class="s2">"ingest"</span><span class="p">],</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    <span class="n">hitl_message</span> <span class="o">=</span> <span class="s2">"Validation complete. Approve to start training."</span><span class="p">,</span>
 </span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    <span class="n">max_wait_seconds</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">3600</span><span class="p">,</span>
 </span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="p">)</span>
 </span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>
 </span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="n">train</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
-</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;scripts/train.py&quot;</span><span class="p">,</span>
-</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>    <span class="n">parents</span>  <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;validate&quot;</span><span class="p">],</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    <span class="n">job_id</span>   <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>    <span class="n">filename</span> <span class="o">=</span> <span class="s2">"scripts/train.py"</span><span class="p">,</span>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>    <span class="n">parents</span>  <span class="o">=</span> <span class="p">[</span><span class="s2">"validate"</span><span class="p">],</span>
 </span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="p">)</span>
 </span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>
-</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;full-pipeline&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">ingest</span><span class="p">,</span> <span class="n">validate</span><span class="p">,</span> <span class="n">train</span><span class="p">])</span>
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">"full-pipeline"</span><span class="p">,</span> <span class="p">[</span><span class="n">ingest</span><span class="p">,</span> <span class="n">validate</span><span class="p">,</span> <span class="n">train</span><span class="p">])</span>
 </span></code></pre></div>
 <p>The SDK injects two gates and the DAG becomes:</p>
 <pre class="mermaid"><code>flowchart LR

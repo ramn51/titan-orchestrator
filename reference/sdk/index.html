@@ -1938,6 +1938,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#finding-a-services-address-get_service_address" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Finding a service's address (get_service_address)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#readiness-what-completed-means-for-a-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Readiness: what COMPLETED means for a service
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2327,6 +2349,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/internals/" class="md-nav__link">
         
   
@@ -2610,6 +2688,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#finding-a-services-address-get_service_address" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Finding a service's address (get_service_address)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#readiness-what-completed-means-for-a-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Readiness: what COMPLETED means for a service
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2763,11 +2863,11 @@
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanJob</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">job_id</span><span class="o">=</span><span class="s2">&quot;train_v1&quot;</span><span class="p">,</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;scripts/train.py&quot;</span><span class="p">,</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">requirement</span><span class="o">=</span><span class="s2">&quot;GPU&quot;</span><span class="p">,</span>     <span class="c1"># Optional: &quot;GPU&quot; or &quot;GENERAL&quot;</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">job_id</span><span class="o">=</span><span class="s2">"train_v1"</span><span class="p">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">"scripts/train.py"</span><span class="p">,</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">requirement</span><span class="o">=</span><span class="s2">"GPU"</span><span class="p">,</span>     <span class="c1"># Optional: "GPU" or "GENERAL"</span>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>           <span class="c1"># Optional: Higher numbers schedule first</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;data_prep&quot;</span><span class="p">],</span> <span class="c1"># Optional: List of parent Job IDs</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">"data_prep"</span><span class="p">],</span> <span class="c1"># Optional: List of parent Job IDs</span>
 </span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">is_archive</span><span class="o">=</span><span class="kc">False</span>       <span class="c1"># Set True if deploying a ZIP/Service</span>
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="p">)</span>
 </span></code></pre></div>
@@ -2871,38 +2971,38 @@
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Step 1: Define the Root Job (No parents)</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">task_a</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">job_id</span><span class="o">=</span><span class="s2">&quot;extract_data&quot;</span><span class="p">,</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;etl/extract.py&quot;</span><span class="p">,</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">job_id</span><span class="o">=</span><span class="s2">"extract_data"</span><span class="p">,</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">"etl/extract.py"</span><span class="p">,</span>
 </span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">priority</span><span class="o">=</span><span class="mi">5</span>
 </span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="p">)</span>
 </span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
 </span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># Step 2: Define a Dependent Job</span>
 </span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="n">task_b</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="n">job_id</span><span class="o">=</span><span class="s2">&quot;train_model&quot;</span><span class="p">,</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;ml/train.py&quot;</span><span class="p">,</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="n">requirement</span><span class="o">=</span><span class="s2">&quot;GPU&quot;</span><span class="p">,</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;extract_data&quot;</span><span class="p">]</span>  <span class="c1"># &lt;--- Defines the dependency</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="n">job_id</span><span class="o">=</span><span class="s2">"train_model"</span><span class="p">,</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">"ml/train.py"</span><span class="p">,</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="n">requirement</span><span class="o">=</span><span class="s2">"GPU"</span><span class="p">,</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">"extract_data"</span><span class="p">]</span>  <span class="c1"># &lt;--- Defines the dependency</span>
 </span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="p">)</span>
 </span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>
 </span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="c1"># Step 3: Submit them as a unified DAG</span>
-</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;nightly_pipeline&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">task_a</span><span class="p">,</span> <span class="n">task_b</span><span class="p">])</span>
-</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DAG Submitted!&quot;</span><span class="p">)</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">"nightly_pipeline"</span><span class="p">,</span> <span class="p">[</span><span class="n">task_a</span><span class="p">,</span> <span class="n">task_b</span><span class="p">])</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"DAG Submitted!"</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="linking-multiple-dags-into-one-agent-run">Linking multiple DAGs into one Agent Run</h3>
 <p>For agentic workflows that submit several DAGs sequentially, pass the same <code>agent_run_id</code> to each <code>submit_dag</code> call. This links all stages into a single run entry in the Dashboard's <strong>Agent Runs</strong> view.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">run_id</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">12</span><span class="p">]</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;PLAN&quot;</span><span class="p">,</span>    <span class="p">[</span><span class="n">planner_job</span><span class="p">],</span>   <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">"PLAN"</span><span class="p">,</span>    <span class="p">[</span><span class="n">planner_job</span><span class="p">],</span>   <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># ... wait for planner, read results ...</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;EXECUTE&quot;</span><span class="p">,</span> <span class="n">executor_jobs</span><span class="p">,</span>   <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">"EXECUTE"</span><span class="p">,</span> <span class="n">executor_jobs</span><span class="p">,</span>   <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># ... wait, evaluate ...</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;SYNTH&quot;</span><span class="p">,</span>   <span class="p">[</span><span class="n">synthesis_job</span><span class="p">],</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">"SYNTH"</span><span class="p">,</span>   <span class="p">[</span><span class="n">synthesis_job</span><span class="p">],</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="submitting-a-yaml-pipeline-submit_yaml">Submitting a YAML pipeline (<code>submit_yaml</code>)</h3>
 <p>If your pipeline is already defined in a <a href="../../examples/yaml/">Titan YAML file</a>, <code>submit_yaml</code> parses it and submits it as a DAG — no need to build <code>TitanJob</code> objects by hand. It is also the one SDK call with a <strong>built-in blocking wait</strong>.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">result</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">submit_yaml</span><span class="p">(</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="s2">&quot;pipeline.yaml&quot;</span><span class="p">,</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="s2">"pipeline.yaml"</span><span class="p">,</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">agent_run_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>   <span class="c1"># optional — links this DAG to an Agent Run in the Dashboard</span>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>          <span class="c1"># if True, block until every job reaches a terminal state</span>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">poll_interval</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>     <span class="c1"># seconds between status polls (only used when wait=True)</span>
@@ -2952,21 +3052,21 @@
 </div>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Sequential agentic loop — each stage blocks until the previous one finishes</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">run_id</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">12</span><span class="p">]</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_yaml</span><span class="p">(</span><span class="s2">&quot;bootstrap.yaml&quot;</span><span class="p">,</span>     <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_yaml</span><span class="p">(</span><span class="s2">&quot;arena_cycle.yaml&quot;</span><span class="p">,</span>   <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_yaml</span><span class="p">(</span><span class="s2">&quot;export_deploy.yaml&quot;</span><span class="p">,</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_yaml</span><span class="p">(</span><span class="s2">"bootstrap.yaml"</span><span class="p">,</span>     <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_yaml</span><span class="p">(</span><span class="s2">"arena_cycle.yaml"</span><span class="p">,</span>   <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_yaml</span><span class="p">(</span><span class="s2">"export_deploy.yaml"</span><span class="p">,</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="tearing-down-a-service-stop_service">Tearing down a service (<code>stop_service</code>)</h3>
 <p>A job submitted with <code>job_type="SERVICE"</code> (or <code>"DEPLOY_PAYLOAD"</code>) is <strong>long-running</strong> — it deploys and stays alive until you stop it. <code>stop_service</code> tears it down: the Master forwards an <code>OP_STOP</code> to the worker hosting the service, which forcibly terminates the service's process tree (and does <strong>not</strong> trigger the auto-restart supervisor, since the stop is intentional).</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># Deploy a long-running service on port 8099</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">svc</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="s2">&quot;my-api&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;api_server.py&quot;</span><span class="p">,</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>               <span class="n">job_type</span><span class="o">=</span><span class="s2">&quot;SERVICE&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8099</span><span class="p">)</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">svc</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="s2">"my-api"</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"api_server.py"</span><span class="p">,</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>               <span class="n">job_type</span><span class="o">=</span><span class="s2">"SERVICE"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8099</span><span class="p">)</span>
 </span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="n">svc</span><span class="p">)</span>
 </span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
 </span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="c1"># ... later, tear it down ...</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">stop_service</span><span class="p">(</span><span class="s2">&quot;my-api&quot;</span><span class="p">)</span>   <span class="c1"># -&gt; &quot;STOPPED: DAG-my-api&quot;</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">stop_service</span><span class="p">(</span><span class="s2">"my-api"</span><span class="p">)</span>   <span class="c1"># -&gt; "STOPPED: DAG-my-api"</span>
 </span></code></pre></div>
 <ul>
 <li><strong><code>service_id</code></strong> is the job id you deployed under. The <code>DAG-</code> prefix is added automatically (services are keyed as <code>DAG-&lt;job_id&gt;</code> on the Master), so <code>"my-api"</code> and <code>"DAG-my-api"</code> are equivalent.</li>
@@ -2976,56 +3076,119 @@
 <p class="admonition-title">Wait for the deploy to register before stopping</p>
 <p>A service is only added to the Master's live registry <strong>after</strong> its post-deploy port verification completes — a couple of seconds <em>after</em> the port first becomes reachable. Stopping in that window returns <code>not found</code>. If you deploy and tear down programmatically in the same script, wait until the deploy job reports <code>COMPLETED</code> first:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="n">svc</span><span class="p">)</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">while</span> <span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">get_job_status</span><span class="p">(</span><span class="s2">&quot;DAG-my-api&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;COMPLETED&quot;</span><span class="p">:</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">while</span> <span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">get_job_status</span><span class="p">(</span><span class="s2">"DAG-my-api"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"COMPLETED"</span><span class="p">:</span>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">client</span><span class="o">.</span><span class="n">stop_service</span><span class="p">(</span><span class="s2">&quot;my-api&quot;</span><span class="p">)</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">client</span><span class="o">.</span><span class="n">stop_service</span><span class="p">(</span><span class="s2">"my-api"</span><span class="p">)</span>
 </span></code></pre></div>
 <p>In a DAG, model teardown as a final job that depends on the work jobs, so the graph sequences it for you.</p>
 </div>
+<h3 id="finding-a-services-address-get_service_address">Finding a service's address (<code>get_service_address</code>)</h3>
+<p>A worker registers its <strong>own RPC port</strong> with the Master (<code>:8080</code>, <code>:8081</code>). A service it hosts listens on a <strong>different</strong> port entirely (<code>:8099</code>). Knowing which worker runs a service therefore does not tell you where to connect — so the Master records the service's real address once it passes its readiness check, and these methods read it back.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">client</span><span class="o">.</span><span class="n">get_service_address</span><span class="p">(</span><span class="s2">"DAG-my-api"</span><span class="p">)</span>   <span class="c1"># -&gt; ("127.0.0.1", 8099)  or None</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">client</span><span class="o">.</span><span class="n">get_service_url</span><span class="p">(</span><span class="s2">"DAG-my-api"</span><span class="p">)</span>       <span class="c1"># -&gt; "http://127.0.0.1:8099"  or None</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">client</span><span class="o">.</span><span class="n">list_services</span><span class="p">()</span>                     <span class="c1"># -&gt; ["DAG-my-api", "DAG-embeddings"]</span>
+</span></code></pre></div>
+<p>The point is that a <strong>consumer job no longer hardcodes a port</strong>:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># producer: deploy the service</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_job</span><span class="p">(</span><span class="n">TitanJob</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="s2">"my-api"</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"api_server.py"</span><span class="p">,</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>                           <span class="n">job_type</span><span class="o">=</span><span class="s2">"SERVICE"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8099</span><span class="p">))</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="c1"># consumer: resolve at runtime instead of sharing a constant</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="n">url</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_service_url</span><span class="p">(</span><span class="s2">"DAG-my-api"</span><span class="p">)</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">/predict"</span><span class="p">)</span>
+</span></code></pre></div>
+<ul>
+<li><strong>Returns <code>None</code></strong> if the service is unknown, was never ready, or has been stopped. Always check before using.</li>
+<li><strong>Portless services</strong> (a daemon with no listener) are never recorded and always resolve to <code>None</code>.</li>
+<li><code>list_services()</code> returns only services the Master currently considers live; <code>stop_service</code> removes the entry.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Resolution is by instance id, not by a logical name</p>
+<p>Service ids are <code>DAG-&lt;job_id&gt;</code>, so a redeploy under a new job id resolves to a different key. Stable logical names — and automatic injection of <code>TITAN_SVC_&lt;NAME&gt;_HOST/PORT</code> into a consumer's environment — are Phase 3 on the roadmap.</p>
+</div>
+<h3 id="readiness-what-completed-means-for-a-service">Readiness: what <code>COMPLETED</code> means for a service</h3>
+<p>A service deploy job reports <code>COMPLETED</code> only once the Master has <strong>opened a TCP connection to the service's port</strong>. It does not mean "the process was spawned" — it means "the service is accepting connections."</p>
+<p>That matters most inside a DAG: a child node that depends on a service deploy will not be dispatched until the service is actually reachable, so consumer jobs never race a slow-booting server. There is nowhere in a downstream node to put a <code>sleep</code>, which is why the guarantee lives in the scheduler.</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nt">jobs</span><span class="p">:</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">api</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">service</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="nt">script</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">api_server.py</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8099</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">consumer</span><span class="w">          </span><span class="c1"># dispatched only after :8099 answers</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">    </span><span class="nt">script</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">call_api.py</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="nt">parents</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">api</span><span class="p p-Indicator">]</span>
+</span></code></pre></div>
+<p>If the port never becomes reachable within the readiness window (10 attempts × 2s by default), the deploy <strong>fails</strong> rather than reporting success — and it fails fast, without retrying, since a service that never bound will not bind on a second attempt.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Setting</th>
+<th style="text-align: left;">Default</th>
+<th style="text-align: left;">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>titan.service.ready.attempts</code></td>
+<td style="text-align: left;"><code>10</code></td>
+<td style="text-align: left;">Probe attempts before the deploy fails</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>titan.service.ready.interval.ms</code></td>
+<td style="text-align: left;"><code>2000</code></td>
+<td style="text-align: left;">Delay between probes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>titan.service.ready.threads</code></td>
+<td style="text-align: left;"><code>4</code></td>
+<td style="text-align: left;">Probe pool size; probes run off the dispatch loop</td>
+</tr>
+</tbody>
+</table>
 <hr />
 <h2 id="3-using-the-distributed-data-bus-titanstore">3. Using the Distributed Data Bus (TitanStore)</h2>
 <p>Tasks running on completely different physical nodes can share state, pass intermediate variables, or track metrics using Titan's built-in persistence layer.</p>
 <p><strong>File 1: <code>task_a.py</code> (Producer)</strong></p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># Save a result globally before the task exits</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="s2">&quot;task_123_accuracy&quot;</span><span class="p">,</span> <span class="s2">&quot;98.5&quot;</span><span class="p">)</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">client</span><span class="o">.</span><span class="n">store_sadd</span><span class="p">(</span><span class="s2">&quot;processed_files&quot;</span><span class="p">,</span> <span class="s2">&quot;batch_A.csv&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Save a result globally before the task exits</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">client</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="s2">"task_123_accuracy"</span><span class="p">,</span> <span class="s2">"98.5"</span><span class="p">)</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="n">client</span><span class="o">.</span><span class="n">store_sadd</span><span class="p">(</span><span class="s2">"processed_files"</span><span class="p">,</span> <span class="s2">"batch_A.csv"</span><span class="p">)</span>
 </span></code></pre></div>
 <p><strong>File 2: <code>task_b.py</code> (Consumer)</strong></p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Retrieve the data passed from Task A</span>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">accuracy</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="s2">&quot;task_123_accuracy&quot;</span><span class="p">)</span>
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="n">completed_files</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">store_smembers</span><span class="p">(</span><span class="s2">&quot;processed_files&quot;</span><span class="p">)</span>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
-</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downstream task received accuracy: </span><span class="si">{</span><span class="n">accuracy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># Retrieve the data passed from Task A</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">accuracy</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="s2">"task_123_accuracy"</span><span class="p">)</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="n">completed_files</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">store_smembers</span><span class="p">(</span><span class="s2">"processed_files"</span><span class="p">)</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Downstream task received accuracy: </span><span class="si">{</span><span class="n">accuracy</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="4-file-artifacts">4. File Artifacts</h2>
 <p>Use artifacts when a worker produces a file that the orchestrator (or a downstream worker) needs to read. TitanStore only holds strings — for binary files or large text outputs, use the artifact system.</p>
 <p><strong>Pattern: worker publishes → orchestrator downloads</strong></p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># worker_script.py (runs on a worker node)</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="c1"># Write the output file to the local workspace</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;report.md&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">final_report</span><span class="p">)</span>
-</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>
-</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="c1"># Upload to master and register under a TitanStore key</span>
-</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="n">client</span><span class="o">.</span><span class="n">publish_artifact</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:report&quot;</span><span class="p">,</span> <span class="s2">&quot;report.md&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># worker_script.py (runs on a worker node)</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="c1"># Write the output file to the local workspace</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"report.md"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">final_report</span><span class="p">)</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="c1"># Upload to master and register under a TitanStore key</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="n">client</span><span class="o">.</span><span class="n">publish_artifact</span><span class="p">(</span><span class="sa">f</span><span class="s2">"run:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:report"</span><span class="p">,</span> <span class="s2">"report.md"</span><span class="p">)</span>
 </span></code></pre></div>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># orchestrator.py (runs on your machine)</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="c1"># Download the file by key — saves to /tmp/report.md by default</span>
-</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="n">client</span><span class="o">.</span><span class="n">get_artifact</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:report&quot;</span><span class="p">,</span> <span class="n">save_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/tmp/report_</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">.md&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># orchestrator.py (runs on your machine)</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">titan_sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">TitanClient</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="c1"># Download the file by key — saves to /tmp/report.md by default</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="n">client</span><span class="o">.</span><span class="n">get_artifact</span><span class="p">(</span><span class="sa">f</span><span class="s2">"run:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:report"</span><span class="p">,</span> <span class="n">save_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">"/tmp/report_</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">.md"</span><span class="p">)</span>
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Remote workers must upload files explicitly</p>

@@ -2334,6 +2334,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/internals/" class="md-nav__link">
         
   
@@ -2789,36 +2845,36 @@
 <hr />
 <h2 id="agentic-loop-orchestrator">Agentic Loop (Orchestrator)</h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Stage 1: Planner — decides what to research</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;PLAN&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">planner_job</span><span class="p">],</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">wait_for_signal</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:planner:done&quot;</span><span class="p">)</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">"PLAN"</span><span class="p">,</span> <span class="p">[</span><span class="n">planner_job</span><span class="p">],</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">wait_for_signal</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:planner:done"</span><span class="p">)</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Plan JSON stored in TitanStore by the planner — no file read needed</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">plan</span>      <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:plan&quot;</span><span class="p">))</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">subtopics</span> <span class="o">=</span> <span class="n">plan</span><span class="p">[</span><span class="s2">&quot;subtopics&quot;</span><span class="p">]</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">plan</span>      <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:plan"</span><span class="p">))</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">subtopics</span> <span class="o">=</span> <span class="n">plan</span><span class="p">[</span><span class="s2">"subtopics"</span><span class="p">]</span>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
 </span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="k">while</span> <span class="n">iteration</span> <span class="o">&lt;</span> <span class="n">max_iterations</span><span class="p">:</span>
 </span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">iteration</span> <span class="o">+=</span> <span class="mi">1</span>
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
 </span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="c1"># Stage 2: Parallel researchers — one per subtopic</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ITER</span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">researcher_jobs</span><span class="p">,</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="sa">f</span><span class="s2">"ITER</span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">researcher_jobs</span><span class="p">,</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
 </span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">wait_for_signals</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">researcher_signal_keys</span><span class="p">)</span>
 </span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
 </span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="c1"># Stage 3: Evaluator — THE AGENTIC DECISION</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;EVAL</span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">evaluator_job</span><span class="p">],</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="n">wait_for_signal</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:eval:</span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">:done&quot;</span><span class="p">)</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="sa">f</span><span class="s2">"EVAL</span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="p">[</span><span class="n">evaluator_job</span><span class="p">],</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="n">wait_for_signal</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:eval:</span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">:done"</span><span class="p">)</span>
 </span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
 </span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="c1"># Eval decision stored in TitanStore by the evaluator</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="n">decision</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:eval:</span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="k">if</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;decision&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;SYNTHESIZE&quot;</span><span class="p">:</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>        <span class="k">break</span>                              <span class="c1"># ← LLM says we&#39;re done</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    <span class="n">decision</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">client</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:eval:</span><span class="si">{</span><span class="n">iteration</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="k">if</span> <span class="n">decision</span><span class="p">[</span><span class="s2">"decision"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"SYNTHESIZE"</span><span class="p">:</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>        <span class="k">break</span>                              <span class="c1"># ← LLM says we're done</span>
 </span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>        <span class="n">subtopics</span> <span class="o">=</span> <span class="n">decision</span><span class="p">[</span><span class="s2">&quot;gaps&quot;</span><span class="p">]</span>       <span class="c1"># ← LLM says go deeper</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>        <span class="n">subtopics</span> <span class="o">=</span> <span class="n">decision</span><span class="p">[</span><span class="s2">"gaps"</span><span class="p">]</span>       <span class="c1"># ← LLM says go deeper</span>
 </span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>
 </span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="c1"># Stage 4: Synthesizer — merges everything into a final report</span>
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">&quot;SYNTH&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">synthesizer_job</span><span class="p">],</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
-</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="n">wait_for_signal</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:synth:done&quot;</span><span class="p">)</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="s2">"SYNTH"</span><span class="p">,</span> <span class="p">[</span><span class="n">synthesizer_job</span><span class="p">],</span> <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="n">wait_for_signal</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:synth:done"</span><span class="p">)</span>
 </span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>
 </span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="c1"># Download report published by synthesizer</span>
-</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="n">client</span><span class="o">.</span><span class="n">get_artifact</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:report&quot;</span><span class="p">,</span> <span class="n">save_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;/tmp/research_</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">_report.md&quot;</span><span class="p">)</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="n">client</span><span class="o">.</span><span class="n">get_artifact</span><span class="p">(</span><span class="sa">f</span><span class="s2">"research:</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:report"</span><span class="p">,</span> <span class="n">save_path</span><span class="o">=</span><span class="sa">f</span><span class="s2">"/tmp/research_</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">_report.md"</span><span class="p">)</span>
 </span></code></pre></div>
 <p>The <code>while</code> loop lives in the orchestrator, not in any DAG. Titan handles parallel execution of each iteration. The LLM drives when to stop.</p>
 <hr />
@@ -2835,11 +2891,11 @@
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Custom query</span>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>python<span class="w"> </span>titan_test_suite/examples/agents_examples/research_agent/research_agent.py<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="s2">&quot;What are the tradeoffs of vector databases for production RAG systems?&quot;</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="s2">"What are the tradeoffs of vector databases for production RAG systems?"</span>
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># Limit iterations</span>
 </span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>python<span class="w"> </span>titan_test_suite/examples/agents_examples/research_agent/research_agent.py<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span><span class="s2">&quot;How does LoRA work for LLM fine-tuning?&quot;</span><span class="w"> </span>--max-iter<span class="w"> </span><span class="m">2</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span><span class="s2">"How does LoRA work for LLM fine-tuning?"</span><span class="w"> </span>--max-iter<span class="w"> </span><span class="m">2</span>
 </span></code></pre></div>
 <hr />
 <h2 id="example-run-output">Example Run Output</h2>

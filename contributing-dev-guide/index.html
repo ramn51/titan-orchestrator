@@ -2164,6 +2164,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../architecture/service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../architecture/internals/" class="md-nav__link">
         
   
@@ -3166,13 +3222,13 @@
 <h3 id="3-job-execution-rpcworkerserverjava-scriptexecutorhandlerjava">3. Job execution (RpcWorkerServer.java → ScriptExecutorHandler.java)</h3>
 <p>The worker receives a job via TCP, spawns a child process (<code>ProcessBuilder</code>), captures stdout via <code>LogBatcher</code>, and sends <code>OP_JOB_COMPLETE</code> back to the Master when the process exits.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>receive OP_RUN → ScriptExecutorHandler.execute()
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  → ProcessBuilder(&quot;python&quot;, script.py).start()
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  → ProcessBuilder("python", script.py).start()
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  → stream stdout to LogBatcher → OP_LOG_BATCH to Master
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  → process exits → OP_JOB_COMPLETE callback to Master
 </span></code></pre></div>
 <h3 id="4-state-persistence-titanjredisadapterjava-titanstore">4. State persistence (TitanJRedisAdapter.java → TitanStore)</h3>
 <p>Every state transition is written to TitanStore via the RESP protocol. The adapter's <code>execute()</code> is <code>synchronized</code> — all writes are serialized. TitanStore appends every write to an AOF file. On Master restart, <code>recoverState()</code> reads back all job states and re-queues incomplete jobs.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>safeRedisSet(&quot;job:X:status&quot;, &quot;RUNNING&quot;) → TitanJRedisAdapter.execute()
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>safeRedisSet("job:X:status", "RUNNING") → TitanJRedisAdapter.execute()
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  → RESP SET command → TitanStore → AOF append
 </span></code></pre></div>
 <hr />
@@ -3347,14 +3403,14 @@
 <div class="language-java highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">MyHandler</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">TaskHandler</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="nd">@Override</span>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">payload</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="c1">// payload format: &quot;arg1|arg2|...&quot;</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="c1">// payload format: "arg1|arg2|..."</span>
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">        </span><span class="c1">// do work</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;SUCCESS&quot;</span><span class="p">;</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"SUCCESS"</span><span class="p">;</span>
 </span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="p">}</span>
 </span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>Register it in <code>RpcWorkerServer.addTaskHandler()</code>:</p>
-<div class="language-java highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">taskHanlderMap</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">&quot;MY_TYPE&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">MyHandler</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
+<div class="language-java highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">taskHanlderMap</span><span class="p">.</span><span class="na">put</span><span class="p">(</span><span class="s">"MY_TYPE"</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">MyHandler</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
 </span></code></pre></div>
 <p>Submit jobs with that type by setting the payload prefix to <code>MY_TYPE|...</code>.</p>
 <h3 id="adding-a-new-opcode">Adding a new opcode</h3>
@@ -3374,9 +3430,9 @@
 <ol>
 <li>Create <code>perm_files/templates/my_page.html</code></li>
 <li>Add route in <code>server_dashboard.py</code>:
-   <div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/my-page&#39;</span><span class="p">)</span>
+   <div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">'/my-page'</span><span class="p">)</span>
 </span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">my_page</span><span class="p">():</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;my_page.html&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">compute_data</span><span class="p">())</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">'my_page.html'</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">compute_data</span><span class="p">())</span>
 </span></code></pre></div></li>
 </ol>
 <h3 id="adding-a-new-scheduling-policy">Adding a new scheduling policy</h3>
@@ -3451,7 +3507,7 @@
     S-&gt;&gt;S: unlockChildren()</code></pre>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>titan_sdk.py         TitanClient.submit_dag(name, [job])
 </span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>                       └─ _inject_hitl_gates(jobs)        ← checks for HITL, none here
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>                       └─ _build_dag_payload(name, jobs)   ← serializes to &quot;job_id|file|req|parents&quot;
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>                       └─ _build_dag_payload(name, jobs)   ← serializes to "job_id|file|req|parents"
 </span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>                       └─ _send_request(OP_SUBMIT_DAG, payload)
 </span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>                       └─ _write_dag_manifest()            ← writes .titan_dag_manifest.json for dashboard
 </span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>                              │
@@ -3463,34 +3519,34 @@
 </span><span id="__span-14-12"><a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>                              │
 </span><span id="__span-14-13"><a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>                              ▼
 </span><span id="__span-14-14"><a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>Scheduler.java       submitJob(job)
-</span><span id="__span-14-15"><a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>                       └─ safeRedisSet(&quot;job:X:status&quot;, &quot;PENDING&quot;)
-</span><span id="__span-14-16"><a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>                       └─ safeRedisSet(&quot;job:X:payload&quot;, ...)
+</span><span id="__span-14-15"><a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>                       └─ safeRedisSet("job:X:status", "PENDING")
+</span><span id="__span-14-16"><a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>                       └─ safeRedisSet("job:X:payload", ...)
 </span><span id="__span-14-17"><a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>                       └─ no parents → taskQueue.add(job)
 </span><span id="__span-14-18"><a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>                              │
 </span><span id="__span-14-19"><a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a>                              ▼
 </span><span id="__span-14-20"><a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a>                     runDispatchLoop()                      ← blocked on taskQueue.take()
 </span><span id="__span-14-21"><a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a>                       └─ taskQueue.take() → got job
 </span><span id="__span-14-22"><a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a>                       └─ selectBestWorker(job, workers)
-</span><span id="__span-14-23"><a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a>                            └─ WorkerRegistry.getWorkersByCapability(&quot;GENERAL&quot;)
+</span><span id="__span-14-23"><a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a>                            └─ WorkerRegistry.getWorkersByCapability("GENERAL")
 </span><span id="__span-14-24"><a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a>                            └─ iterate, find lowest currentLoad
-</span><span id="__span-14-25"><a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a>                       └─ safeRedisSet(&quot;job:X:status&quot;, &quot;RUNNING&quot;)
+</span><span id="__span-14-25"><a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a>                       └─ safeRedisSet("job:X:status", "RUNNING")
 </span><span id="__span-14-26"><a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a>                       └─ executeJobRequest(job, worker)    ← TCP to worker
 </span><span id="__span-14-27"><a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a>                              │
 </span><span id="__span-14-28"><a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a>                              ▼  TCP port 8080
 </span><span id="__span-14-29"><a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a>RpcWorkerServer.java processCommand(payload)
-</span><span id="__span-14-30"><a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a>                       └─ taskType = &quot;RUN_SCRIPT&quot;
+</span><span id="__span-14-30"><a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a>                       └─ taskType = "RUN_SCRIPT"
 </span><span id="__span-14-31"><a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a>                       └─ ScriptExecutorHandler.execute(payload)
 </span><span id="__span-14-32"><a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a>                              │
 </span><span id="__span-14-33"><a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a>                              ▼
-</span><span id="__span-14-34"><a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a>ScriptExecutorHandler  ProcessBuilder(&quot;python&quot;, script.py).start()
+</span><span id="__span-14-34"><a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a>ScriptExecutorHandler  ProcessBuilder("python", script.py).start()
 </span><span id="__span-14-35"><a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a>                       └─ thread: read stdout line by line
 </span><span id="__span-14-36"><a id="__codelineno-14-36" name="__codelineno-14-36" href="#__codelineno-14-36"></a>                            └─ LogBatcher.addLog(line)
 </span><span id="__span-14-37"><a id="__codelineno-14-37" name="__codelineno-14-37" href="#__codelineno-14-37"></a>                            └─ LogBatcher flushes → OP_LOG_BATCH → SchedulerServer
 </span><span id="__span-14-38"><a id="__codelineno-14-38" name="__codelineno-14-38" href="#__codelineno-14-38"></a>                       └─ process.waitFor() → exit code 0
-</span><span id="__span-14-39"><a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a>                       └─ return &quot;SUCCESS&quot;
+</span><span id="__span-14-39"><a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a>                       └─ return "SUCCESS"
 </span><span id="__span-14-40"><a id="__codelineno-14-40" name="__codelineno-14-40" href="#__codelineno-14-40"></a>                              │
 </span><span id="__span-14-41"><a id="__codelineno-14-41" name="__codelineno-14-41" href="#__codelineno-14-41"></a>                              ▼
-</span><span id="__span-14-42"><a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a>RpcWorkerServer.java sendCallback(OP_JOB_COMPLETE, &quot;job-X|COMPLETED|result&quot;)
+</span><span id="__span-14-42"><a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a>RpcWorkerServer.java sendCallback(OP_JOB_COMPLETE, "job-X|COMPLETED|result")
 </span><span id="__span-14-43"><a id="__codelineno-14-43" name="__codelineno-14-43" href="#__codelineno-14-43"></a>                              │
 </span><span id="__span-14-44"><a id="__codelineno-14-44" name="__codelineno-14-44" href="#__codelineno-14-44"></a>                              ▼  TCP port 9090
 </span><span id="__span-14-45"><a id="__codelineno-14-45" name="__codelineno-14-45" href="#__codelineno-14-45"></a>SchedulerServer.java case OP_JOB_COMPLETE:
@@ -3500,14 +3556,14 @@
 </span><span id="__span-14-49"><a id="__codelineno-14-49" name="__codelineno-14-49" href="#__codelineno-14-49"></a>Scheduler.java       handleJobCallback(payload)
 </span><span id="__span-14-50"><a id="__codelineno-14-50" name="__codelineno-14-50" href="#__codelineno-14-50"></a>                       └─ parse jobId, status, result
 </span><span id="__span-14-51"><a id="__codelineno-14-51" name="__codelineno-14-51" href="#__codelineno-14-51"></a>                       └─ completeJob(job, result, record)
-</span><span id="__span-14-52"><a id="__codelineno-14-52" name="__codelineno-14-52" href="#__codelineno-14-52"></a>                            └─ safeRedisSet(&quot;job:X:status&quot;, &quot;COMPLETED&quot;)
-</span><span id="__span-14-53"><a id="__codelineno-14-53" name="__codelineno-14-53" href="#__codelineno-14-53"></a>                            └─ safeRedisSrem(&quot;system:active_jobs&quot;, jobId)
+</span><span id="__span-14-52"><a id="__codelineno-14-52" name="__codelineno-14-52" href="#__codelineno-14-52"></a>                            └─ safeRedisSet("job:X:status", "COMPLETED")
+</span><span id="__span-14-53"><a id="__codelineno-14-53" name="__codelineno-14-53" href="#__codelineno-14-53"></a>                            └─ safeRedisSrem("system:active_jobs", jobId)
 </span><span id="__span-14-54"><a id="__codelineno-14-54" name="__codelineno-14-54" href="#__codelineno-14-54"></a>                            └─ unlockChildren(jobId)       ← no children, nothing to unlock
 </span></code></pre></div>
 <hr />
 <h3 id="scenario-2-dag-with-dependencies-a-b-c">Scenario 2: DAG with dependencies (A → B → C)</h3>
 <p>Three jobs in a chain. B waits for A, C waits for B.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>titan_sdk.py         submit_dag(&quot;pipeline&quot;, [A, B(parents=[A]), C(parents=[B])])
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>titan_sdk.py         submit_dag("pipeline", [A, B(parents=[A]), C(parents=[B])])
 </span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>                              │
 </span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>                              ▼
 </span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>Scheduler.java       submitJob(A) → no parents → taskQueue.add(A)
@@ -3520,7 +3576,7 @@
 </span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>                              │
 </span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>                              ▼
 </span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>                     completeJob(A)
-</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>                       └─ unlockChildren(&quot;A&quot;)
+</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>                       └─ unlockChildren("A")
 </span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a>                            └─ scan dagWaitingRoom
 </span><span id="__span-15-16"><a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>                            └─ B has parent A → A is done → all parents met
 </span><span id="__span-15-17"><a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a>                            └─ taskQueue.add(B)            ← B is now dispatchable
@@ -3532,7 +3588,7 @@
 </span><span id="__span-15-23"><a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a>                              │
 </span><span id="__span-15-24"><a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a>                              ▼
 </span><span id="__span-15-25"><a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a>                     completeJob(B)
-</span><span id="__span-15-26"><a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a>                       └─ unlockChildren(&quot;B&quot;)
+</span><span id="__span-15-26"><a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a>                       └─ unlockChildren("B")
 </span><span id="__span-15-27"><a id="__codelineno-15-27" name="__codelineno-15-27" href="#__codelineno-15-27"></a>                            └─ C has parent B → B is done → all parents met
 </span><span id="__span-15-28"><a id="__codelineno-15-28" name="__codelineno-15-28" href="#__codelineno-15-28"></a>                            └─ taskQueue.add(C)
 </span><span id="__span-15-29"><a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a>                              │
@@ -3571,7 +3627,7 @@
 </span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>                     submitJob(E) → parents [B,C,D] → dagWaitingRoom
 </span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>                              │
 </span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>                              ▼
-</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>                     A completes → unlockChildren(&quot;A&quot;)
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>                     A completes → unlockChildren("A")
 </span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>                       └─ B, C, D all have parent A met → taskQueue.add(B), add(C), add(D)
 </span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>                       └─ E has parents [B,C,D] → none done yet → stays
 </span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>                              │
@@ -3582,11 +3638,11 @@
 </span><span id="__span-16-16"><a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a>                     ← B, C, D executing in parallel across workers →
 </span><span id="__span-16-17"><a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a>                              │
 </span><span id="__span-16-18"><a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a>                              ▼
-</span><span id="__span-16-19"><a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a>                     B completes → unlockChildren(&quot;B&quot;)
+</span><span id="__span-16-19"><a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a>                     B completes → unlockChildren("B")
 </span><span id="__span-16-20"><a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a>                       └─ E: parent B done, but C and D still pending → stays
-</span><span id="__span-16-21"><a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>                     C completes → unlockChildren(&quot;C&quot;)
+</span><span id="__span-16-21"><a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>                     C completes → unlockChildren("C")
 </span><span id="__span-16-22"><a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a>                       └─ E: parents B,C done, D still pending → stays
-</span><span id="__span-16-23"><a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a>                     D completes → unlockChildren(&quot;D&quot;)
+</span><span id="__span-16-23"><a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a>                     D completes → unlockChildren("D")
 </span><span id="__span-16-24"><a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a>                       └─ E: parents B,C,D all done → taskQueue.add(E)
 </span><span id="__span-16-25"><a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a>                              │
 </span><span id="__span-16-26"><a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a>                              ▼
@@ -3629,11 +3685,11 @@
     end</code></pre>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>titan_sdk.py         submit with DEPLOY_PAYLOAD type
 </span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>        or
-</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>TitanCLI.java        &quot;deploy log_viewer.py 9991&quot;
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>TitanCLI.java        "deploy log_viewer.py 9991"
 </span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>                              │
 </span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>                              ▼
 </span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>SchedulerServer.java case OP_DEPLOY:
-</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>                       └─ scheduler.submitJob(job)  ← payload starts with &quot;DEPLOY_PAYLOAD&quot;
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>                       └─ scheduler.submitJob(job)  ← payload starts with "DEPLOY_PAYLOAD"
 </span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>                              │
 </span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>                              ▼
 </span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>Scheduler.java       runDispatchLoop() picks job
@@ -3641,13 +3697,13 @@
 </span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>                              │
 </span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>                              ▼  TCP port 8080
 </span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>RpcWorkerServer.java processCommand(payload)
-</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>                       └─ taskType = &quot;DEPLOY_PAYLOAD&quot; or &quot;START_SERVICE&quot;
+</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>                       └─ taskType = "DEPLOY_PAYLOAD" or "START_SERVICE"
 </span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>                       └─ ServiceHandler.execute(payload)
 </span><span id="__span-17-17"><a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>                              │
 </span><span id="__span-17-18"><a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>                              ▼
 </span><span id="__span-17-19"><a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>ServiceHandler.java  startProcess(filename, serviceId, port)
-</span><span id="__span-17-20"><a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>                       └─ if .jar → ProcessBuilder(&quot;java&quot;, &quot;-jar&quot;, file, port)
-</span><span id="__span-17-21"><a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>                       └─ if .py  → launchDetachedProcess(&quot;python&quot;, file)
+</span><span id="__span-17-20"><a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>                       └─ if .jar → ProcessBuilder("java", "-jar", file, port)
+</span><span id="__span-17-21"><a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>                       └─ if .py  → launchDetachedProcess("python", file)
 </span><span id="__span-17-22"><a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a>                              │
 </span><span id="__span-17-23"><a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>                              ▼
 </span><span id="__span-17-24"><a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a>                     launchDetachedProcess(serviceId, dir, command)
@@ -3659,14 +3715,14 @@
 </span><span id="__span-17-30"><a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a>                            if intentionallyStopped → notify Master, done
 </span><span id="__span-17-31"><a id="__codelineno-17-31" name="__codelineno-17-31" href="#__codelineno-17-31"></a>                            else → crash detected → sleep 3s → relaunch same command
 </span><span id="__span-17-32"><a id="__codelineno-17-32" name="__codelineno-17-32" href="#__codelineno-17-32"></a>                          })
-</span><span id="__span-17-33"><a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a>                       └─ return &quot;DEPLOYED_SUCCESS&quot;
+</span><span id="__span-17-33"><a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a>                       └─ return "DEPLOYED_SUCCESS"
 </span><span id="__span-17-34"><a id="__codelineno-17-34" name="__codelineno-17-34" href="#__codelineno-17-34"></a>                              │
 </span><span id="__span-17-35"><a id="__codelineno-17-35" name="__codelineno-17-35" href="#__codelineno-17-35"></a>                              ▼
 </span><span id="__span-17-36"><a id="__codelineno-17-36" name="__codelineno-17-36" href="#__codelineno-17-36"></a>                     ← process stays alive, no OP_JOB_COMPLETE callback →
-</span><span id="__span-17-37"><a id="__codelineno-17-37" name="__codelineno-17-37" href="#__codelineno-17-37"></a>                     ← service appears in dashboard under worker&#39;s Running Services →
+</span><span id="__span-17-37"><a id="__codelineno-17-37" name="__codelineno-17-37" href="#__codelineno-17-37"></a>                     ← service appears in dashboard under worker's Running Services →
 </span></code></pre></div>
 <p>Stopping a service:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>TitanCLI.java        &quot;stop service-id&quot;
+<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>TitanCLI.java        "stop service-id"
 </span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>                              │
 </span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>                              ▼
 </span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>SchedulerServer.java case OP_STOP → forward to worker
@@ -3707,15 +3763,15 @@
     Gate-&gt;&gt;Gate: sys.exit(0)
     W--&gt;&gt;S: OP_JOB_COMPLETE (COMPLETED)
     S-&gt;&gt;S: unlockChildren() → train enters taskQueue</code></pre>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>titan_sdk.py         submit_dag(&quot;pipeline&quot;, [
-</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>                       TitanJob(&quot;preprocess&quot;, ..., hitl_message=&quot;Review before training&quot;),
-</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>                       TitanJob(&quot;train&quot;, ..., parents=[&quot;preprocess&quot;])
+<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>titan_sdk.py         submit_dag("pipeline", [
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>                       TitanJob("preprocess", ..., hitl_message="Review before training"),
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>                       TitanJob("train", ..., parents=["preprocess"])
 </span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>                     ])
 </span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>                       └─ _inject_hitl_gates(jobs)
-</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>                            └─ detects hitl_message on &quot;preprocess&quot;
-</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>                            └─ creates gate job: &quot;hitl-gate-preprocess&quot;
-</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>                            └─ rewires: train.parents = [&quot;hitl-gate-preprocess&quot;]
-</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>                            └─ store_put(&quot;titan:hitl:status:hitl-gate-preprocess&quot;, &quot;CLEARED&quot;)
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>                            └─ detects hitl_message on "preprocess"
+</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>                            └─ creates gate job: "hitl-gate-preprocess"
+</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>                            └─ rewires: train.parents = ["hitl-gate-preprocess"]
+</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>                            └─ store_put("titan:hitl:status:hitl-gate-preprocess", "CLEARED")
 </span><span id="__span-19-10"><a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>                              │
 </span><span id="__span-19-11"><a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>                              ▼
 </span><span id="__span-19-12"><a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a>                     Final DAG: preprocess → hitl-gate-preprocess → train
@@ -3729,22 +3785,22 @@
 </span><span id="__span-19-20"><a id="__codelineno-19-20" name="__codelineno-19-20" href="#__codelineno-19-20"></a>                              │
 </span><span id="__span-19-21"><a id="__codelineno-19-21" name="__codelineno-19-21" href="#__codelineno-19-21"></a>                              ▼
 </span><span id="__span-19-22"><a id="__codelineno-19-22" name="__codelineno-19-22" href="#__codelineno-19-22"></a>Worker runs:         perm_files/hitl_gate.py
-</span><span id="__span-19-23"><a id="__codelineno-19-23" name="__codelineno-19-23" href="#__codelineno-19-23"></a>                       └─ args: &quot;hitl-gate-preprocess 172800 Review before training&quot;
-</span><span id="__span-19-24"><a id="__codelineno-19-24" name="__codelineno-19-24" href="#__codelineno-19-24"></a>                       └─ store_put(&quot;titan:hitl:queue&quot;, gate_id)   ← dashboard polls this
+</span><span id="__span-19-23"><a id="__codelineno-19-23" name="__codelineno-19-23" href="#__codelineno-19-23"></a>                       └─ args: "hitl-gate-preprocess 172800 Review before training"
+</span><span id="__span-19-24"><a id="__codelineno-19-24" name="__codelineno-19-24" href="#__codelineno-19-24"></a>                       └─ store_put("titan:hitl:queue", gate_id)   ← dashboard polls this
 </span><span id="__span-19-25"><a id="__codelineno-19-25" name="__codelineno-19-25" href="#__codelineno-19-25"></a>                       └─ loop:
-</span><span id="__span-19-26"><a id="__codelineno-19-26" name="__codelineno-19-26" href="#__codelineno-19-26"></a>                            store_get(&quot;titan:hitl:status:hitl-gate-preprocess&quot;)
-</span><span id="__span-19-27"><a id="__codelineno-19-27" name="__codelineno-19-27" href="#__codelineno-19-27"></a>                            if &quot;APPROVED&quot; → sys.exit(0)           ← job COMPLETED
-</span><span id="__span-19-28"><a id="__codelineno-19-28" name="__codelineno-19-28" href="#__codelineno-19-28"></a>                            if &quot;REJECTED&quot; → sys.exit(1)           ← job FAILED
+</span><span id="__span-19-26"><a id="__codelineno-19-26" name="__codelineno-19-26" href="#__codelineno-19-26"></a>                            store_get("titan:hitl:status:hitl-gate-preprocess")
+</span><span id="__span-19-27"><a id="__codelineno-19-27" name="__codelineno-19-27" href="#__codelineno-19-27"></a>                            if "APPROVED" → sys.exit(0)           ← job COMPLETED
+</span><span id="__span-19-28"><a id="__codelineno-19-28" name="__codelineno-19-28" href="#__codelineno-19-28"></a>                            if "REJECTED" → sys.exit(1)           ← job FAILED
 </span><span id="__span-19-29"><a id="__codelineno-19-29" name="__codelineno-19-29" href="#__codelineno-19-29"></a>                            else → sleep 3s, keep polling
 </span><span id="__span-19-30"><a id="__codelineno-19-30" name="__codelineno-19-30" href="#__codelineno-19-30"></a>                              │
 </span><span id="__span-19-31"><a id="__codelineno-19-31" name="__codelineno-19-31" href="#__codelineno-19-31"></a>                              ▼  (meanwhile, human reviews)
 </span><span id="__span-19-32"><a id="__codelineno-19-32" name="__codelineno-19-32" href="#__codelineno-19-32"></a>Dashboard            /api/hitl/pending → shows pending gates
 </span><span id="__span-19-33"><a id="__codelineno-19-33" name="__codelineno-19-33" href="#__codelineno-19-33"></a>        or
-</span><span id="__span-19-34"><a id="__codelineno-19-34" name="__codelineno-19-34" href="#__codelineno-19-34"></a>TitanCLI.java        &quot;approve hitl-gate-preprocess&quot;
-</span><span id="__span-19-35"><a id="__codelineno-19-35" name="__codelineno-19-35" href="#__codelineno-19-35"></a>                       └─ OP_KV_SET: &quot;titan:hitl:status:hitl-gate-preprocess|APPROVED&quot;
+</span><span id="__span-19-34"><a id="__codelineno-19-34" name="__codelineno-19-34" href="#__codelineno-19-34"></a>TitanCLI.java        "approve hitl-gate-preprocess"
+</span><span id="__span-19-35"><a id="__codelineno-19-35" name="__codelineno-19-35" href="#__codelineno-19-35"></a>                       └─ OP_KV_SET: "titan:hitl:status:hitl-gate-preprocess|APPROVED"
 </span><span id="__span-19-36"><a id="__codelineno-19-36" name="__codelineno-19-36" href="#__codelineno-19-36"></a>                              │
 </span><span id="__span-19-37"><a id="__codelineno-19-37" name="__codelineno-19-37" href="#__codelineno-19-37"></a>                              ▼
-</span><span id="__span-19-38"><a id="__codelineno-19-38" name="__codelineno-19-38" href="#__codelineno-19-38"></a>hitl_gate.py         next poll sees &quot;APPROVED&quot; → sys.exit(0)
+</span><span id="__span-19-38"><a id="__codelineno-19-38" name="__codelineno-19-38" href="#__codelineno-19-38"></a>hitl_gate.py         next poll sees "APPROVED" → sys.exit(0)
 </span><span id="__span-19-39"><a id="__codelineno-19-39" name="__codelineno-19-39" href="#__codelineno-19-39"></a>                              │
 </span><span id="__span-19-40"><a id="__codelineno-19-40" name="__codelineno-19-40" href="#__codelineno-19-40"></a>                              ▼
 </span><span id="__span-19-41"><a id="__codelineno-19-41" name="__codelineno-19-41" href="#__codelineno-19-41"></a>                     OP_JOB_COMPLETE: hitl-gate-preprocess COMPLETED
@@ -3779,33 +3835,33 @@
     S-&gt;&gt;DLQ: deadLetterQueue.add(job)
     S-&gt;&gt;S: cancel all children in dagWaitingRoom</code></pre>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>ScriptExecutorHandler  process exits with code 1 (or crashes)
-</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>                       └─ return &quot;FAILED: ...&quot;
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>                       └─ return "FAILED: ..."
 </span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>                              │
 </span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>                              ▼
-</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>RpcWorkerServer.java sendCallback(OP_JOB_COMPLETE, &quot;job-X|FAILED|error message&quot;)
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>RpcWorkerServer.java sendCallback(OP_JOB_COMPLETE, "job-X|FAILED|error message")
 </span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>                              │
 </span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>                              ▼
 </span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>Scheduler.java       handleJobCallback(payload)
-</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>                       └─ statusStr = &quot;FAILED&quot;
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>                       └─ statusStr = "FAILED"
 </span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>                       └─ handleJobFailure(job)
 </span><span id="__span-20-11"><a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a>                            └─ job.incrementRetry()
 </span><span id="__span-20-12"><a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>                            └─ if retryCount ≤ 3:
 </span><span id="__span-20-13"><a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a>                                 job.setStatus(PENDING)
-</span><span id="__span-20-14"><a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a>                                 safeRedisSet(&quot;job:X:status&quot;, &quot;PENDING&quot;)
+</span><span id="__span-20-14"><a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a>                                 safeRedisSet("job:X:status", "PENDING")
 </span><span id="__span-20-15"><a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a>                                 taskQueue.add(job)            ← re-queued for another attempt
 </span><span id="__span-20-16"><a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a>                            └─ if retryCount &gt; 3:
-</span><span id="__span-20-17"><a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a>                                 safeRedisSet(&quot;job:X:status&quot;, &quot;DEAD&quot;)
+</span><span id="__span-20-17"><a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a>                                 safeRedisSet("job:X:status", "DEAD")
 </span><span id="__span-20-18"><a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a>                                 deadLetterQueue.add(job)      ← no more retries
 </span><span id="__span-20-19"><a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a>                                 cancel all children in dagWaitingRoom
 </span></code></pre></div>
 <hr />
 <h3 id="scenario-7-cancel-with-cascade">Scenario 7: Cancel with cascade</h3>
 <p>User cancels a running job. All downstream descendants are cancelled too.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>TitanCLI.java        &quot;cancel parent-job&quot;
+<div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>TitanCLI.java        "cancel parent-job"
 </span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>                              │
 </span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>                              ▼
 </span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>SchedulerServer.java case OP_CANCEL_JOB:
-</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>                       └─ scheduler.cancelJob(&quot;DAG-parent-job&quot;)
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>                       └─ scheduler.cancelJob("DAG-parent-job")
 </span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>                              │
 </span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>                              ▼
 </span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>Scheduler.java       cancelJob(jobId)
@@ -3814,10 +3870,10 @@
 </span><span id="__span-21-11"><a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>                       └─ check: is it running on a worker?
 </span><span id="__span-21-12"><a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>                            └─ yes → send kill signal to worker
 </span><span id="__span-21-13"><a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>                            └─ worker kills the process
-</span><span id="__span-21-14"><a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a>                       └─ safeRedisSet(&quot;job:X:status&quot;, &quot;CANCELLED&quot;)
+</span><span id="__span-21-14"><a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a>                       └─ safeRedisSet("job:X:status", "CANCELLED")
 </span><span id="__span-21-15"><a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a>                       └─ cascade: find all jobs in dagWaitingRoom whose ancestors include X
 </span><span id="__span-21-16"><a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a>                            └─ for each descendant:
-</span><span id="__span-21-17"><a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a>                                 safeRedisSet(&quot;job:child:status&quot;, &quot;CANCELLED&quot;)
+</span><span id="__span-21-17"><a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a>                                 safeRedisSet("job:child:status", "CANCELLED")
 </span><span id="__span-21-18"><a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a>                                 remove from dagWaitingRoom
 </span></code></pre></div>
 <hr />
@@ -3828,7 +3884,7 @@
 </span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>                              ▼
 </span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>Scheduler.java       reconcileClusters() runs periodically
 </span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>                       └─ checks heartbeat timestamps for all registered workers
-</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>                       └─ worker hasn&#39;t sent heartbeat in &gt; threshold
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>                       └─ worker hasn't sent heartbeat in &gt; threshold
 </span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>                       └─ removes worker from WorkerRegistry
 </span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>                       └─ any jobs assigned to that worker:
 </span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>                            └─ handleJobFailure(job) → re-queues with retry increment
@@ -3871,13 +3927,13 @@
     C-&gt;&gt;MCP: get_job_logs(job_id)
     MCP--&gt;&gt;C: logs content
     C--&gt;&gt;U: rendered results</code></pre>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>Claude Desktop       user types: &quot;Run three analysis jobs in parallel, combine results&quot;
+<div class="language-text highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>Claude Desktop       user types: "Run three analysis jobs in parallel, combine results"
 </span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>                       └─ Claude generates job scripts on the fly
 </span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>                       └─ calls MCP tool: submit_dag_pipeline(dag_name, jobs_json)
 </span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>                              │
 </span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>                              ▼  MCP stdio protocol
 </span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>titan_mcp_server.py  submit_dag_pipeline handler
-</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>                       └─ generates agent_run_id (auto: &quot;mcp-{name}-{uuid}&quot;)
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>                       └─ generates agent_run_id (auto: "mcp-{name}-{uuid}")
 </span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>                       └─ for each job: prepend _SCRIPT_PREAMBLE (sys.path fix)
 </span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>                       └─ write scripts to perm_files/
 </span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a>                       └─ TitanClient().submit_dag(name, jobs, agent_run_id=run_id)

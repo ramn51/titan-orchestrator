@@ -2477,6 +2477,62 @@
   
   
     <li class="md-nav__item">
+      <a href="architecture/service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="architecture/service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="architecture/internals/" class="md-nav__link">
         
   
@@ -3063,7 +3119,7 @@
 </tr>
 <tr>
 <td><strong>Transport</strong></td>
-<td>A custom <strong>32-opcode binary RPC protocol</strong> over raw TCP, no gRPC, no Netty</td>
+<td>A custom <strong>33-opcode binary RPC protocol</strong> over raw TCP, no gRPC, no Netty</td>
 </tr>
 <tr>
 <td><strong>Execution</strong></td>
@@ -3297,9 +3353,9 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nd">@tool</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">titan_get_status</span><span class="p">(</span><span class="n">job_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the current status of a Titan job.&quot;&quot;&quot;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="sd">"""Get the current status of a Titan job."""</span>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">prefixed</span> <span class="o">=</span> <span class="n">job_id</span> <span class="k">if</span> <span class="n">job_id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;DAG-&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;DAG-</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">prefixed</span> <span class="o">=</span> <span class="n">job_id</span> <span class="k">if</span> <span class="n">job_id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"DAG-"</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"DAG-</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">"</span>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="k">return</span> <span class="n">client</span><span class="o">.</span><span class="n">get_job_status</span><span class="p">(</span><span class="n">prefixed</span><span class="p">)</span>
 </span></code></pre></div>
 <p>LangChain is optional, not a Titan dependency. A self-contained validation script with all five core tool wrappers is at <code>examples/langchain_titan.py</code>.</p>
@@ -3339,6 +3395,10 @@
 <li class="task-list-item"><input type="checkbox" disabled/> <strong>Distributed Consensus:</strong> Implement Raft or Paxos for Leader Election to remove the Master node as a Single Point of Failure (SPOF).</li>
 <li class="task-list-item"><input type="checkbox" disabled/> <strong>Security &amp; Auth:</strong> Implement mTLS (Mutual TLS) for encrypted, authenticated cluster communication.</li>
 <li class="task-list-item"><input type="checkbox" disabled/> <strong>Containerized Execution:</strong> Add support for Docker execution drivers to provide true filesystem isolation (currently utilizing Process-Level isolation).</li>
+<li class="task-list-item"><input type="checkbox" disabled checked/> <strong>Service readiness gate:</strong> A service deploy completes only once its port accepts connections, so downstream DAG nodes never race a slow-booting server. Fails fast if the port never binds.</li>
+<li class="task-list-item"><input type="checkbox" disabled checked/> <strong>Service discovery (address):</strong> The Master records each live service's real host and port; <code>get_service_address()</code> / <code>get_service_url()</code> / <code>list_services()</code> resolve it at runtime instead of hardcoding.</li>
+<li class="task-list-item"><input type="checkbox" disabled/> <strong>Service health checking:</strong> Periodic TCP/HTTP probes per service, crash-loop backoff with a restart ceiling, and restart state surfaced to the dashboard. See <a href="architecture/service-health/">Phase 2 spec</a>.</li>
+<li class="task-list-item"><input type="checkbox" disabled/> <strong>Logical service names &amp; env injection:</strong> Stable names that survive redeploys, plus <code>TITAN_SVC_&lt;NAME&gt;_HOST/PORT</code> injected into any job that declares <code>needs_services</code>. See <a href="architecture/service-discovery/">Phase 3 spec</a>.</li>
 <li class="task-list-item"><input type="checkbox" disabled/> <strong>Cluster Autoscaler Webhooks:</strong> Allow Titan to trigger external APIs (e.g., Azure VM Scale Sets, AWS EC2) to provision bare-metal compute automatically when queues saturate.</li>
 <li class="task-list-item"><input type="checkbox" disabled/> <strong>Opt-in TTL heartbeat:</strong> Offer push-style worker liveness via TitanStore TTL keys (worker refreshes an expiring key; Master detects absence) as an alternative to the current Master-dial loop. Requires exposing a <code>SETEX</code>-style command over the wire, and would make TitanStore required for liveness — so it stays opt-in, with the dial loop remaining the store-less default.</li>
 <li class="task-list-item"><input type="checkbox" disabled checked/> <strong>Human-in-the-Loop (HITL):</strong> Pause DAG execution and wait for human Approve/Reject via the Dashboard. Supports per-gate timeouts and automatic gate injection via the SDK. See <a href="examples/hitl/">HITL Pipelines</a>.</li>

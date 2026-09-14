@@ -2432,6 +2432,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/internals/" class="md-nav__link">
         
   
@@ -3114,16 +3170,16 @@
 </span></code></pre></div>
 <h3 id="how-the-data-flows">How the data flows</h3>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># cpu_prepare.py — pushes dataset JSON to TitanStore</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">store</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;gpu_pipeline_</span><span class="si">{</span><span class="n">RUN_ID</span><span class="si">}</span><span class="s2">_dataset&quot;</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">dataset</span><span class="p">))</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">store</span><span class="o">.</span><span class="n">store_put</span><span class="p">(</span><span class="sa">f</span><span class="s2">"gpu_pipeline_</span><span class="si">{</span><span class="n">RUN_ID</span><span class="si">}</span><span class="s2">_dataset"</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">dataset</span><span class="p">))</span>
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
 </span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># gpu_compute.py — reads it back (titan_sdk installed on RunPod)</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">raw</span>     <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;gpu_pipeline_</span><span class="si">{</span><span class="n">RUN_ID</span><span class="si">}</span><span class="s2">_dataset&quot;</span><span class="p">)</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">raw</span>     <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">store_get</span><span class="p">(</span><span class="sa">f</span><span class="s2">"gpu_pipeline_</span><span class="si">{</span><span class="n">RUN_ID</span><span class="si">}</span><span class="s2">_dataset"</span><span class="p">)</span>
 </span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">dataset</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
-</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">num_samples</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;num_samples&quot;</span><span class="p">],</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">],</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">&quot;std&quot;</span><span class="p">]</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">num_samples</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">"num_samples"</span><span class="p">],</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">"mean"</span><span class="p">],</span> <span class="n">dataset</span><span class="p">[</span><span class="s2">"std"</span><span class="p">]</span>
 </span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
 </span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="c1"># gpu_kv_pipeline.py — single DAG, GPU job depends on CPU job</span>
-</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="n">gpu_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="n">cpu_job</span><span class="o">.</span><span class="n">id</span><span class="p">],</span> <span class="n">requirement</span><span class="o">=</span><span class="s2">&quot;GPU&quot;</span><span class="p">)</span>
-</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GPU_KV_PIPELINE_</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">cpu_job</span><span class="p">,</span> <span class="n">gpu_job</span><span class="p">])</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="n">gpu_job</span> <span class="o">=</span> <span class="n">TitanJob</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="n">cpu_job</span><span class="o">.</span><span class="n">id</span><span class="p">],</span> <span class="n">requirement</span><span class="o">=</span><span class="s2">"GPU"</span><span class="p">)</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span><span class="sa">f</span><span class="s2">"GPU_KV_PIPELINE_</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="p">[</span><span class="n">cpu_job</span><span class="p">,</span> <span class="n">gpu_job</span><span class="p">])</span>
 </span></code></pre></div>
 <p>Titan enforces the dependency — <code>gpu_compute</code> only starts after <code>cpu_prepare</code> completes successfully. No polling loop needed in the orchestrator.</p>
 <hr />
@@ -3147,11 +3203,11 @@
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">store</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Write your output</span>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;my_output.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"my_output.txt"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
 </span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
 </span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
 </span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="c1"># Push it to the Master so it appears in Dashboard &gt; Workspace Files</span>
-</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="n">store</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="s2">&quot;my_output.txt&quot;</span><span class="p">)</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="n">store</span><span class="o">.</span><span class="n">upload_file</span><span class="p">(</span><span class="s2">"my_output.txt"</span><span class="p">)</span>
 </span></code></pre></div>
 <p>Open <code>http://localhost:5000</code> → <strong>Visualizer</strong> → select the GPU job → <strong>Workspace Files</strong> to download <code>model_report.txt</code>.</p>
 <hr />

@@ -2544,6 +2544,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/internals/" class="md-nav__link">
         
   
@@ -3261,12 +3317,12 @@
 </span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">TITAN_PORT</span><span class="o">=</span><span class="m">9090</span>
 </span></code></pre></div>
 <p>Add these to <code>~/.zshrc</code> (or <code>~/.bashrc</code>) to make them permanent:
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;export TITAN_HOST=&lt;MASTER_EXTERNAL_IP&gt;&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.zshrc
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;export TITAN_PORT=9090&#39;</span><span class="w">                 </span>&gt;&gt;<span class="w"> </span>~/.zshrc
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">'export TITAN_HOST=&lt;MASTER_EXTERNAL_IP&gt;'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.zshrc
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">'export TITAN_PORT=9090'</span><span class="w">                 </span>&gt;&gt;<span class="w"> </span>~/.zshrc
 </span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="nb">source</span><span class="w"> </span>~/.zshrc
 </span></code></pre></div></p>
 <h3 id="42-verify-the-sdk-picks-them-up">4.2 Verify the SDK picks them up</h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;from titan_sdk.titan_sdk import TITAN_HOST, TITAN_PORT; print(TITAN_HOST, TITAN_PORT)&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from titan_sdk.titan_sdk import TITAN_HOST, TITAN_PORT; print(TITAN_HOST, TITAN_PORT)"</span>
 </span></code></pre></div>
 <p>Must print your GCP external IP — not <code>127.0.0.1</code>.</p>
 <h3 id="43-install-the-sdk">4.3 Install the SDK</h3>
@@ -3288,7 +3344,7 @@
 <hr />
 <h2 id="managing-the-cluster">Managing the Cluster</h2>
 <h3 id="stop-all-services">Stop all services</h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>pkill<span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;TitanStore.jar&quot;</span><span class="w"> </span><span class="p">;</span><span class="w"> </span>pkill<span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;TitanMaster&quot;</span><span class="w"> </span><span class="p">;</span><span class="w"> </span>pkill<span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;server_dashboard.py&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>pkill<span class="w"> </span>-f<span class="w"> </span><span class="s2">"TitanStore.jar"</span><span class="w"> </span><span class="p">;</span><span class="w"> </span>pkill<span class="w"> </span>-f<span class="w"> </span><span class="s2">"TitanMaster"</span><span class="w"> </span><span class="p">;</span><span class="w"> </span>pkill<span class="w"> </span>-f<span class="w"> </span><span class="s2">"server_dashboard.py"</span>
 </span></code></pre></div>
 <h3 id="view-live-logs">View live logs</h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># From ~/titan-master-bundle/ on the Master VM</span>
@@ -3297,7 +3353,7 @@
 </span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>tail<span class="w"> </span>-f<span class="w"> </span>dashboard.log<span class="w">   </span><span class="c1"># Flask dashboard</span>
 </span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>
 </span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="c1"># Filter for key events only</span>
-</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>grep<span class="w"> </span><span class="s2">&quot;UPLOAD\|ARCHIVE\|DISPATCH\|ERROR\|Registered&quot;</span><span class="w"> </span>master.log<span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-20
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>grep<span class="w"> </span><span class="s2">"UPLOAD\|ARCHIVE\|DISPATCH\|ERROR\|Registered"</span><span class="w"> </span>master.log<span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-20
 </span></code></pre></div>
 <h3 id="redeploy-after-a-code-change">Redeploy after a code change</h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1"># 1. On your local machine — rebuild and repackage</span>
@@ -3309,7 +3365,7 @@
 </span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>
 </span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="c1"># 3. On the Master VM — replace and restart</span>
 </span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>unzip<span class="w"> </span>-o<span class="w"> </span>~/titan-master-bundle.zip<span class="w"> </span>-d<span class="w"> </span>~/
-</span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>pkill<span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;TitanMaster&quot;</span>
+</span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>pkill<span class="w"> </span>-f<span class="w"> </span><span class="s2">"TitanMaster"</span>
 </span><span id="__span-22-11"><a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a>sleep<span class="w"> </span><span class="m">1</span>
 </span><span id="__span-22-12"><a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a><span class="nb">cd</span><span class="w"> </span>~/titan-master-bundle<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>bash<span class="w"> </span>start_master.sh
 </span></code></pre></div>
@@ -3351,7 +3407,7 @@
 <p>The SDK pushes the manifest to the dashboard automatically after every submission. Ensure port 5000 is reachable from your local machine and the dashboard is running.</p>
 <p><strong><code>DAG_ACCEPTED</code> returned but nothing appears in master logs</strong></p>
 <p>The SDK is likely connecting to a local master instead of the remote one. Verify:
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;from titan_sdk.titan_sdk import TITAN_HOST; print(TITAN_HOST)&quot;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"from titan_sdk.titan_sdk import TITAN_HOST; print(TITAN_HOST)"</span>
 </span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="c1"># Must print the remote IP, not 127.0.0.1</span>
 </span></code></pre></div></p>
 <p><strong>YAML <code>project: true</code> submission accepted but job never runs</strong></p>

@@ -2329,6 +2329,62 @@
   
   
     <li class="md-nav__item">
+      <a href="../../architecture/service-health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Health (Phase 2)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/service-discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service Discovery (Phase 3)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../architecture/internals/" class="md-nav__link">
         
   
@@ -2748,19 +2804,19 @@
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TitanClient</span><span class="p">()</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">run_id</span> <span class="o">=</span> <span class="s2">&quot;RESEARCH_cb5e13&quot;</span>   <span class="c1"># shared across all stages of this invocation</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">run_id</span> <span class="o">=</span> <span class="s2">"RESEARCH_cb5e13"</span>   <span class="c1"># shared across all stages of this invocation</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Stage 1 — Plan</span>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">_PLAN&quot;</span><span class="p">,</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="p">[</span><span class="n">TitanJob</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="s2">&quot;plan&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;plan.py&quot;</span><span class="p">)],</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">_PLAN"</span><span class="p">,</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="p">[</span><span class="n">TitanJob</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="s2">"plan"</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"plan.py"</span><span class="p">)],</span>
 </span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span>
 </span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">)</span>
 </span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
 </span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1"># Stage 2 — Execute (submitted after plan completes)</span>
 </span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="n">client</span><span class="o">.</span><span class="n">submit_dag</span><span class="p">(</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">_EXECUTE&quot;</span><span class="p">,</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="p">[</span><span class="n">TitanJob</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="s2">&quot;execute&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;execute.py&quot;</span><span class="p">)],</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">_EXECUTE"</span><span class="p">,</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>    <span class="p">[</span><span class="n">TitanJob</span><span class="p">(</span><span class="n">job_id</span><span class="o">=</span><span class="s2">"execute"</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"execute.py"</span><span class="p">)],</span>
 </span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>    <span class="n">agent_run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span>
 </span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="p">)</span>
 </span></code></pre></div>
@@ -2769,7 +2825,7 @@
 <p class="admonition-title">Tip</p>
 <p>Use a unique ID per invocation — a short UUID or timestamp suffix works well:
 <div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">run_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;RESEARCH_</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">6</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">run_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"RESEARCH_</span><span class="si">{</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="mi">6</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
 </span></code></pre></div></p>
 </div>
 <hr />
