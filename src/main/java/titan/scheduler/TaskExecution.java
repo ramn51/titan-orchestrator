@@ -57,11 +57,110 @@ package titan.scheduler;
  * @param jobId The unique identifier of the job.
  * @param worker The worker instance assigned to execute this task.
  */
+    /**
+ * The IDs this job declared as parents. Retained here so a completed execution still knows its
+ * position in the graph — {@code runningJobs} drops the Job object once the work finishes.
+ */
+    java.util.List<String> parents = java.util.Collections.emptyList();
+
+    /**
+ * When the job first became eligible to run — {@code Job.getScheduledTime()}, i.e. submission
+ * time for an ordinary job and the delay expiry for a delayed one.
+ * <p>
+ * {@link #startTime} is set when the dispatch loop picks the job up, so the difference between
+ * the two is time spent waiting in a queue rather than executing. Without this, a slow job and a
+ * starved job look identical.
+ */
+    long enqueuedAt;
+
+    /**
+ * Which attempt this record represents, 1-based. Retries produce distinct records so a job that
+ * failed twice before succeeding shows three spans rather than collapsing into one.
+ */
+    int attempt = 1;
+
+    /**
+ * The job's declared priority, carried onto the span so the dashboard can answer whether
+ * priority actually changed anything.
+ * <p>
+ * The queue is a {@link java.util.concurrent.PriorityBlockingQueue}, so a higher priority is
+ * supposed to be dispatched sooner — but without this field there is no way to observe it. A
+ * queue-wait distribution split by priority is the only evidence that the ordering works;
+ * equal waits across bands mean the priority is being ignored.
+ */
+    int priority;
+
     public TaskExecution(String jobId, Worker worker) {
         this.jobId = jobId;
         this.assignedWorker = worker;
         this.startTime = System.currentTimeMillis();
         this.status = Job.Status.RUNNING;
+    }
+
+    /**
+ * Constructs an execution record that also captures the job's declared parents, so a timeline
+ * view can reconstruct the dependency edges after the job object is gone.
+ *
+ * @param jobId The unique identifier of the job.
+ * @param worker The worker instance assigned to execute this task.
+ * @param parents The job's declared parent IDs; may be {@code null}.
+ */
+    public TaskExecution(String jobId, Worker worker, java.util.List<String> parents) {
+        this(jobId, worker);
+        if (parents != null) this.parents = java.util.List.copyOf(parents);
+    }
+
+    /**
+ * Constructs an execution record capturing the graph edges, when the job became eligible, and
+ * which attempt this is.
+ *
+ * @param jobId The unique identifier of the job.
+ * @param worker The worker assigned to execute this task.
+ * @param parents The job's declared parent IDs; may be {@code null}.
+ * @param enqueuedAt When the job became eligible to run, in epoch millis.
+ * @param attempt 1-based attempt number.
+ */
+    public TaskExecution(String jobId, Worker worker, java.util.List<String> parents,
+                         long enqueuedAt, int attempt) {
+        this(jobId, worker, parents);
+        this.enqueuedAt = enqueuedAt;
+        this.attempt = Math.max(1, attempt);
+    }
+
+    /**
+ * Constructs an execution record carrying the graph edges, eligibility time, attempt number and
+ * the job's priority.
+ *
+ * @param jobId The unique identifier of the job.
+ * @param worker The worker assigned to execute this task.
+ * @param parents The job's declared parent IDs; may be {@code null}.
+ * @param enqueuedAt When the job became eligible to run, in epoch millis.
+ * @param attempt 1-based attempt number.
+ * @param priority The job's declared priority.
+ */
+    public TaskExecution(String jobId, Worker worker, java.util.List<String> parents,
+                         long enqueuedAt, int attempt, int priority) {
+        this(jobId, worker, parents, enqueuedAt, attempt);
+        this.priority = priority;
+    }
+
+    /**
+ * The job's declared priority as recorded at dispatch.
+ *
+ * @return the priority value.
+ */
+    public int getPriority() {
+        return priority;
+    }
+
+    /**
+ * How long this job waited between becoming eligible and being dispatched.
+ *
+ * @return Queue wait in milliseconds, or 0 if the eligible time was never recorded.
+ */
+    public long getQueueWaitMs() {
+        if (enqueuedAt <= 0) return 0;
+        return Math.max(0, startTime - enqueuedAt);
     }
 
     /**

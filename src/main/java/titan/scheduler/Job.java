@@ -196,6 +196,23 @@ public class Job implements Comparable<Job> {
         }
     }
 
+    /**
+     * The declared parents that have not yet reported completion.
+     * <p>
+     * Answers "what is this job actually waiting for?" — the count alone says a job is blocked, this
+     * says by whom.
+     *
+     * @return Outstanding parent IDs; empty when the job is ready or has no dependencies.
+     */
+    public List<String> getUnsatisfiedDeps() {
+        if (dependenciesIds == null) return java.util.Collections.emptyList();
+        List<String> out = new java.util.ArrayList<>();
+        for (String d : dependenciesIds) {
+            if (satisfiedDeps == null || !satisfiedDeps.contains(d)) out.add(d);
+        }
+        return out;
+    }
+
     public List<String> getDependenciesIds(){
         if(dependenciesIds == null)
             return Collections.emptyList();

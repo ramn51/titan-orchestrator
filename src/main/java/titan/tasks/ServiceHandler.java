@@ -139,10 +139,17 @@ import java.util.concurrent.ConcurrentHashMap;
                 ProcessBuilder pb;
                 if (System.getProperty("os.name").toLowerCase().contains("win")) {
                     // Windows Detached: cmd /c start /b java -jar Worker.jar <port>
-                    pb = new ProcessBuilder("cmd", "/c", "start", "/b", javaBin, "-jar", "\"" + jarPath + "\"", port);
+                    pb = new ProcessBuilder("cmd", "/c", "start", "/b", javaBin, "-jar", "\"" + jarPath + "\"", port,
+                            parentServer.getSchedulerHost(), String.valueOf(parentServer.getSchedulerPort()));
                 } else {
-                    // Linux Detached: nohup java -jar Worker.jar <port> &
-                    pb = new ProcessBuilder("nohup", javaBin, "-jar", jarPath, port, "&");
+                    // ProcessBuilder execs directly — it does not run a shell, so a trailing "&" is
+                    // NOT backgrounding syntax here: it was being passed to Worker.jar as argv[1],
+                    // which TitanWorker reads as the master host. Every auto-scaled worker therefore
+                    // tried to register with a host literally named "&" and silently never joined.
+                    // The process is already detached by virtue of being a separate process; nohup
+                    // only detaches it from SIGHUP. Pass the real master address instead.
+                    pb = new ProcessBuilder("nohup", javaBin, "-jar", jarPath, port,
+                            parentServer.getSchedulerHost(), String.valueOf(parentServer.getSchedulerPort()));
                 }
 
                 pb.redirectOutput(ProcessBuilder.Redirect.appendTo(new File(WORKSPACE_DIR + "/worker_" + port + ".log")));

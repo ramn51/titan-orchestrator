@@ -92,7 +92,10 @@ import java.util.stream.Collectors;
                 finalPermanentStatus = true; // Once permanent, stays permanent (safer)
             }
 
-           return new Worker(host, port, newCapabilities, finalPermanentStatus);
+           Worker refreshed = new Worker(host, port, newCapabilities, finalPermanentStatus);
+           // Keep idle timer, load and active job across a routine re-registration.
+           refreshed.inheritRuntimeState(existingWorker);
+           return refreshed;
         });
     }
 

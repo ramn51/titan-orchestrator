@@ -4,6 +4,12 @@
 
 Each node in the pipeline graph is colour-coded to reflect the current job state:
 
+!!! warning "Cross-check live status"
+    These colours are resolved through the client-side DAG manifest, which is being reworked, so a
+    node can lag or briefly misreport. The [Execution Timeline](execution-timeline.md) reads execution
+    spans directly and the [Cluster](control-plane.md) page reads the store, so use those to confirm.
+
+
 | Colour | Status | Meaning |
 |---|---|---|
 | Gray | `PENDING` | Waiting for dependencies to complete, or for a worker |

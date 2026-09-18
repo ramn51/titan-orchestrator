@@ -1,0 +1,509 @@
+<style>
+  body { background:#121212; color:#f0f3f5; font-family:'Segoe UI',sans-serif; padding:0; margin:0; }
+  a { text-decoration:none; color:inherit; }
+  a:hover { text-decoration:underline; color:#64b5f6; }
+
+  .topnav { background:#1a1a2e; border-bottom:1px solid #333; padding:0 24px; display:flex; align-items:center; gap:0; }
+  .topnav-brand { font-size:15px; font-weight:700; letter-spacing:1px; padding:10px 20px 10px 0; color:#fff; border-right:1px solid #333; margin-right:8px; display:flex; align-items:center; }
+  .topnav a.tab { padding:14px 18px; font-size:13px; color:#aaa; border-bottom:3px solid transparent; display:inline-block; }
+  .topnav a.tab:hover { color:#fff; text-decoration:none; }
+  .topnav a.tab.active { color:#64b5f6; border-bottom-color:#64b5f6; }
+  .topnav-right { margin-left:auto; display:flex; align-items:center; gap:10px; font-size:12px; color:#777; }
+
+  .wrap { padding:22px 24px 60px; }
+  h1 { font-size:19px; margin:0 0 4px; font-weight:600; }
+  .sub { font-size:12px; color:#95a0a8; margin:0 0 20px; }
+
+  .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:20px; }
+  .controls select { max-width:280px; }
+  .controls input, .controls select {
+    background:#1e1e2e; border:1px solid #333; color:#e0e0e0; padding:7px 10px;
+    border-radius:4px; font-size:12px; font-family:inherit;
+  }
+  .controls input:focus, .controls select:focus { outline:1px solid #64b5f6; border-color:#64b5f6; }
+  .controls button {
+    background:#64b5f6; border:0; color:#0d1117; padding:7px 14px; border-radius:4px;
+    font-size:12px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  .controls button.ghost { background:#1e1e2e; color:#aaa; border:1px solid #333; }
+  .controls button.ghost.on { color:#64b5f6; border-color:#64b5f6; }
+  .controls label { font-size:12px; color:#888; }
+
+  .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:22px; }
+  .metric { background:#1a1a2e; border:1px solid #2a2a3e; border-radius:6px; padding:12px 14px; }
+  .metric .k { font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:#95a0a8; display:block; margin-bottom:6px; }
+  .metric .v { font-size:20px; font-weight:600; color:#fff; font-variant-numeric:tabular-nums; }
+  .metric .v small { font-size:11px; color:#777; font-weight:400; margin-left:3px; }
+
+  .chartbox { background:#1a1a2e; border:1px solid #2a2a3e; border-radius:6px; padding:16px 16px 8px;
+    max-height:62vh; overflow-y:auto; overflow-x:auto; }
+  .chartbox::-webkit-scrollbar { width:10px; height:10px; }
+  .chartbox::-webkit-scrollbar-thumb { background:#33435a; border-radius:5px; }
+  .chartbox::-webkit-scrollbar-track { background:#141422; }
+  #chart { min-width:720px; }
+  .axis { position:sticky; top:-8px; z-index:2; background:#1a1a2e; padding-top:8px; }
+  .axis { position:relative; height:20px; margin-left:262px; border-bottom:1px solid #333; margin-bottom:8px; }
+  .axis span { position:absolute; top:2px; font-size:10px; color:#b8c2c9; transform:translateX(-50%); font-variant-numeric:tabular-nums; }
+  .axis i { position:absolute; top:16px; width:1px; height:5px; background:#444; }
+
+  .row { display:flex; align-items:center; height:26px; }
+  .row:hover { background:#20203450; }
+  .row .lbl {
+    width:262px; flex:none; font-size:11px; color:#d6dde2; padding-right:10px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:ui-monospace,Menlo,monospace;
+    display:flex; align-items:center; gap:6px;
+  }
+  .row .lbl span.nm { overflow:hidden; text-overflow:ellipsis; }
+  .chip { flex:none; font-size:8.5px; letter-spacing:.06em; padding:1px 4px; border-radius:3px;
+    border:1px solid currentColor; font-family:ui-monospace,Menlo,monospace; }
+  .chip.perm { color:#64b5f6; } .chip.eph { color:#c98500; }
+  .row .track { position:relative; flex:1; height:100%; }
+  .row .grid { position:absolute; top:0; bottom:0; width:1px; background:#2a2a3e; }
+  .bar {
+    position:absolute; top:5px; height:15px; border-radius:3px; min-width:2px;
+    display:flex; align-items:center; box-sizing:border-box;
+  }
+  .bar span {
+    font-size:9px; color:#0d1117; padding:0 5px; white-space:nowrap;
+    font-variant-numeric:tabular-nums; font-weight:600;
+  }
+  .bar.out span { color:#888; position:absolute; left:100%; padding-left:6px; }
+  .b-COMPLETED { background:#4caf50; }
+  .b-RUNNING   { background:#64b5f6; }
+  .b-FAILED    { background:#f44336; }
+  .b-DEAD      { background:#b71c1c; }
+  .b-CANCELLED { background:#616161; }
+  .b-PENDING   { background:#555; }
+  .bar.crit { box-shadow:0 0 0 2px #ffb300; }
+  /* Queue residency: the job was eligible but nothing had dispatched it yet. */
+  .wait { position:absolute; top:9px; height:7px; border-radius:2px; background:#3d3d52; }
+  .wait.starved { background:#8a6d1f; }
+
+  .wlane { font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:#777;
+    margin:16px 0 6px; padding-top:10px; border-top:1px solid #2a2a3e; }
+  .wlane:first-child { border-top:0; padding-top:0; margin-top:0; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; font-size:11px; color:#b8c2c9; }
+  .legend i { display:inline-block; width:11px; height:11px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+  .empty { color:#666; font-size:13px; padding:40px 0; text-align:center; }
+  .note { font-size:11px; color:#95a0a8; margin-top:14px; line-height:1.6; }
+  .fails { background:#1a1a2e; border:1px solid #2a2a3e; border-left:3px solid #f44336;
+    border-radius:6px; padding:12px 14px; margin-top:16px; }
+  .fails.ok { border-left-color:#4caf50; }
+  .fails.ok h3 { color:#8fd694; }
+  .fails h3 { margin:0 0 8px; font-size:12px; color:#fff; font-weight:600; }
+  .fails ul { margin:0; padding-left:15px; font-size:11px; font-family:ui-monospace,Menlo,monospace;
+    color:#cfd6db; max-height:230px; overflow-y:auto; }
+  .fails ul::-webkit-scrollbar { width:9px; }
+  .fails ul::-webkit-scrollbar-thumb { background:#4a3038; border-radius:5px; }
+  .fails li { margin-bottom:5px; line-height:1.45; }
+  .fails b { color:#f48771; font-weight:600; }
+  .guide { background:#1a1a2e; border:1px solid #2a2a3e; border-radius:6px; padding:13px 16px; margin:0 0 18px; }
+.guide summary { font-size:12px; color:#ccc; cursor:pointer; margin-bottom:10px; outline:none; }
+  .guide summary:hover { color:#fff; }
+  .guide summary b { color:#fff; }
+  .guide[open] summary { margin-bottom:12px; }
+  .guide dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:11.5px; }
+  .guide dt { color:#64b5f6; font-family:ui-monospace,Menlo,monospace; white-space:nowrap; }
+  .guide dd { margin:0; color:#c6ced4; line-height:1.5; }
+  /* Short bullets read better than a paragraph for the two multi-part definitions. */
+  .guide dd ul.tight { margin:4px 0 0; padding-left:15px; }
+  .guide dd ul.tight li { margin:0 0 2px; }
+  .guide dd code { font-family:ui-monospace,Menlo,monospace; color:#e8eeec; }
+</style>
+
+<div class="topnav">
+  <div class="topnav-brand">TITAN</div>
+  <a class="tab" href="/">🖥 Orchestrator</a>
+  <a class="tab" href="/dags">🔀 DAG Pipelines</a>
+  <a class="tab" href="/dags/new">✏️ Constructor</a>
+  <a class="tab" href="/agents">🤖 Agent Runs</a>
+  <a class="tab active" href="/timeline">📊 Timeline</a>
+  <a class="tab" href="/cluster">🌐 Cluster</a>
+  <div class="topnav-right"><span id="conn">—</span></div>
+</div>
+
+<div class="wrap">
+  <h1>Execution Timeline</h1>
+  <p class="sub">Every recorded job on an absolute time axis. Bars are real start and end times, so overlap is real parallelism &mdash; not layout.</p>
+
+  <div class="controls">
+    <select id="dagpick" onchange="pickDag()" title="Jump to a pipeline">
+      <option value="">— all pipelines —</option>
+    </select>
+    <input id="filter" placeholder="…or filter by job id substring" value="{{ dag_filter or '' }}" size="24">
+    <label>window
+      <select id="win" onchange="load()" title="Bars are drawn to scale across the whole window — a narrow window makes short jobs visible">
+        <option value="0" selected>fit to all spans</option>
+        <option value="60">last 1 min</option>
+        <option value="300">last 5 min</option>
+        <option value="900">last 15 min</option>
+        <option value="3600">last 1 hour</option>
+        <option value="d24">last 24 h · from disk</option>
+        <option value="d168">last 7 days · from disk</option>
+      </select>
+    </label>
+    <label title="Maximum spans fetched. The Master keeps up to 5000.">limit
+      <input id="limit" type="number" value="2000" min="10" max="5000" size="5" style="width:74px"></label>
+    <button onclick="load()">Refresh</button>
+    <button class="ghost" id="btnGroup" onclick="toggleGroup()">Group by worker</button>
+    <button class="ghost" id="btnAuto" onclick="toggleAuto()">Auto-refresh</button>
+  </div>
+
+  <details class="guide" open>
+    <summary><b>How to read this</b> — click to collapse</summary>
+    <dl>
+      <dt>grey prefix</dt><dd>Time the job sat <b>queued</b> after becoming eligible. A long grey bar means the scheduler, not your script, is what made it slow.</dd>
+      <dt>amber prefix</dt><dd>Queued more than 2s — <b>starved</b>. One job stuck at the head of the priority queue starves everything behind it, and this is how you see it.</dd>
+      <dt>coloured bar</dt><dd>Actual execution. Length is real duration and horizontal position is real start time, so two bars that overlap genuinely ran at the same moment.</dd>
+      <dt>amber outline</dt><dd>On the <b>critical path</b>.
+        <ul class="tight">
+          <li>The single longest chain of <i>dependent</i> jobs, by wall time.</li>
+          <li>Its length is the floor on how fast the run can be.</li>
+          <li>Everything off it has slack, so speeding those up changes nothing.</li>
+          <li>Share near 100% of wall clock: dependency-bound, more workers will not help.</li>
+          <li>Share well under 100%: capacity-bound, more workers will help.</li>
+        </ul></dd>
+      <dt>parallelism</dt><dd>Total execution time of every job divided by wall clock.
+        <ul class="tight">
+          <li><code>1.0</code> means nothing overlapped, strictly one job at a time.</li>
+          <li><code>4.0</code> means four jobs ran at once on average.</li>
+          <li>Compare it against total worker slots: far below means capacity sat idle.</li>
+        </ul></dd>
+      <dt>#2, #3</dt><dd>Retry attempt. Each attempt is its own span, so a job that failed twice before succeeding shows three bars.</dd>
+      <dt>PERM / EPH</dt><dd>Whether the worker that ran it is a permanent node or an ephemeral one the scaler spawned and may reclaim.</dd>
+      <dt>hover a row</dt><dd>Queue wait, execution time, worker, failure reason, and parents.</dd>
+      <dt>how far back</dt><dd>The in-memory ring holds up to 5000 spans and is cleared when the Master restarts. The <b>from disk</b> window options read persisted history instead, which survives restarts (retained <b>7 days</b> by default, configurable).</dd>
+    </dl>
+    <div class="legend">
+      <span><i style="background:#3d3d52"></i>queue wait</span>
+      <span><i style="background:#8a6d1f"></i>starved (&gt;2s)</span>
+      <span><i style="background:#4caf50"></i>completed</span>
+      <span><i style="background:#64b5f6"></i>running</span>
+      <span><i style="background:#f44336"></i>failed</span>
+      <span><i style="background:#b71c1c"></i>dead</span>
+      <span><i style="background:#616161"></i>cancelled</span>
+      <span><i style="box-shadow:0 0 0 2px #ffb300;background:transparent"></i>critical path</span>
+    </div>
+  </details>
+
+  <div class="metrics" id="metrics"></div>
+  <div class="chartbox"><div id="chart"><div class="empty">Loading…</div></div></div>
+
+  <p id="trunc" class="note" style="display:none;border-left:2px solid #ffb300;padding-left:10px;margin:14px 0 0"></p>
+  <p id="recon" class="note" style="display:none;border-left:2px solid #64b5f6;padding-left:10px;margin:14px 0 0"></p>
+  <div id="failbox"></div>
+
+  <p class="note">
+    <b>Critical path</b> is the longest chain of dependent jobs by wall time &mdash; shortening anything off it will not make the run finish sooner.
+    <b>Parallelism</b> is total job time divided by wall clock: 1.0 means everything ran one after another, higher means real overlap.
+  </p>
+</div>
+
+<script>
+var groupByWorker = false, autoTimer = null, lastSpans = [], DAG_INFO = {};
+
+// Reading .value off a missing element throws and kills load(), leaving the page on "Loading…".
+// Route every control lookup through these so a markup change degrades instead of white-screening.
+function el(id) { return document.getElementById(id); }
+// Every string interpolated into innerHTML goes through this. It lived only in cluster.html, so
+// the reconciliation notice below threw "esc is not defined" the moment a picked pipeline had
+// fewer spans than the manifest — which blanked the whole chart via load()'s catch.
+function esc(t) {
+  return String(t).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  });
+}
+function val(id, dflt) { var e = el(id); return e ? e.value : (dflt === undefined ? '' : dflt); }
+function setVal(id, v) { var e = el(id); if (e) e.value = v; }
+
+function fmt(ms) {
+  if (ms < 1000) return ms + 'ms';
+  if (ms < 60000) return (ms / 1000).toFixed(2) + 's';
+  return Math.floor(ms / 60000) + 'm' + Math.round((ms % 60000) / 1000) + 's';
+}
+
+function criticalPath(spans) {
+  // Longest finish time through the dependency chain. Returns the set of ids on that path.
+  var by = {}, memo = {}, prev = {};
+  spans.forEach(function (s) { by[s.id] = s; });
+  function walk(id, seen) {
+    if (memo[id] !== undefined) return memo[id];
+    if (seen[id]) return 0;                       // cycle guard; a DAG shouldn't have one
+    seen[id] = true;
+    var s = by[id];
+    if (!s) return 0;
+    var best = 0, bestP = null;
+    (s.parents || []).forEach(function (p) {
+      if (!by[p]) return;
+      var v = walk(p, seen);
+      if (v > best) { best = v; bestP = p; }
+    });
+    prev[id] = bestP;
+    memo[id] = best + (s.duration_ms || 0);
+    return memo[id];
+  }
+  spans.forEach(function (s) { walk(s.id, {}); });
+  var endId = null, endVal = -1;
+  Object.keys(memo).forEach(function (id) { if (memo[id] > endVal) { endVal = memo[id]; endId = id; } });
+  var path = {}, cur = endId;
+  while (cur) { path[cur] = true; cur = prev[cur]; }
+  return { set: path, length: endVal };
+}
+
+function render(data) {
+  var spans = (data.spans || []).slice();
+
+  // Bars are drawn proportional to the full time range. Spans from disjoint runs hours apart
+  // compress every job into a hairline, so clip to a window first.
+  var winSec = (String(val('win', '0')).charAt(0) === 'd') ? 0 : (parseInt(val('win', '0'), 10) || 0);
+  var clipped = 0;
+  if (winSec > 0) {
+    var cutoff = (data.now || Date.now()) - winSec * 1000;
+    var before = spans.length;
+    spans = spans.filter(function (s) { return (s.ended_at || s.started_at) >= cutoff; });
+    clipped = before - spans.length;
+  }
+  lastSpans = spans;
+  var chart = document.getElementById('chart'), metrics = document.getElementById('metrics');
+  if (!spans.length) {
+    var picked = val('dagpick'), pickedName = picked;
+    var info = DAG_INFO[pickedName];
+    if (!clipped && pickedName && info && info.spans === 0) {
+      chart.innerHTML = '<div class="empty"><b>' + pickedName + '</b> was submitted (' + info.runs +
+        (info.runs === 1 ? ' run' : ' runs') + ', ' + info.jobs + ' jobs) but has no spans left to draw.<br>' +
+        'Spans live in the Master\'s in-memory ring, which is cleared on restart, and on disk for ' +
+        '7 days. A pipeline that ran before the current Master started — or before span persistence ' +
+        'was enabled — is in the picker but not in the data. Jobs that never got dispatched ' +
+        '(parked for a missing capability) have no span by definition.</div>';
+      metrics.innerHTML = ''; return;
+    }
+    if (!clipped && pickedName && info && info.spans && !info.spans_memory &&
+        String(val('win', '0')).charAt(0) !== 'd') {
+      chart.innerHTML = '<div class="empty"><b>' + pickedName + '</b> has ' + info.spans +
+        ' span(s) on disk but none in memory — it ran before this Master started.<br>' +
+        'Switch <b>window</b> to <b>last 24 h · from disk</b> or <b>last 7 days · from disk</b>.</div>';
+      metrics.innerHTML = ''; return;
+    }
+    chart.innerHTML = '<div class="empty">' + (clipped
+      ? clipped + ' span(s) fell outside this time window — widen it with the <b>window</b> selector.'
+      : picked
+        ? 'No spans for <b>' + picked + '</b>.<br><span style="font-size:11px">Its job statuses survive in the store, but execution spans are held in memory only and are cleared when the Master restarts. Re-run the pipeline to see its timeline.</span>'
+        : 'No executions recorded yet. Submit a DAG, then refresh.') + '</div>';
+    metrics.innerHTML = '';
+    return;
+  }
+
+  var t0 = Math.min.apply(null, spans.map(function (s) { return s.enqueued_at > 0 ? Math.min(s.enqueued_at, s.started_at) : s.started_at; }));
+  var t1 = Math.max.apply(null, spans.map(function (s) { return s.ended_at || data.now; }));
+  var span = Math.max(t1 - t0, 1);
+
+  var cp = criticalPath(spans);
+  var busy = spans.reduce(function (a, s) { return a + (s.duration_ms || 0); }, 0);
+  var qTotal = spans.reduce(function (a, s) { return a + (s.queue_wait_ms || 0); }, 0);
+  var starved = spans.filter(function (s) { return (s.queue_wait_ms || 0) > 2000; }).length;
+
+  // The Master truncates to `limit` before sending. Without saying so, a cut view is
+  // indistinguishable from a complete one.
+  var trunc = el('trunc');
+  if (trunc) {
+    if (data.truncated) {
+      trunc.innerHTML = 'Only the most recent <b>' + data.count + '</b> spans were fetched — ' +
+        'the Master holds more. Raise <b>limit</b> to see further back.';
+      trunc.style.display = '';
+    } else {
+      trunc.style.display = 'none';
+    }
+  }
+
+  // peak concurrency via a sweep over start/end events
+  var ev = [];
+  spans.forEach(function (s) { ev.push([s.started_at, 1]); ev.push([s.ended_at || data.now, -1]); });
+  ev.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+  var cur = 0, peak = 0;
+  ev.forEach(function (e) { cur += e[1]; if (cur > peak) peak = cur; });
+
+  var workers = {};
+  spans.forEach(function (s) { workers[s.worker] = 1; });
+  var failed = spans.filter(function (s) { return s.status === 'FAILED' || s.status === 'DEAD'; }).length;
+
+  metrics.innerHTML =
+    m('Wall clock', fmt(span)) +
+    m('Critical path', fmt(cp.length), (100 * cp.length / span).toFixed(0) + '% of wall') +
+    m('Parallelism', (busy / span).toFixed(2) + '×') +
+    m('Peak concurrent', peak) +
+    m('Jobs', spans.length + (data.truncated ? '+' : '')) +
+    m('Workers', Object.keys(workers).length) +
+    m('Failed', failed) +
+    m('Queue time', (100 * qTotal / (qTotal + busy || 1)).toFixed(0) + '%', 'of job lifetime') +
+    m('Starved', starved, '>2s waiting') +
+    (clipped ? m('Hidden', clipped, 'outside window') : '');
+
+  // gridlines every 10%
+  var grids = '';
+  for (var g = 1; g < 10; g++) grids += '<div class="grid" style="left:' + (g * 10) + '%"></div>';
+
+  var axis = '<div class="axis">';
+  for (var a = 0; a <= 10; a++) {
+    axis += '<i style="left:' + (a * 10) + '%"></i><span style="left:' + (a * 10) + '%">' + fmt(Math.round(span * a / 10)) + '</span>';
+  }
+  axis += '</div>';
+
+  function rowFor(s) {
+    var left = 100 * (s.started_at - t0) / span;
+    var w = 100 * ((s.ended_at || data.now) - s.started_at) / span;
+    var wide = w > 7;
+    var label = s.id + (s.attempt > 1 ? ' #' + s.attempt : '');
+
+    // queue residency sits immediately before the execution bar
+    var qw = s.queue_wait_ms || 0;
+    var waitSeg = '';
+    if (qw > 0) {
+      var wl = 100 * (s.enqueued_at - t0) / span;
+      var ww = 100 * qw / span;
+      waitSeg = '<div class="wait' + (qw > 2000 ? ' starved' : '') + '" style="left:' + wl + '%;width:' + Math.max(ww, 0.2) + '%"></div>';
+    }
+
+    return '<div class="row" title="' + label + '  ' + s.status +
+           '\nqueue wait ' + fmt(qw) + '  ·  exec ' + fmt(s.duration_ms) +
+           '\nworker ' + (s.host || '?') + ':' + s.worker +
+           (s.reason ? '\n\n' + s.reason : '') +
+           (s.parents && s.parents.length ? '\n← ' + s.parents.join(', ') : '') + '">' +
+           '<div class="lbl"><span class="nm">' + label + '</span>' +
+           '<span class="chip ' + (s.worker_permanent ? 'perm">PERM' : 'eph">EPH') + '</span>' +
+           '<span style="color:#666;font-size:9px">:' + s.worker + '</span></div>' +
+           '<div class="track">' + grids + waitSeg +
+           '<div class="bar b-' + s.status + (cp.set[s.id] ? ' crit' : '') + (wide ? '' : ' out') +
+           '" style="left:' + left + '%;width:' + Math.max(w, 0.3) + '%">' +
+           '<span>' + fmt(s.duration_ms) + '</span></div></div></div>';
+  }
+
+  // Reconcile the manifest's lifetime job count against what is actually in the span log, so a
+  // smaller chart than the dropdown suggests is explained rather than looking like lost data.
+  var pickedDag = val('dagpick');
+  var info = DAG_INFO[pickedDag];
+  var recon = el('recon');
+  if (recon) {
+    if (info && spans.length < info.jobs) {
+      recon.innerHTML = 'Showing <b>' + spans.length + '</b> of <b>' + info.jobs +
+        '</b> jobs recorded for <b>' + esc(pickedDag) + '</b> across ' + info.runs +
+        (info.runs === 1 ? ' run' : ' runs') + '. Job IDs are unique per run — nothing is overwritten. ' +
+        'The missing ones ran before the current Master started; execution spans are held in memory only.';
+      recon.style.display = '';
+    } else {
+      recon.style.display = 'none';
+    }
+  }
+
+  var fails = spans.filter(function (s) { return s.status === 'FAILED' || s.status === 'DEAD'; });
+  var fb = el('failbox');
+  if (fb) {
+    fb.innerHTML = fails.length
+      ? '<div class="fails"><h3>Failures — ' + fails.length + ' span' + (fails.length > 1 ? 's' : '') +
+        ' <span style="color:#777;font-weight:400">· scroll for more</span></h3><ul>' +
+        fails.sort(function (a, b) { return a.started_at - b.started_at; }).map(function (s) {
+          return '<li>' + s.id + (s.attempt > 1 ? ' #' + s.attempt : '') +
+                 ' <span style="color:#666">· ' + s.status + ' on ' + (s.host || '?') + ':' + s.worker + '</span><br><b>' +
+                 (s.reason || 'no reason recorded') + '</b></li>'; }).join('') + '</ul></div>'
+      : '<div class="fails ok"><h3>Failures — none in this window</h3>' +
+        '<p style="margin:0;font-size:11px;color:#8fa">All ' + spans.length +
+        ' spans shown completed. Failed and dead jobs would be listed here with their exit code and error line.</p></div>';
+  }
+
+  var html = axis;
+  if (groupByWorker) {
+    Object.keys(workers).sort().forEach(function (wk) {
+      html += '<div class="wlane">worker :' + wk + '</div>';
+      spans.filter(function (s) { return s.worker === wk; })
+           .sort(function (a, b) { return a.started_at - b.started_at; })
+           .forEach(function (s) { html += rowFor(s); });
+    });
+  } else {
+    spans.sort(function (a, b) { return a.started_at - b.started_at; })
+         .forEach(function (s) { html += rowFor(s); });
+  }
+  chart.innerHTML = html;
+}
+
+function m(k, v, sub) {
+  return '<div class="metric"><span class="k">' + k + '</span><span class="v">' + v +
+         (sub ? '<small>' + sub + '</small>' : '') + '</span></div>';
+}
+
+function pickDag() {
+  // Selecting a pipeline clears the free-text filter; they are alternative ways to narrow.
+  if (val('dagpick')) setVal('filter', '');
+  load();
+}
+
+function loadDagNames() {
+  fetch('/api/dag_names').then(function (r) { return r.json(); }).then(function (d) {
+    var sel = el('dagpick');
+    if (!sel) return;
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">— all pipelines —</option>' +
+      (d.dags || []).map(function (x) {
+        DAG_INFO[x.name] = x;
+        // Submitted-but-undrawable pipelines are the common confusion: the manifest remembers
+        // every submission forever, spans do not. Label it rather than drawing a blank chart.
+        var avail = x.spans === undefined ? ''
+          : x.spans === 0 ? '  · no spans on record'
+          : x.spans_memory ? '  · ' + x.spans + ' spans'
+          : '  · ' + x.spans + ' spans (disk only)';
+        return '<option value="' + x.name + '">' + x.name + '  · ' + x.runs +
+               (x.runs === 1 ? ' run' : ' runs') + ', ' + x.jobs + ' jobs' + avail + '</option>';
+      }).join('');
+    sel.value = cur;
+  }).catch(function () {});
+}
+
+function load() {
+  var f = val('filter').trim();
+  var dag = val('dagpick');
+  var l = val('limit', '2000') || 2000;
+  var w = val('win', '0');
+
+  // "d<hours>" windows read persisted JSONL instead of the in-memory ring, so they reach back
+  // past the current Master's lifetime.
+  // A pipeline name is not a job-id substring, so `dag` goes as its own parameter on BOTH
+  // paths — the server resolves it through the manifest. Passing it as `filter` matched nothing.
+  var url = (String(w).charAt(0) === 'd')
+    ? '/api/history?hours=' + String(w).slice(1) + '&filter=' + encodeURIComponent(f) +
+      '&dag=' + encodeURIComponent(dag) + '&limit=' + encodeURIComponent(l)
+    : '/api/timeline?filter=' + encodeURIComponent(f) + '&dag=' + encodeURIComponent(dag) +
+      '&limit=' + encodeURIComponent(l);
+  fetch(url)
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var lbl = d.error ? 'OFFLINE'
+        : d.count + ' spans' + (d.source === 'disk' ? ' · from disk' : ' · in memory');
+      document.getElementById('conn').textContent = lbl;
+      if (d.error) {
+        document.getElementById('chart').innerHTML = '<div class="empty">' + d.error + '</div>';
+        return;
+      }
+      render(d);
+    })
+    .catch(function (e) {
+      var c2 = el('conn'); if (c2) c2.textContent = 'ERROR';
+      var ch = el('chart');
+      if (ch) ch.innerHTML = '<div class="empty">Could not load spans — ' + (e && e.message ? e.message : e) + '</div>';
+    });
+}
+
+function toggleGroup() {
+  groupByWorker = !groupByWorker;
+  document.getElementById('btnGroup').classList.toggle('on', groupByWorker);
+  load();
+}
+function toggleAuto() {
+  var b = document.getElementById('btnAuto');
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; b.classList.remove('on'); }
+  else { autoTimer = setInterval(load, 2000); b.classList.add('on'); }
+}
+if (el('filter')) el('filter').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { setVal('dagpick', ''); load(); }
+});
+loadDagNames();
+load();
+</script>

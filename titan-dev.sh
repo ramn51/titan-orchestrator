@@ -56,7 +56,10 @@ MASTER_PID=$!
 sleep 2 
 
 echo -e "${YELLOW}[START] Starting General Worker (Port 8080)...${NC}"
-java -cp $JAR_FILE titan.TitanWorker > /tmp/titan-worker.log 2>&1 &
+# Root worker: explicitly PERMANENT. It was previously started with no args, which defaults to
+# ephemeral — the scaler only spared it via a hardcoded "port != 8080" check, so the dashboard
+# correctly labelled it ephemeral while it behaved permanently.
+java -cp $JAR_FILE titan.TitanWorker 8080 localhost 9090 GENERAL true > /tmp/titan-worker.log 2>&1 &
 WORKER_PID=$!
 
 if python3 -c "import flask" &> /dev/null; then

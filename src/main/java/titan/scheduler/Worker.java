@@ -75,6 +75,22 @@ import java.util.List;
  */
     private boolean isPermanent;
 
+    /**
+ * Host CPU utilisation last reported by this worker, 0&ndash;100, or {@code -1} when unknown.
+ * <p>
+ * Slot occupancy alone cannot distinguish a node running one heavy job from one running two
+ * trivial ones &mdash; both read as "loaded". These three fields carry what the machine is
+ * actually doing, so a saturated pool at 12% CPU and a saturated pool at 95% CPU stop looking
+ * identical. Reported on the heartbeat; {@code -1} on any JVM that will not disclose them.
+ */
+    private volatile int hostCpuPct = -1;
+
+    /** Host memory in use, 0&ndash;100, or {@code -1} when unknown. */
+    private volatile int hostMemPct = -1;
+
+    /** System load average &times;100, or {@code -1} when the platform does not report one. */
+    private volatile int hostLoadX100 = -1;
+
 
     /**
  * Constructs a new Worker instance.
@@ -159,6 +175,29 @@ import java.util.List;
  *
  * @return The idle duration in milliseconds, or 0 if the worker is currently busy.
  */
+    /**
+     * Copies live runtime state from a previous incarnation of this same worker.
+     * <p>
+     * Re-registration builds a fresh {@code Worker} every 30s, which used to reset
+     * {@link #idleStartTime} — and because the scale-down threshold is 45s of continuous idleness,
+     * the timer could never reach it and auto-descale was unreachable. Registration announces
+     * identity and capabilities; it should not erase how long the node has been idle or what it is
+     * currently running.
+     *
+     * @param prev The worker object this one replaces. A {@code null} is ignored.
+     */
+    public synchronized void inheritRuntimeState(Worker prev) {
+        if (prev == null) return;
+        this.idleStartTime = prev.idleStartTime;
+        this.currentLoad   = prev.currentLoad;
+        this.maxCap        = prev.maxCap;
+        this.currentJobId  = prev.currentJobId;
+        this.lastSeen      = Math.max(this.lastSeen, prev.lastSeen);
+        this.hostCpuPct    = prev.hostCpuPct;
+        this.hostMemPct    = prev.hostMemPct;
+        this.hostLoadX100  = prev.hostLoadX100;
+    }
+
     public long getIdleDuration() {
         if (idleStartTime == -1) return 0;
         return System.currentTimeMillis() - idleStartTime;
@@ -214,6 +253,28 @@ import java.util.List;
  *
  * @return The host string.
  */
+    /**
+ * Records the host vitals carried on a heartbeat reply.
+ *
+ * @param cpuPct  CPU utilisation 0&ndash;100, or -1 if the worker could not determine it.
+ * @param memPct  memory in use 0&ndash;100, or -1.
+ * @param loadX100 system load average &times;100, or -1.
+ */
+    public void setHostStats(int cpuPct, int memPct, int loadX100) {
+        this.hostCpuPct = cpuPct;
+        this.hostMemPct = memPct;
+        this.hostLoadX100 = loadX100;
+    }
+
+    /** @return host CPU utilisation 0&ndash;100, or -1 when the worker has not reported it. */
+    public int hostCpuPct() { return hostCpuPct; }
+
+    /** @return host memory in use 0&ndash;100, or -1 when unknown. */
+    public int hostMemPct() { return hostMemPct; }
+
+    /** @return system load average &times;100, or -1 when unknown. */
+    public int hostLoadX100() { return hostLoadX100; }
+
     public String host() { return host; }
     /**
  * Returns the port number on which the worker is listening.

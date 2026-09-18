@@ -196,12 +196,47 @@ class TitanClient:
     def _write_dag_manifest(self, dag_name, jobs, dag_payload=None, agent_run_id=None):
         """Writes job→DAG mapping to .titan_dag_manifest.json for dashboard discovery."""
         manifest_path = ".titan_dag_manifest.json"
+        lock_path = manifest_path + ".lock"
+        lock_file = None
         try:
+            # An atomic rename stops a reader seeing half a file, but it does NOT stop lost
+            # updates: two submissions can both read, both add their own jobs, and the second
+            # write silently discards the first's. Serialise the whole read-modify-write on an
+            # advisory file lock so concurrent submit_dag calls accumulate instead of clobbering.
+            try:
+                import fcntl as _fcntl
+                lock_file = open(lock_path, "w")
+                _fcntl.flock(lock_file.fileno(), _fcntl.LOCK_EX)
+            except (ImportError, OSError):
+                lock_file = None      # non-POSIX or lock unavailable: fall back to best effort
             import re as _re
             existing = {}
             if os.path.exists(manifest_path):
-                with open(manifest_path) as f:
-                    existing = _json.load(f)
+                try:
+                    with open(manifest_path) as f:
+                        existing = _json.load(f)
+                except ValueError:
+                    # A truncated or interleaved write leaves invalid JSON. Losing the mapping makes
+                    # the dashboard fall back to a job-ID naming heuristic that fragments DAGs, so
+                    # quarantine the bad file and start clean rather than failing silently forever.
+                    #
+                    # "Start clean" used to mean losing every pipeline name ever recorded — the
+                    # Master never receives the DAG name, so this file is its only record. Recover
+                    # from the rolling backup first and only fall back to empty if that is gone too.
+                    bad = manifest_path + ".corrupt"
+                    try:
+                        os.replace(manifest_path, bad)
+                        print(f"[SDK][WARN] Manifest was corrupt; moved to {bad}.")
+                    except OSError:
+                        pass
+                    existing = {}
+                    try:
+                        with open(manifest_path + ".bak") as bf:
+                            existing = _json.load(bf)
+                        print("[SDK][WARN] Recovered {} entries from the manifest backup."
+                              .format(len(existing)))
+                    except (OSError, ValueError):
+                        print("[SDK][WARN] No usable backup; pipeline history starts fresh.")
             import time as _time
             run_ts = int(_time.time() * 1000)
             for job in jobs:
@@ -230,11 +265,41 @@ class TitanClient:
                     job_key = job_str.split("|")[0]
                     replay_str = _re.sub(r'\[[^\]]*\]', '[]', job_str)
                     existing[f"__job_payload__DAG-{job_key}"] = replay_str
-            with open(manifest_path, 'w') as f:
+            # Write to a unique temp file and rename. os.replace is atomic on POSIX and Windows,
+            # so a reader never observes a half-written file and two concurrent submissions cannot
+            # interleave their output into one another's bytes.
+            # A rolling copy of the last good manifest. This file is the only place a pipeline
+            # NAME exists — the Master is told job IDs and nothing else — so one bad write must
+            # not be able to erase every run ever recorded.
+            if existing:
+                try:
+                    bak_tmp = "{}.bak.{}.tmp".format(manifest_path, os.getpid())
+                    with open(bak_tmp, 'w') as bf:
+                        _json.dump(existing, bf, indent=2)
+                    os.replace(bak_tmp, manifest_path + ".bak")
+                except OSError:
+                    pass
+
+            tmp_path = "{}.{}.tmp".format(manifest_path, os.getpid())
+            with open(tmp_path, 'w') as f:
                 _json.dump(existing, f, indent=2)
+            os.replace(tmp_path, manifest_path)
             self._push_manifest(existing)
         except Exception:
             pass
+        finally:
+            # Release the lock whichever way we leave, so one failed submission cannot wedge
+            # every later one.
+            if lock_file is not None:
+                try:
+                    import fcntl as _fcntl
+                    _fcntl.flock(lock_file.fileno(), _fcntl.LOCK_UN)
+                except (ImportError, OSError):
+                    pass
+                try:
+                    lock_file.close()
+                except OSError:
+                    pass
 
     def _push_manifest(self, manifest_data):
         """Pushes the manifest to the remote dashboard so it can group pipelines correctly."""

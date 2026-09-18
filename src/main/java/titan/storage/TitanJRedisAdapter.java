@@ -37,6 +37,18 @@ import java.util.*;
     private BufferedInputStream in;
     private boolean isConnected;
 
+    /** Successful reconnects since start. A climbing count means the link is flapping. */
+    private final java.util.concurrent.atomic.AtomicLong reconnects = new java.util.concurrent.atomic.AtomicLong();
+
+    /** @return Number of times this adapter has re-established a dropped connection. */
+    public long getReconnectCount() { return reconnects.get(); }
+
+    /** @return The configured store host, for display. */
+    public String getHost() { return host; }
+
+    /** @return The configured store port, for display. */
+    public int getPort() { return port; }
+
     /**
      * Constructs a new {@code TitanJRedisAdapter} instance.
      * This constructor initializes the adapter but does not establish a connection to Redis.
@@ -108,6 +120,7 @@ import java.util.*;
             this.out = socket.getOutputStream();
             this.in  = new BufferedInputStream(socket.getInputStream());
             this.isConnected = true;
+            reconnects.incrementAndGet();
             System.out.println("[INFO][RECONNECT] Re-connected to Redis.");
         } catch (IOException e) {
             this.isConnected = false;

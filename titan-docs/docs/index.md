@@ -7,7 +7,7 @@
 [![GitHub Repo](https://img.shields.io/badge/GitHub-View_Repository-181717?logo=github)](https://github.com/ramn51/titan-orchestrator) ![Status: Experimental](https://img.shields.io/badge/Status-Experimental_Research-blue) ![Built by: 1 Developer](https://img.shields.io/badge/Solo_Project-Ram_Narayanan-brightgreen)
 
 
-**Titan is a self-hosted distributed runtime for DAGs, services, and agentic workflows, and it ships as a single JAR with zero external dependencies. You can define your jobs in YAML or Python, build them visually in the browser, or even describe them in plain English through an AI client. Titan then handles capability routing and dependency execution across your cluster, running everything from a nightly ETL pipeline to a multi-agent LLM workflow.**
+**Titan is a self-hosted distributed runtime for DAGs, services, and agentic workflows, and it ships as a single **129 KB** JAR with zero external dependencies. You can define your jobs in YAML or Python, build them visually in the browser, or even describe them in plain English through an AI client. Titan then handles capability routing and dependency execution across your cluster, running everything from a nightly ETL pipeline to a multi-agent LLM workflow.**
 
 !!! tip "Ready to dive in?"
     Skip the reading and jump straight into the code. Follow our **[5-Minute Quickstart](getting-started.md)** to run your first distributed task, or view the **[Python SDK Reference](reference/sdk.md)**.
@@ -37,6 +37,11 @@ Every pipeline submitted to the cluster, via CLI, SDK, YAML, or the visual Const
 ![DAG Visualizer](screenshots/visualizer_overview.png)
 
 ---
+
+!!! tip "Prefer slides?"
+    [**Titan Runtime, in 31 slides**](deck.html) covers the same ground as this site at a tenth of
+    the length: why it exists, what it does, where it wins and where it plainly does not. Worth
+    skimming first if you are deciding whether to read further.
 
 ## Architecture Overview
 
@@ -167,13 +172,29 @@ Titan is designed to grow with your system's complexity:
 ## Built-In Dashboard
 Titan includes a lightweight Python Flask dashboard to visualize cluster health, monitor worker load, and stream stdout/stderr from distributed jobs in real-time.
 
-The dashboard ships with three views:
+The dashboard ships with five views, in two groups.
 
-- **DAG Visualizer**: live graph of any running or completed pipeline with real-time status, logs, HITL approval, and workspace file downloads
+**Your pipelines:**
+
+- **DAG Visualizer**: live graph of any running or completed pipeline with status, logs, HITL approval, and workspace file downloads *(live status is being reworked, see the note on that page)*
 - **DAG Constructor**: browser-based drag-and-drop builder for designing and deploying pipelines without writing code
 - **Agent Runs**: groups multi-stage agent invocations into a single timeline row so you can track a full agent loop at a glance instead of hunting through individual DAG entries
 
+**The system running them**, see [Observability](#observability) below:
+
+- **Execution Timeline**: every dispatch on a real time axis, with the wait before each job separated from its execution
+- **Cluster & Control Plane**: the scheduler's own state: what is queued and why, where dispatch time goes, worker and store health
+
 > For the dashboard you will need Flask as external dependency (The core engine has zero dependencies, this is an extension)
+
+!!! note "The dashboard does not have to run on the Master"
+    It is a client of the Master, talking to it over the same TCP protocol as any other client, so
+    it can run on your laptop while the cluster runs elsewhere. Point it at the Master with
+    `TITAN_MASTER_HOST` and `TITAN_MASTER_PORT` (defaults `127.0.0.1` and `9090`):
+
+    ```bash
+    TITAN_MASTER_HOST=10.0.0.5 python3 perm_files/server_dashboard.py
+    ```
 
 ### DAG Visualizer
 
@@ -197,6 +218,66 @@ The Constructor also auto-generates the equivalent **Python SDK** and **YAML** d
 Monitor remote worker execution directly from the control plane UI in real-time.
 
 ![Log Streaming](screenshots/Log_Stream.png)
+
+## Observability { #observability }
+
+The views above answer *what ran*. These two answer *why it took as long as it did*, and they
+need no metrics stack, exporter or Grafana. Everything is sampled inside the Master and served
+from the same process.
+
+### Execution Timeline
+
+Every job dispatch on an absolute time axis. Each bar records when the job became eligible and
+when it actually started, so the time it spent queued is shown separately from the time it spent
+running. Those two are what a status view cannot separate.
+
+What it gives you:
+
+- **Where the wall clock went**: queued versus executing, per job
+- **Real parallelism**: bars that overlap ran at the same moment, so you can see whether work
+  genuinely ran concurrently
+- **The critical path**: the longest chain of dependent jobs, and what share of the run it
+  accounts for. A high share means adding workers will not help; a low share means it will
+- **Retries as separate attempts**: a job retried twice draws three bars rather than one
+- **Failure reasons**: script failure, a service that never bound its port, and a worker that
+  never replied are distinguished, because they need different fixes
+
+Spans are held in memory and also written to disk for 7 days, so a post-mortem survives a Master
+restart.
+
+
+![Execution Timeline](screenshots/timeline_overview.png)
+
+Full reference: **[Execution Timeline](visualizer/execution-timeline.md)**
+
+### Cluster & Control Plane
+
+The scheduler's own state and vitals, on two sub-tabs: **Live** for what is happening now,
+**Analytics** for how it has been trending.
+
+What it gives you:
+
+- **Why work is not moving**: pending reasons in the scheduler's own words, capability dead ends
+  with the command that fixes them, and the four pre-dispatch lanes (delayed, blocked, ready,
+  parked) that a single "pending" count cannot distinguish
+- **Where the scheduler's own time goes**: the dispatch loop is serialized, and it is broken down
+  into routing, worker selection, bookkeeping, store writes and the network hand-off, with a share
+  table
+- **Cluster health**: topology with per-node slot occupancy and host CPU / memory / load,
+  heartbeat round-trip, saturation, failure rate, store read and write latency, and scaling
+  history with the reason recorded for every scale-up and descale
+- **Long-running work**: a roster of live services with the address a caller would dial, uptime
+  and host node; services appear nowhere else, since they have no duration
+- **Trends**: success rate, duration distribution, queue-wait percentiles, per-worker
+  utilisation, queue wait by declared priority, and pipeline duration across runs
+- **A demo runner**: seven preset workflows that put the cluster into a known state, for showing
+  the dashboard to someone
+
+
+
+![Cluster & Control Plane](screenshots/cluster_live_diagnostics.png)
+
+Full reference: **[Cluster & Control Plane](visualizer/control-plane.md)**
 
 
 ## Demos
@@ -338,10 +419,10 @@ Titan runs locally out of the box. When you're ready to move to the cloud:
 - [ ] **Containerized Execution:** Add support for Docker execution drivers to provide true filesystem isolation (currently utilizing Process-Level isolation).
 - [x] **Service readiness gate:** A service deploy completes only once its port accepts connections, so downstream DAG nodes never race a slow-booting server. Fails fast if the port never binds.
 - [x] **Service discovery (address):** The Master records each live service's real host and port; `get_service_address()` / `get_service_url()` / `list_services()` resolve it at runtime instead of hardcoding.
-- [ ] **Service health checking:** Periodic TCP/HTTP probes per service, crash-loop backoff with a restart ceiling, and restart state surfaced to the dashboard. See [Phase 2 spec](architecture/service-health.md).
-- [ ] **Logical service names & env injection:** Stable names that survive redeploys, plus `TITAN_SVC_<NAME>_HOST/PORT` injected into any job that declares `needs_services`. See [Phase 3 spec](architecture/service-discovery.md).
+- [ ] **Service health checking:** Periodic TCP/HTTP probes per service, crash-loop backoff with a restart ceiling, and restart state surfaced to the dashboard.
+- [ ] **Logical service names & env injection:** Stable names that survive redeploys, plus `TITAN_SVC_<NAME>_HOST/PORT` injected into any job that declares `needs_services`.
 - [ ] **Cluster Autoscaler Webhooks:** Allow Titan to trigger external APIs (e.g., Azure VM Scale Sets, AWS EC2) to provision bare-metal compute automatically when queues saturate.
-- [ ] **Opt-in TTL heartbeat:** Offer push-style worker liveness via TitanStore TTL keys (worker refreshes an expiring key; Master detects absence) as an alternative to the current Master-dial loop. Requires exposing a `SETEX`-style command over the wire, and would make TitanStore required for liveness — so it stays opt-in, with the dial loop remaining the store-less default.
+- [ ] **Opt-in TTL heartbeat:** Offer push-style worker liveness via TitanStore TTL keys (worker refreshes an expiring key; Master detects absence) as an alternative to the current Master-dial loop. Requires exposing a `SETEX`-style command over the wire, and would make TitanStore required for liveness, so it stays opt-in, with the dial loop remaining the store-less default.
 - [x] **Human-in-the-Loop (HITL):** Pause DAG execution and wait for human Approve/Reject via the Dashboard. Supports per-gate timeouts and automatic gate injection via the SDK. See [HITL Pipelines](examples/hitl.md).
 
 

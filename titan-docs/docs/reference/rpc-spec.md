@@ -192,7 +192,29 @@ The `SchedulerServer` acts as the primary ingress point for the Titan cluster. I
 | `OP_REGISTER` | `workerPort||capability||isPerm` | `8081||GPU||true` | Registers a new worker node in the Scheduler's internal map. |
 | `OP_KILL_WORKER` | `HOST|PORT` | `192.168.1.5|8081` | Sends a fatal shutdown signal to a specific Worker JVM. |
 | `OP_STATS` | *(Empty / Ignored)* | ` ` | Returns cluster statistics as a formatted string. |
-| `OP_STATS_JSON` | *(Empty / Ignored)* | ` ` | Returns cluster statistics serialized as a JSON string. |
+| `OP_STATS_JSON` | *(Discriminator, see below)* | ` ` | Returns cluster state serialized as a JSON string. |
+
+### `OP_STATS_JSON` discriminators
+
+`OP_STATS_JSON` (`0x09`) originally ignored its payload. Rather than spend an opcode per view, the
+payload is now a discriminator string, so the whole observability surface costs **zero** new
+opcodes. An unrecognised payload falls through to the original cluster-stats response, so older
+clients are unaffected.
+
+| Payload | Returns |
+|---|---|
+| *(empty)* | Cluster stats: workers, their capabilities, load, recent history, hosted services |
+| `metrics` | Sampled control-plane series and instantaneous panels — see the signal reference in [Cluster & Control Plane](../visualizer/control-plane.md#signal-reference) |
+| `metrics:mid`, `metrics:coarse` | The same, at the 10s or 100s resolution tier instead of 1s |
+| `timeline:<filter>:<limit>` | Spans from the in-memory ring, newest first. `filter` is a job-ID substring; empty matches all |
+| `board:<limit>` | The four pre-dispatch holding areas: delayed, blocked, ready, parked |
+| `status:<id1>,<id2>,…` | Bulk job status, resolved from live state then the store. Flat `{id: status}` |
+| `history:<fromMs>:<toMs>:<filter>:<limit>` | Spans from persisted JSONL, sorted by start time before the limit is applied |
+| `history_stats` | Persistence health: day files, bytes, retention window, queued writes, write errors |
+
+!!! note "Match order matters"
+    `history_stats` must be matched before the `history` prefix, or the exact request returns span
+    data instead of statistics.
 | `OP_CLEAN_STATS` | *(Empty / Ignored)* | ` ` | Clears the `LiveServiceMap` to remove stale dashboard data. |
 
 ### Job & DAG Execution

@@ -68,6 +68,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Troubleshooting: troubleshooting.md
 
   - Using Titan:
       - Ways to Define a Pipeline:
@@ -91,6 +92,8 @@ nav:
   - Dashboard:
       - DAG Visualizer: visualizer/overview.md
       - Monitoring & Logs: visualizer/monitoring.md
+      - Execution Timeline: visualizer/execution-timeline.md
+      - Cluster & Control Plane: visualizer/control-plane.md
       - HITL Approval: visualizer/hitl-approval.md
       - Workspace Files: visualizer/workspace-files.md
       - Agent Runs: visualizer/agent-runs.md
@@ -119,8 +122,6 @@ nav:
       - System Design: architecture/design.md
       - Execution Flows: architecture/execution-flows.md
       - Fault Tolerance & Recovery: architecture/fault-tolerance.md
-      - Service Health (Phase 2): architecture/service-health.md
-      - Service Discovery (Phase 3): architecture/service-discovery.md
       - TitanStore & IPC: architecture/internals.md
       - How Titan Compares: comparison.md
 

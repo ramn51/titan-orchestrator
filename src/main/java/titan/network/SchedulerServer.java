@@ -374,9 +374,64 @@ import titan.network.TitanProtocol.TitanPacket;
                 String runReq = (runParts.length > 1) ? runParts[1] : "GENERAL";
                 return handleRunScript(runFile, runReq);
 
-            case TitanProtocol.OP_STATS_JSON:
+            case TitanProtocol.OP_STATS_JSON: {
+                // The payload was previously ignored, so using it as a discriminator costs no
+                // opcode and is backward compatible: an empty payload still returns cluster stats.
+                String statsArg = payload == null ? "" : payload.trim();
+                // Exact match first: "history_stats" also startsWith("history").
+                if (statsArg.equals("history_stats")) {
+                    return scheduler.getSpanHistoryStatsJSON();
+                }
+                if (statsArg.startsWith("history")) {
+                    // "history:<fromMs>:<toMs>:<filter>:<limit>" — reads persisted JSONL, not memory.
+                    String[] hp = statsArg.split(":", 5);
+                    long now = System.currentTimeMillis();
+                    long from = now - 24L * 3600 * 1000, to = now;
+                    String hf = "";
+                    int hl = 1000;
+                    try {
+                        if (hp.length > 1 && !hp[1].isEmpty()) from = Long.parseLong(hp[1].trim());
+                        if (hp.length > 2 && !hp[2].isEmpty()) to = Long.parseLong(hp[2].trim());
+                        if (hp.length > 3) hf = hp[3].trim();
+                        if (hp.length > 4 && !hp[4].isEmpty()) hl = Integer.parseInt(hp[4].trim());
+                    } catch (NumberFormatException ignored) { /* keep defaults */ }
+                    return scheduler.getSpanHistoryJSON(from, to, hf, hl);
+                }
+                if (statsArg.startsWith("status:")) {
+                    // "status:<id1>,<id2>,..." — bulk resolve, uncapped, straight from the store.
+                    String idList = statsArg.substring("status:".length());
+                    return scheduler.getBulkStatusJSON(java.util.Arrays.asList(idList.split(",")));
+                }
+                if (statsArg.startsWith("board")) {
+                    // "board" | "board:<limit>"
+                    String[] bParts = statsArg.split(":", 2);
+                    int bLimit = 50;
+                    if (bParts.length > 1) {
+                        try { bLimit = Integer.parseInt(bParts[1].trim()); }
+                        catch (NumberFormatException ignored) { /* default */ }
+                    }
+                    return scheduler.getQueueBoardJSON(bLimit);
+                }
+                if (statsArg.startsWith("metrics")) {
+                    // "metrics" | "metrics:mid" | "metrics:coarse"
+                    String[] mParts = statsArg.split(":", 2);
+                    return scheduler.getMetricsJSON(mParts.length > 1 ? mParts[1].trim() : "fine");
+                }
+                if (statsArg.startsWith("timeline")) {
+                    // "timeline" | "timeline:<dag-filter>" | "timeline:<dag-filter>:<limit>"
+                    String[] tParts = statsArg.split(":", 3);
+                    String dagFilter = tParts.length > 1 ? tParts[1] : "";
+                    int tLimit = 500;
+                    if (tParts.length > 2) {
+                        try { tLimit = Integer.parseInt(tParts[2].trim()); }
+                        catch (NumberFormatException ignored) { /* keep the default */ }
+                    }
+                    System.out.println("[INFO] Generating timeline (filter='" + dagFilter + "', limit=" + tLimit + ")");
+                    return scheduler.getTimelineJSON(dagFilter, tLimit);
+                }
                 System.out.println("[INFO] Generating JSON Stats...");
                 return scheduler.getSystemStatsJSON();
+            }
 
             case TitanProtocol.OP_CLEAN_STATS:
                 scheduler.getLiveServiceMap().clear();

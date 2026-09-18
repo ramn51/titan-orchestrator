@@ -8,6 +8,7 @@
 
 import socket
 import struct
+import threading
 import json
 import time
 import base64
@@ -21,8 +22,11 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__, template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
 
 # --- CONFIGURATION ---
-SCHEDULER_HOST = "127.0.0.1"
-SCHEDULER_PORT = 9090
+# The dashboard is a client of the Master, not a part of it — it can run on a laptop while the
+# Master runs elsewhere. These were hardcoded to loopback, which silently limited it to the
+# Master's own host. Defaults are unchanged, so an existing single-host setup behaves identically.
+SCHEDULER_HOST = os.environ.get("TITAN_MASTER_HOST", "127.0.0.1")
+SCHEDULER_PORT = int(os.environ.get("TITAN_MASTER_PORT", "9090"))
 
 # --- TITAN PROTOCOL CONSTANTS ---
 CURRENT_VERSION = 1
@@ -570,6 +574,574 @@ def index():
                            status_color=status_color, status_text=status_text)
 
 
+def _load_manifest():
+    try:
+        with open('.titan_dag_manifest.json') as mf:
+            return json.load(mf)
+    except (OSError, ValueError):
+        return {}
+
+
+def _jobs_of_dag(dag):
+    """The job IDs belonging to a pipeline name.
+
+    The Master only substring-matches on job ID, and a DAG's name is usually nothing like its
+    job IDs, so the name has to be resolved here, where the manifest lives.
+    """
+    return {k for k, v in _load_manifest().items()
+            if isinstance(v, dict) and v.get('dag') == dag}
+
+
+# =======================================================================
+# Demo runner — preset workflows for showing the dashboard to someone live
+# =======================================================================
+# This is the one endpoint that MUTATES the cluster, and the dashboard has no authentication,
+# so the blast radius is deliberately fenced in:
+#   * only the presets below can run — the request names a preset, it never carries a script,
+#     a job spec, or a command, so there is nothing to inject
+#   * the scripts are short sleeps and deliberate failures written by this file
+#   * one run at a time, so it cannot be used to pile on load
+#   * set TITAN_DASHBOARD_DEMO=0 to remove the endpoint's ability to run at all
+DEMO_ENABLED = os.environ.get('TITAN_DASHBOARD_DEMO', '1') not in ('0', 'false', 'False')
+DEMO_DIR = '/tmp/titan_demo_presets'
+
+# Each preset is (pipeline name, builder). A builder returns a list of (job_id, script, parents,
+# priority, requirement) tuples — plain data, so nothing from the request reaches a job spec.
+DEMO_PRESETS = {
+    'fanout': {
+        'label': 'Fan-out / fan-in',
+        'shows': 'parallelism, the blocked lane, a real critical path',
+        'seconds': 25,
+    },
+    'saturate': {
+        'label': 'Saturation burst',
+        'shows': 'queue wait, wave-shaped starvation, scaling pressure',
+        'seconds': 45,
+    },
+    'failures': {
+        'label': 'Failures and retries',
+        'shows': 'retry spans, the dead-letter queue, red failure reasons',
+        'seconds': 60,
+    },
+    'deadend': {
+        'label': 'Capability dead end',
+        'shows': 'the parked lane, pending reasons, a red capability gap',
+        'seconds': 10,
+    },
+    'priority': {
+        'label': 'Priority test',
+        'shows': 'whether a high-priority job really jumps a saturated queue',
+        'seconds': 30,
+    },
+    'deep': {
+        'label': 'Deep chain',
+        'shows': 'genuine graph depth and dependency-release latency',
+        'seconds': 30,
+    },
+    'service': {
+        'label': 'Deploy a service',
+        'shows': 'the services panel, readiness gating, address discovery',
+        'seconds': 30,
+    },
+}
+
+_demo_state = {'running': False, 'preset': None, 'started': 0, 'jobs': [],
+               'pipeline': None, 'error': None, 'finished': 0}
+
+
+def _demo_script(client, name, body):
+    if not os.path.isdir(DEMO_DIR):
+        os.makedirs(DEMO_DIR, exist_ok=True)
+    path = os.path.join(DEMO_DIR, name + '.py')
+    with open(path, 'w') as f:
+        f.write(body)
+    client.deploy_script(path)
+    return path
+
+
+def _demo_jobs(client, preset, tag):
+    """Build the job list for a preset. Returns (pipeline_name, [TitanJob])."""
+    from titan_sdk import TitanJob
+
+    quick = _demo_script(client, 'demo_quick', "import time\ntime.sleep(0.4)\nprint('ok')\n")
+    med = _demo_script(client, 'demo_med', "import time\ntime.sleep(1.5)\nprint('ok')\n")
+    heavy = _demo_script(client, 'demo_heavy', "import time\ntime.sleep(3.0)\nprint('ok')\n")
+
+    if preset == 'fanout':
+        jobs = [TitanJob(job_id='demo%s-seed' % tag, filename=quick)]
+        leaves = []
+        for i in range(8):
+            jid = 'demo%s-map%d' % (tag, i)
+            leaves.append(jid)
+            jobs.append(TitanJob(job_id=jid, filename=med, parents=['demo%s-seed' % tag]))
+        jobs.append(TitanJob(job_id='demo%s-reduce' % tag, filename=heavy, parents=leaves))
+        return 'demo-fanout', jobs
+
+    if preset == 'saturate':
+        return 'demo-saturation', [
+            TitanJob(job_id='demo%s-burst%d' % (tag, i), filename=heavy) for i in range(24)]
+
+    if preset == 'failures':
+        conn = _demo_script(client, 'demo_err_conn',
+                            "raise ConnectionError('postgres refused connection on 5432')\n")
+        code = _demo_script(client, 'demo_err_code', "import sys\nsys.exit(137)\n")
+        imp = _demo_script(client, 'demo_err_import', "import a_module_that_is_not_installed\n")
+        return 'demo-failures', [
+            TitanJob(job_id='demo%s-ok1' % tag, filename=quick),
+            TitanJob(job_id='demo%s-ok2' % tag, filename=quick),
+            TitanJob(job_id='demo%s-db' % tag, filename=conn),
+            TitanJob(job_id='demo%s-oom' % tag, filename=code),
+            TitanJob(job_id='demo%s-import' % tag, filename=imp),
+        ]
+
+    if preset == 'deadend':
+        return 'demo-dead-end', [
+            TitanJob(job_id='demo%s-needs-tpu' % tag, filename=quick, requirement='TPU')]
+
+    if preset == 'priority':
+        jobs = [TitanJob(job_id='demo%s-bulk%d' % (tag, i), filename=heavy, priority=1)
+                for i in range(16)]
+        # Submitted last but at the top priority: it should overtake the bulk jobs still queued.
+        jobs.append(TitanJob(job_id='demo%s-urgent' % tag, filename=quick, priority=9))
+        return 'demo-priority', jobs
+
+    if preset == 'service':
+        # A real HTTP server, so readiness probing has something to actually connect to. The port
+        # is derived from the tag, not from the request, so it cannot be chosen by a caller.
+        port = 9700 + (int(tag) % 80)
+        folder = os.path.join(DEMO_DIR, 'demo_svc_%s' % tag)
+        os.makedirs(folder, exist_ok=True)
+        with open(os.path.join(folder, 'server.py'), 'w') as f:
+            f.write("from http.server import BaseHTTPRequestHandler, HTTPServer\n"
+                    "class H(BaseHTTPRequestHandler):\n"
+                    "    def do_GET(s):\n"
+                    "        s.send_response(200); s.end_headers(); s.wfile.write(b'titan demo service')\n"
+                    "    def log_message(s, *a): pass\n"
+                    "httpd = HTTPServer(('0.0.0.0', %d), H)\n"
+                    "print('bound', flush=True)\n"
+                    "httpd.serve_forever()\n" % port)
+        client.upload_project_folder(folder)
+        zip_name = os.path.basename(folder) + '.zip'
+        return 'demo-service', [TitanJob(job_id='demo%s-svc' % tag,
+                                         filename='%s/server.py' % zip_name,
+                                         job_type='SERVICE', port=port, is_archive=True)]
+
+    if preset == 'deep':
+        jobs, prev = [], None
+        for lvl in range(8):
+            jid = 'demo%s-lvl%d' % (tag, lvl)
+            jobs.append(TitanJob(job_id=jid, filename=med, parents=[prev] if prev else []))
+            prev = jid
+        return 'demo-deep-chain', jobs
+
+    return None, []
+
+
+def _demo_worker(preset, tag):
+    """Submit the preset off the request thread so the HTTP call returns straight away."""
+    try:
+        from titan_sdk import TitanClient
+        client = TitanClient()
+        pipeline, jobs = _demo_jobs(client, preset, tag)
+        if not jobs:
+            _demo_state['error'] = 'unknown preset'
+            return
+        _demo_state['pipeline'] = pipeline
+        _demo_state['jobs'] = ['DAG-' + j.id for j in jobs]
+        client.submit_dag(pipeline, jobs)
+    except Exception as exc:                       # a demo must never take the dashboard down
+        _demo_state['error'] = '{}: {}'.format(type(exc).__name__, exc)
+    finally:
+        _demo_state['running'] = False
+        _demo_state['finished'] = int(time.time() * 1000)
+
+
+@app.route('/api/demo/presets')
+def api_demo_presets():
+    """What the Demo runner can run, for the picker."""
+    return jsonify({
+        "enabled": DEMO_ENABLED,
+        "presets": [dict(id=k, **v) for k, v in DEMO_PRESETS.items()],
+        "state": {k: _demo_state[k] for k in ('running', 'preset', 'started', 'pipeline', 'error')},
+    })
+
+
+@app.route('/api/demo/run', methods=['POST'])
+def api_demo_run():
+    """Submit one preset workflow. The body names a preset and nothing else."""
+    if not DEMO_ENABLED:
+        return jsonify({"error": "Demo runner is disabled (TITAN_DASHBOARD_DEMO=0)"}), 403
+    preset = (request.get_json(silent=True) or {}).get('preset') or request.args.get('preset') or ''
+    preset = preset.strip()
+    if preset not in DEMO_PRESETS:
+        return jsonify({"error": "Unknown preset"}), 400
+    if _demo_state['running']:
+        return jsonify({"error": "A demo is already being submitted — wait for it to finish"}), 409
+
+    _demo_state.update(running=True, preset=preset, started=int(time.time() * 1000),
+                       jobs=[], pipeline=None, error=None)
+    tag = str(int(time.time()) % 100000)
+    threading.Thread(target=_demo_worker, args=(preset, tag), daemon=True).start()
+    return jsonify({"ok": True, "preset": preset, "label": DEMO_PRESETS[preset]['label'],
+                    "expect_seconds": DEMO_PRESETS[preset]['seconds']})
+
+
+@app.route('/api/demo/status')
+def api_demo_status():
+    """Live progress of the last demo submitted, by asking the store for each job's status."""
+    jobs = list(_demo_state['jobs'])
+    counts = {"COMPLETED": 0, "RUNNING": 0, "PENDING": 0, "FAILED": 0, "DEAD": 0, "UNKNOWN": 0}
+    if jobs:
+        # The bulk payload is a flat {id: status} map; fetch_bulk_status already chunks it to stay
+        # under the frame cap, so reuse it rather than re-implementing the call.
+        statuses = fetch_bulk_status(jobs)
+        for j in jobs:
+            st = (statuses.get(j) or 'UNKNOWN').upper()
+            counts[st if st in counts else 'UNKNOWN'] += 1
+    return jsonify({
+        "running": _demo_state['running'], "preset": _demo_state['preset'],
+        "pipeline": _demo_state['pipeline'], "error": _demo_state['error'],
+        "started": _demo_state['started'], "total": len(jobs), "counts": counts,
+        "done": counts['COMPLETED'] + counts['FAILED'] + counts['DEAD'],
+    })
+
+
+@app.route('/api/dag_names')
+def api_dag_names():
+    """DAG names known to the manifest, newest first, for the timeline picker."""
+    manifest = _load_manifest()
+    if not manifest:
+        return jsonify({"dags": []})
+    seen = {}
+    for v in manifest.values():
+        if not (isinstance(v, dict) and v.get('dag')):
+            continue
+        name, ts = v['dag'], v.get('run_ts', 0)
+        e = seen.setdefault(name, {"name": name, "run_ts": 0, "jobs": 0, "stamps": set()})
+        e['jobs'] += 1
+        e['run_ts'] = max(e['run_ts'], ts)
+        if ts:
+            e['stamps'].add(ts)
+    out = []
+    for e in seen.values():
+        # Jobs submitted together share a run_ts, so distinct stamps ≈ distinct runs. This is the
+        # count a reader expects; the job total spans every run the manifest has ever seen.
+        out.append({"name": e['name'], "run_ts": e['run_ts'],
+                    "jobs": e['jobs'], "runs": max(len(e['stamps']), 1)})
+    out.sort(key=lambda d: -d['run_ts'])
+    out = out[:80]
+
+    # The manifest is a submission log that lives forever on this side; spans live in the
+    # Master's ring (cleared on restart) and on disk (retained a few days). So a pipeline can be
+    # in the picker with nothing left to draw. Say which, instead of rendering a blank chart.
+    job_to_dag = {k: v['dag'] for k, v in manifest.items()
+                  if isinstance(v, dict) and v.get('dag')}
+    mem_counts, disk_counts = {}, {}
+    now = int(time.time() * 1000)
+    for target, payload in ((mem_counts, "timeline::5000"),
+                            (disk_counts, "history:{}:{}::20000".format(
+                                now - 7 * 24 * 3600 * 1000, now))):
+        raw = titan_communicate(OP_STATS_JSON, payload)
+        if not raw:
+            continue
+        try:
+            start = raw.find('{')
+            spans = json.loads(raw[start:]).get('spans', []) if start != -1 else []
+        except json.JSONDecodeError:
+            continue
+        for sp in spans:
+            name = job_to_dag.get(sp.get('id'))
+            if name:
+                target[name] = target.get(name, 0) + 1
+    for e in out:
+        e['spans_memory'] = mem_counts.get(e['name'], 0)
+        e['spans_disk'] = disk_counts.get(e['name'], 0)
+        e['spans'] = max(e['spans_memory'], e['spans_disk'])
+    return jsonify({"dags": out})
+
+
+@app.route('/api/history')
+def api_history():
+    """Persisted spans from disk — survives Master restarts, unlike the in-memory ring."""
+    now = int(time.time() * 1000)
+    try:
+        hours = max(1, min(int(request.args.get('hours', 24)), 24 * 30))
+    except (TypeError, ValueError):
+        hours = 24
+    try:
+        limit = max(10, min(int(request.args.get('limit', 2000)), 20000))
+    except (TypeError, ValueError):
+        limit = 2000
+    f = (request.args.get('filter') or '').strip()
+
+    # Same resolution as /api/timeline: a pipeline NAME is not a job-id substring, so passing it
+    # through as a filter matches nothing. Resolve it here and filter on the returned ids.
+    dag = (request.args.get('dag') or '').strip()
+    wanted = None
+    if dag:
+        wanted = _jobs_of_dag(dag)
+        if not wanted:
+            wanted = None
+            f = f or dag
+
+    raw = titan_communicate(OP_STATS_JSON, "history:{}:{}:{}:{}".format(
+        now - hours * 3600 * 1000, now, f, limit))
+    if not raw:
+        return jsonify({"error": "Master unreachable on :9090", "spans": [], "count": 0})
+    try:
+        start = raw.find('{')
+        data = json.loads(raw[start:]) if start != -1 else {"spans": [], "count": 0}
+        if wanted is not None:
+            data['spans'] = [sp for sp in data.get('spans', []) if sp.get('id') in wanted]
+            data['count'] = len(data['spans'])
+            data['dag'] = dag
+        return jsonify(data)
+    except json.JSONDecodeError as e:
+        return jsonify({"error": "Malformed history payload: {}".format(e), "spans": [], "count": 0})
+
+
+@app.route('/api/history_stats')
+def api_history_stats():
+    """What is on disk: day files, bytes, retention window, write errors."""
+    raw = titan_communicate(OP_STATS_JSON, "history_stats")
+    if not raw:
+        return jsonify({"error": "Master unreachable on :9090"})
+    try:
+        start = raw.find('{')
+        return jsonify(json.loads(raw[start:]) if start != -1 else {})
+    except json.JSONDecodeError as e:
+        return jsonify({"error": str(e)})
+
+
+@app.route('/api/job_dag_map')
+def api_job_dag_map():
+    """job id -> pipeline name and submission stamp, so Analytics can group spans into runs."""
+    manifest = _load_manifest()
+    if not manifest:
+        return jsonify({"map": {}, "runs": {}})
+    ok = {k: v for k, v in manifest.items() if isinstance(v, dict) and v.get('dag')}
+    # run_ts is stamped per submission, so it separates two runs of the SAME pipeline exactly.
+    # Grouping by a time gap instead merges back-to-back runs into one, which understates the
+    # run count and inflates the wall clock.
+    return jsonify({"map": {k: v['dag'] for k, v in ok.items()},
+                    "runs": {k: v.get('run_ts', 0) for k, v in ok.items()}})
+
+
+@app.route('/api/board')
+def api_board():
+    """Contents of the four pre-dispatch holding areas: delayed, blocked, ready, parked."""
+    try:
+        limit = max(5, min(int(request.args.get('limit', 40)), 200))
+    except (TypeError, ValueError):
+        limit = 40
+    raw = titan_communicate(OP_STATS_JSON, "board:{}".format(limit))
+    if not raw:
+        return jsonify({"error": "Master unreachable on :9090"})
+    try:
+        start = raw.find('{')
+        return jsonify(json.loads(raw[start:]) if start != -1 else {})
+    except json.JSONDecodeError as e:
+        return jsonify({"error": "Malformed board payload: {}".format(e)})
+
+
+@app.route('/api/export')
+def api_export():
+    """A shareable snapshot of the cluster's important state.
+
+    fmt=md  -> a human-readable report you can paste into an issue or a message
+    fmt=json -> the raw stats + metrics, for tooling
+    """
+    fmt = (request.args.get('fmt') or 'md').strip().lower()
+    stats_raw = titan_communicate(OP_STATS_JSON, "")
+    metrics_raw = titan_communicate(OP_STATS_JSON, "metrics")
+    if not stats_raw or not metrics_raw:
+        return "Master unreachable on :9090", 503, {'Content-Type': 'text/plain'}
+    try:
+        stats = json.loads(stats_raw[stats_raw.find('{'):])
+        m = json.loads(metrics_raw[metrics_raw.find('{'):])
+    except json.JSONDecodeError as e:
+        return "Malformed payload: {}".format(e), 502, {'Content-Type': 'text/plain'}
+
+    stamp = time.strftime('%Y-%m-%d %H:%M:%S')
+    fname = "titan-cluster-{}".format(time.strftime('%Y%m%d-%H%M%S'))
+
+    if fmt == 'json':
+        body = json.dumps({"generated_at": stamp, "stats": stats, "metrics": m}, indent=2)
+        return body, 200, {'Content-Type': 'application/json',
+                           'Content-Disposition': 'attachment; filename="{}.json"'.format(fname)}
+
+    st = m.get('store', {})
+    qw = m.get('queue_wait', {})
+    rt = m.get('retries', {})
+    pk = m.get('parked', {})
+    dlq = m.get('dlq', {})
+    disp = sorted(p[1] for p in m.get('dispatch', []))
+
+    def pctl(arr, q):
+        return arr[min(len(arr) - 1, max(0, int(q * len(arr)) - 1))] if arr else 0
+
+    L = []
+    L.append("# Titan cluster report")
+    L.append("")
+    L.append("Generated {}".format(stamp))
+    L.append("")
+    L.append("## Fleet")
+    L.append("")
+    L.append("| Node | Capability | Slots | Kind | Active job | Services |")
+    L.append("|---|---|---|---|---|---|")
+    for w in sorted(stats.get('workers', []), key=lambda x: x['port']):
+        L.append("| `{}:{}` | {} | {} | {} | {} | {} |".format(
+            w.get('host', '?'), w['port'], w.get('capabilities', ''), w.get('load', ''),
+            'permanent' if w.get('permanent') else 'ephemeral',
+            w.get('active_job') or '—', len(w.get('services') or [])))
+    L.append("")
+    L.append("## Performance")
+    L.append("")
+    L.append("| Layer | p50 | p99 | max | samples |")
+    L.append("|---|---|---|---|---|")
+    L.append("| Queue wait (submit → dispatch) | {}ms | {}ms | {}ms | {} |".format(
+        qw.get('p50', 0), qw.get('p99', 0), qw.get('max', 0), qw.get('n', 0)))
+    L.append("| Dispatch placement | {}ms | {}ms | {}ms | {} |".format(
+        pctl(disp, .5), pctl(disp, .99), disp[-1] if disp else 0, len(disp)))
+    L.append("| Store write | {}ms | {}ms | {}ms | {} |".format(
+        st.get('latency_p50', 0), st.get('latency_p99', 0), st.get('latency_max', 0), st.get('ops', 0)))
+    L.append("| Store read | {}ms | {}ms | — | {} |".format(
+        st.get('read_p50', 0), st.get('read_p99', 0), st.get('reads', 0)))
+    for k, v in (m.get('heartbeat') or {}).items():
+        rt_vals = sorted(p[1] for p in v)
+        L.append("| Heartbeat `{}` | {}ms | {}ms | {}ms | {} |".format(
+            k, pctl(rt_vals, .5), pctl(rt_vals, .99), rt_vals[-1] if rt_vals else 0, len(rt_vals)))
+    L.append("")
+    L.append("## TitanStore")
+    L.append("")
+    L.append("- **{}** at `{}`".format('Connected' if st.get('connected') else 'DISCONNECTED',
+                                       st.get('endpoint', '?')))
+    L.append("- {} writes, {} reads, **{} dropped writes**, {} reconnects".format(
+        st.get('ops', 0), st.get('reads', 0), st.get('dropped_writes', 0), st.get('reconnects', 0)))
+    L.append("- Last successful write {}ms ago".format(st.get('last_write_age_ms', -1)))
+    L.append("- Store lists {} workers / {} services; Master has {} workers{}".format(
+        st.get('live_workers', 0), st.get('live_services', 0), st.get('master_workers', 0),
+        "  ⚠ **state drift**" if st.get('live_workers') != st.get('master_workers') else ""))
+    L.append("- {} jobs would be recovered if the Master restarted now".format(st.get('recoverable_jobs', 0)))
+    if st.get('last_error'):
+        L.append("- Last error: `{}`".format(st['last_error']))
+    L.append("")
+    L.append("## Scheduling health")
+    L.append("")
+    L.append("- Ready queue **{}**, parked **{}**, dead-letter **{}**".format(
+        stats.get('queue_size', 0), pk.get('total', 0), dlq.get('depth', 0)))
+    L.append("- Retry rate **{:.1%}** over {} dispatches".format(rt.get('rate', 0), rt.get('dispatches', 0)))
+    if m.get('capability'):
+        L.append("")
+        L.append("| Capability | Waiting | Parked | Workers |")
+        L.append("|---|---|---|---|")
+        for cp in m['capability']:
+            flag = "  ⚠ dead end" if cp['waiting'] > 0 and cp['workers'] == 0 else ""
+            L.append("| {} | {} | {} | {}{} |".format(cp['cap'], cp['waiting'], cp.get('parked', 0),
+                                                      cp['workers'], flag))
+    if m.get('pending_reasons'):
+        L.append("")
+        L.append("### Why queued work is not running")
+        L.append("")
+        for x in m['pending_reasons']:
+            L.append("- `{}` — {}".format(x['id'], x['reason']))
+    if dlq.get('jobs'):
+        L.append("")
+        L.append("### Dead-letter queue")
+        L.append("")
+        for x in dlq['jobs']:
+            L.append("- `{}` after {} attempts — {}".format(x['id'], x['attempts'], x.get('reason') or 'no reason'))
+    if m.get('scaler_events'):
+        L.append("")
+        L.append("### Recent cluster events")
+        L.append("")
+        for e in m['scaler_events'][-12:]:
+            L.append("- **{}** — {}".format(e['type'], e['detail']))
+    L.append("")
+    L.append("---")
+    L.append("")
+    L.append("_Series are in-memory ring buffers (~10 min at 1s resolution) and reset on Master restart._")
+
+    return "\n".join(L), 200, {'Content-Type': 'text/markdown; charset=utf-8',
+                               'Content-Disposition': 'attachment; filename="{}.md"'.format(fname)}
+
+
+@app.route('/cluster')
+def cluster_view():
+    """Topology + control-plane vitals. All data comes from two JSON endpoints below."""
+    return render_template('cluster.html')
+
+
+@app.route('/api/cluster_stats')
+def api_cluster_stats():
+    """The existing cluster snapshot, unchanged — now including host and permanence per worker."""
+    raw = titan_communicate(OP_STATS_JSON, "")
+    if not raw:
+        return jsonify({"error": "Master unreachable on :9090"})
+    try:
+        start = raw.find('{')
+        return jsonify(json.loads(raw[start:]) if start != -1 else {})
+    except json.JSONDecodeError as e:
+        return jsonify({"error": "Malformed stats payload: {}".format(e)})
+
+
+@app.route('/api/metrics')
+def api_metrics():
+    """Sampled control-plane series: queue composition, dispatch duration, throughput, heartbeat RTT."""
+    res = (request.args.get('res') or 'fine').strip()
+    if res not in ('fine', 'mid', 'coarse'):
+        res = 'fine'
+    raw = titan_communicate(OP_STATS_JSON, "metrics:{}".format(res))
+    if not raw:
+        return jsonify({"error": "Master unreachable on :9090"})
+    try:
+        start = raw.find('{')
+        return jsonify(json.loads(raw[start:]) if start != -1 else {})
+    except json.JSONDecodeError as e:
+        return jsonify({"error": "Malformed metrics payload: {}".format(e)})
+
+
+@app.route('/timeline')
+@app.route('/timeline/<path:dag_filter>')
+def timeline_view(dag_filter=None):
+    """Gantt view of recorded executions. Data is fetched client-side from /api/timeline."""
+    return render_template('timeline.html', dag_filter=dag_filter or '')
+
+
+@app.route('/api/timeline')
+def api_timeline():
+    """Proxy the Master's timeline payload (OP_STATS_JSON with a 'timeline' discriminator)."""
+    f = (request.args.get('filter') or '').strip()
+    try:
+        limit = max(10, min(int(request.args.get('limit', 2000)), 5000))
+    except (TypeError, ValueError):
+        limit = 2000
+
+    # A DAG's name and its job IDs are usually different strings — the Master can only substring
+    # match on job ID, so resolve the name to its jobs here, where the manifest lives.
+    dag = (request.args.get('dag') or '').strip()
+    wanted = None
+    if dag:
+        wanted = _jobs_of_dag(dag) or None
+        if not wanted:
+            # Unknown DAG name: fall back to treating it as a plain substring.
+            f = f or dag
+
+    raw = titan_communicate(OP_STATS_JSON, "timeline:{}:{}".format(f, limit))
+    if not raw:
+        return jsonify({"error": "Master unreachable on :9090", "spans": [], "count": 0})
+    try:
+        start = raw.find('{')
+        data = json.loads(raw[start:]) if start != -1 else {"spans": [], "count": 0}
+        if wanted is not None:
+            data['spans'] = [sp for sp in data.get('spans', []) if sp.get('id') in wanted]
+            data['count'] = len(data['spans'])
+            data['dag'] = dag
+        return jsonify(data)
+    except json.JSONDecodeError as e:
+        return jsonify({"error": "Malformed timeline payload: {}".format(e), "spans": [], "count": 0})
+
+
 @app.route('/logs/<job_id>')
 def view_logs(job_id):
     return render_template('log_viewer.html', job_id=job_id)
@@ -603,13 +1175,18 @@ def dag_dashboard(dag_id=None):
         except Exception:
             pass
 
-    # Build sidebar list
+    # Build sidebar list. One bulk status call covers every job in every DAG, so the list and the
+    # detail view agree instead of the list guessing from a rolling window.
+    all_jobs = [jid for meta in dag_registry.values() for jid in meta.get("jobs", [])]
+    authoritative = fetch_bulk_status(all_jobs)
+
     dag_list = []
     for did, meta in dag_registry.items():
         jobs_meta = meta.get("job_meta", {})
         total = len(meta["jobs"])
-        done  = sum(1 for jid in meta["jobs"] if jobs_meta.get(jid, {}).get("status") == "COMPLETED")
-        dag_status = _resolve_dag_status_from_meta(meta)
+        done = sum(1 for jid in meta["jobs"]
+                   if (authoritative.get(jid) or jobs_meta.get(jid, {}).get("status")) == "COMPLETED")
+        dag_status = _resolve_dag_status_from_meta(meta, authoritative)
         dag_list.append({
             "id":     did,
             "name":   meta["name"],
@@ -628,12 +1205,16 @@ def dag_dashboard(dag_id=None):
         # deps are already populated by scan_yaml_dags()
         dep_map = _yaml_job_deps
 
-        # Build jobs_data — status comes from worker history (job_meta),
-        # which is reliably populated by discover_dags_from_stats.
+        # Build jobs_data. Status comes from the Master's store, which keeps every job; the
+        # worker-history window (job_meta) is only a fallback because it holds 10 entries per
+        # worker and silently drops the rest of a larger graph.
         jobs_data = []
+        authoritative = fetch_bulk_status(list(meta["jobs"]))
         for jid in meta["jobs"]:
             stored = jobs_meta.get(jid, {})
-            status = stored.get("status", "WAITING")
+            status = authoritative.get(jid) or stored.get("status", "WAITING")
+            if status == "UNKNOWN":
+                status = stored.get("status") or stored.get("final_status") or "WAITING"
             # Normalise terminal states for display
             if status in ("DEAD", "UNKNOWN", ""):
                 status = "FAILED"
@@ -1125,19 +1706,25 @@ def api_dag_status():
             pass
 
     result = []
+    # One bulk call for every job, so this endpoint agrees with the page.
+    api_authoritative = fetch_bulk_status(
+        [j for mt in dag_registry.values() for j in mt.get("jobs", [])])
+
     for did, meta in dag_registry.items():
         jobs_meta = meta.get("job_meta", {})
         jobs_out  = []
         for jid in meta["jobs"]:
+            live = api_authoritative.get(jid)
             jobs_out.append({
                 "id":     jid,
-                "status": jobs_meta.get(jid, {}).get("status", "WAITING"),
+                "status": live if live and live not in ("UNKNOWN", "NULL", "")
+                          else jobs_meta.get(jid, {}).get("status", "WAITING"),
                 "worker": jobs_meta.get(jid, {}).get("worker"),
             })
         result.append({
             "id":     did,
             "name":   meta["name"],
-            "status": _resolve_dag_status_from_meta(meta),
+            "status": _resolve_dag_status_from_meta(meta, api_authoritative),
             "jobs":   jobs_out,
         })
     return jsonify(result)
@@ -1147,6 +1734,32 @@ def api_dag_status():
 # Helpers
 # ================================================================
 
+def fetch_bulk_status(job_ids):
+    """Resolve job statuses from the Master's store, which retains every job.
+
+    OP_STATS_JSON only carries workerRecentHistory — 10 entries per worker — so any DAG with more
+    nodes than that has statuses missing from the live payload, and they render as PENDING long
+    after finishing. This asks the authoritative source instead.
+    """
+    ids = [j for j in job_ids if j]
+    if not ids:
+        return {}
+    out = {}
+    # Chunked so the request stays well under the protocol's 10MB frame cap.
+    for i in range(0, len(ids), 120):
+        chunk = ids[i:i + 120]
+        raw = titan_communicate(OP_STATS_JSON, "status:" + ",".join(chunk))
+        if not raw:
+            continue
+        try:
+            start = raw.find('{')
+            if start != -1:
+                out.update(json.loads(raw[start:]))
+        except json.JSONDecodeError:
+            continue
+    return out
+
+
 def _resolve_dag_status_from_jobs(jobs):
     statuses = [j["status"] for j in jobs]
     if "FAILED"    in statuses: return "FAILED"
@@ -1155,14 +1768,26 @@ def _resolve_dag_status_from_jobs(jobs):
     if all(s == "COMPLETED" for s in statuses): return "COMPLETED"
     return "PENDING"
 
-def _resolve_dag_status_from_meta(meta):
+def _resolve_dag_status_from_meta(meta, authoritative=None):
+    """Roll a DAG's jobs up into one status.
+
+    `authoritative` is a job-id -> status map read from the Master's store, which retains every
+    job. Without it this falls back to job_meta, which is built from workerRecentHistory (10
+    entries per worker) — so any DAG whose jobs have rolled out of that window resolved to
+    PENDING even after completing. That is what made every pipeline look stuck.
+    """
     jobs_meta = meta.get("job_meta", {})
-    # Use persisted final_status when live status is unavailable (e.g. after restart)
-    statuses = [
-        v.get("status") or v.get("final_status", "WAITING")
-        for v in jobs_meta.values()
-    ]
+    statuses = []
+    for jid in meta.get("jobs", []) or jobs_meta.keys():
+        live = (authoritative or {}).get(jid)
+        if live and live not in ("UNKNOWN", "NULL", ""):
+            statuses.append(live)
+            continue
+        v = jobs_meta.get(jid, {})
+        statuses.append(v.get("status") or v.get("final_status") or "WAITING")
+
     if not statuses:            return "PENDING"
+    if "DEAD"      in statuses: return "FAILED"
     if "FAILED"    in statuses: return "FAILED"
     if "RUNNING"   in statuses: return "RUNNING"
     if "CANCELLED" in statuses: return "CANCELLED"

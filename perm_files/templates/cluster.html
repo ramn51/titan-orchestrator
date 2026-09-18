@@ -1,0 +1,2249 @@
+<style>
+  /* Series colours come from a CVD-validated categorical set, stepped for this dark surface.
+     Slots are assigned in fixed order and never cycled. Status colours are kept separate. */
+  :root {
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+    /* Status colours, kept out of the series palette. Each passes WCAG AA as text on --surface
+       (good 6.1:1, bad 5.3:1, warn 9.5:1). Under deuteranopia good and bad are nearly the same
+       hue, so every coloured value is paired with a glyph — colour is never the only cue. */
+    --ok:#4caf50; --good:#4caf50; --bad:#e66767; --warn:#ffb300;
+    --sunk:#15151f;
+    /* These four were referenced across the stylesheet but never declared. An undefined custom
+       property makes the whole declaration invalid, so the sticky nav had no background to sit
+       on and the active tab/nav states lost their highlight entirely. */
+    --accent:#64b5f6; --alt:#7ec8e3; --bg:#121212; --line-2:#3a3a52;
+    --surface:#1a1a2e; --surface-2:#1e1e2e; --line:#2a2a3e;
+    --ink:#f0f3f5; --ink-2:#c6ced4; --ink-3:#95a0a8;
+  }
+  body { background:#121212; color:var(--ink); font-family:'Segoe UI',sans-serif; padding:0; margin:0; }
+  a { text-decoration:none; color:inherit; }
+  a:hover { text-decoration:underline; color:#64b5f6; }
+
+  .topnav { background:var(--surface); border-bottom:1px solid #333; padding:0 24px; display:flex; align-items:center; }
+  .topnav-brand { font-size:15px; font-weight:700; letter-spacing:1px; padding:10px 20px 10px 0; color:#fff; border-right:1px solid #333; margin-right:8px; }
+  .topnav a.tab { padding:14px 18px; font-size:13px; color:var(--ink-2); border-bottom:3px solid transparent; display:inline-block; }
+  .topnav a.tab:hover { color:#fff; text-decoration:none; }
+  .topnav a.tab.active { color:#64b5f6; border-bottom-color:#64b5f6; }
+  .topnav-right { margin-left:auto; display:flex; align-items:center; gap:12px; font-size:12px; color:var(--ink-3); }
+
+  .wrap { max-width:1440px; margin:0 auto; padding:22px 24px 70px; }
+  h1 { font-size:19px; margin:0 0 4px; font-weight:600; }
+  .sub { font-size:12px; color:var(--ink-3); margin:0 0 20px; }
+  h2 { font-size:13px; font-weight:600; margin:0 0 2px; color:var(--ink); }
+  .cap { font-size:11.5px; color:var(--ink-2); margin:0 0 12px; }
+
+  .bar { display:flex; gap:10px; align-items:center; margin-bottom:18px; flex-wrap:wrap; }
+  .bar button { background:var(--surface-2); color:var(--ink-2); border:1px solid #333; padding:7px 13px;
+    border-radius:4px; font-size:12px; cursor:pointer; font-family:inherit; }
+  .bar button.on { color:#64b5f6; border-color:#64b5f6; }
+  .bar select { background:var(--surface-2); border:1px solid #333; color:var(--ink); padding:7px 9px;
+    border-radius:4px; font-size:12px; font-family:inherit; }
+  .bar .spacer { flex:1; }
+  .bar .btnlink { background:var(--surface-2); color:var(--ink-2); border:1px solid var(--line-2);
+    padding:7px 12px; border-radius:4px; font-size:12px; text-decoration:none; }
+  .bar .btnlink:hover { color:var(--accent); border-color:var(--accent); text-decoration:none; }
+  .pill { font-size:11px; padding:3px 9px; border-radius:99px; border:1px solid var(--line); color:var(--ink-3); }
+  .pill.live { color:var(--ok); border-color:var(--ok); }
+
+  .panel { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:16px; margin-bottom:18px; }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(390px,1fr)); gap:18px; }
+  /* Analytics: at most two across, so charts stay legible instead of shrinking to slivers. */
+  #view-analytics .grid2 { grid-template-columns:repeat(auto-fit,minmax(430px,1fr)); }
+  @media (min-width:1100px) { #view-analytics .grid2 { grid-template-columns:1fr 1fr; } }
+  /* The global svg{width:100%} would blow every viewBox up to full page height. */
+  #cSuccess svg, #cHist svg, #cPct svg, #cUtil svg { max-height:230px; }
+  #cTrend svg { max-width:900px; max-height:190px; }
+  #anaTiles { grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); }
+  .grid3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(255px,1fr)); gap:14px; }
+  .sig { background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:11px 13px; }
+  .sig h4 { margin:0 0 3px; font-size:11px; color:#fff; font-weight:650; }
+  .sig .n { font-size:10.5px; color:var(--ink-2); margin:0 0 8px; }
+  .sig .none { font-size:11px; color:var(--good); }
+  .sig ul { margin:0; padding-left:14px; font-size:10.5px; color:var(--ink-2);
+    font-family:ui-monospace,Menlo,monospace; max-height:150px; overflow-y:auto; }
+  .sig li { margin-bottom:3px; line-height:1.4; }
+  .sig li b { color:var(--bad); font-weight:600; }
+  .sig .warnrow { color:var(--warn); }
+  /* store health strip */
+  .strip { display:flex; flex-wrap:wrap; align-items:center; gap:0; background:var(--surface);
+    border:1px solid var(--line); border-radius:6px; overflow:hidden; margin-bottom:18px; }
+  .strip.down { border-color:var(--bad); }
+  .strip .cell { padding:10px 15px; border-right:1px solid var(--line); }
+  .strip .cell:last-child { border-right:0; }
+  .strip .k { display:block; font-size:9.5px; letter-spacing:1.1px; text-transform:uppercase; color:var(--ink-3); margin-bottom:4px; }
+  .strip .v { font-size:14px; font-weight:600; color:#fff; font-variant-numeric:tabular-nums;
+    font-family:ui-monospace,Menlo,monospace; }
+  .strip .v.ok { color:var(--good); } .strip .v.bad { color:var(--bad); } .strip .v.warn { color:var(--warn); }
+  .strip .grow { flex:1; }
+  .strip .status { display:flex; align-items:center; gap:8px; }
+  .dot { width:10px; height:10px; border-radius:50%; flex:none; }
+  .dot.up { background:var(--good); box-shadow:0 0 0 3px color-mix(in srgb, var(--good) 28%, transparent); }
+  .dot.down { background:var(--bad); box-shadow:0 0 0 3px color-mix(in srgb, var(--bad) 28%, transparent); }
+  .strip .cell.headline { background:color-mix(in srgb, var(--good) 11%, transparent); }
+  .strip.down .cell.headline { background:color-mix(in srgb, var(--bad) 13%, transparent); }
+  .strip .err { font-size:10px; color:var(--bad); font-family:ui-monospace,Menlo,monospace; }
+
+  /* latency budget */
+  .budget { width:100%; border-collapse:collapse; font-size:12px; }
+  .budget th, .budget td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); }
+  .budget th { font-size:9.5px; letter-spacing:1.1px; text-transform:uppercase; color:var(--ink-3); font-weight:600; }
+  .budget td { font-family:ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums; color:var(--ink-2); }
+  .budget td.layer { color:#fff; font-family:inherit; font-weight:600; }
+  .budget td .sub { display:block; font-family:inherit; font-size:10px; color:var(--ink-3); font-weight:400; }
+  .budget .bar { height:7px; border-radius:3px; background:var(--s1); display:block; min-width:2px; }
+  /* The trend table lists EVERY pipeline, not just the five plotted, so it needs to scroll
+     inside its panel. The header sticks or you lose which column you are reading. */
+  .tscroll { max-height:270px; overflow:auto; border:1px solid var(--line); border-radius:6px; }
+  .tscroll table.budget thead th { position:sticky; top:0; z-index:1; background:var(--surface-2);
+    border-bottom:1px solid var(--line); }
+  .tscroll table.budget tbody tr:last-child td { border-bottom:none; }
+  .subtabs { display:flex; gap:4px; margin:0 0 16px; border-bottom:1px solid var(--line); }
+  .subtabs button { background:none; border:0; border-bottom:2px solid transparent; color:var(--ink-3);
+    font-size:13px; font-weight:600; padding:9px 15px; cursor:pointer; font-family:inherit; }
+  .subtabs button:hover { color:var(--ink); }
+  .subtabs button.on { color:var(--accent); border-bottom-color:var(--accent); }
+  .subview[hidden] { display:none; }
+
+  /* sticky section nav — the page grew past one screen */
+  .secnav { position:sticky; top:0; z-index:30; background:color-mix(in srgb, var(--bg) 94%, transparent);
+    backdrop-filter:blur(6px); border-bottom:1px solid var(--line); margin:0 -24px 18px;
+    padding:9px 24px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .secnav a { font-size:11px; color:var(--ink-3); padding:4px 10px; border-radius:99px;
+    border:1px solid transparent; white-space:nowrap; }
+  .secnav a:hover { color:var(--ink); border-color:var(--line-2); text-decoration:none; }
+  .secnav a.on { color:var(--accent); border-color:var(--accent); }
+  .secnav .navlbl { font-size:9.5px; letter-spacing:1.1px; text-transform:uppercase;
+    color:var(--ink-3); margin-right:4px; }
+  .anchor { scroll-margin-top:58px; }
+
+  /* click-to-expand */
+  .zoomable { cursor:zoom-in; position:relative; }
+  .zoomable::after { content:'⤢'; position:absolute; top:4px; right:6px; font-size:11px;
+    color:var(--ink-3); opacity:0; transition:opacity .12s; }
+  .zoomable:hover::after { opacity:1; }
+  .modal { position:fixed; inset:0; z-index:100; background:#000c; display:none;
+    align-items:center; justify-content:center; padding:28px; }
+  .modal.open { display:flex; }
+  .modal .sheet { background:var(--surface); border:1px solid var(--line-2); border-radius:8px;
+    padding:18px 20px; max-width:1400px; width:100%; max-height:92vh; overflow:auto; }
+  .modal .sheet h3 { margin:0 0 3px; font-size:14px; color:#fff; }
+  .modal .sheet .cap { margin-bottom:12px; }
+  .modal .sheet svg { max-width:none !important; max-height:none !important; width:100%; }
+  .modal .x { float:right; cursor:pointer; color:var(--ink-3); font-size:18px; line-height:1;
+    border:0; background:none; }
+  .modal .x:hover { color:#fff; }
+  .sm2 { font-size:10px; color:var(--ink-3); font-weight:400; }
+  .fold > summary { font-size:13px; color:var(--ink); cursor:pointer; outline:none; font-weight:600;
+    list-style:none; display:flex; align-items:center; gap:7px; }
+  .fold > summary::before { content:'\25B8'; color:var(--ink-3); font-size:11px; }
+  .fold[open] > summary::before { content:'\25BE'; }
+  .fold > summary:hover { color:#fff; }
+  .fold[open] > summary { margin-bottom:12px; }
+  .fold > summary::-webkit-details-marker { display:none; }
+  .allclear { display:flex; align-items:center; gap:9px; font-size:12px; color:var(--good); padding:2px 0; }
+  .allclear i { width:9px; height:9px; border-radius:50%; background:var(--good); flex:none;
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--good) 26%, transparent); }
+  .allclear b { color:var(--good); } .allclear span { color:var(--ink-3); font-weight:400; }
+  .howto summary { font-size:13px; color:var(--ink); cursor:pointer; outline:none; font-weight:600; }
+  .howto summary:hover { color:#fff; }
+  .howto[open] summary { margin-bottom:2px; }
+  .fix { margin-top:9px; padding:8px 10px; border-left:2px solid var(--good);
+    background:color-mix(in srgb, var(--good) 10%, transparent); border-radius:0 4px 4px 0;
+    font-size:10.5px; color:var(--ink-2); line-height:1.6; }
+  .fix b { color:var(--good); }
+  .fix code { background:var(--sunk); padding:.1em .35em; border-radius:3px; color:var(--ink); font-size:.95em; }
+  .evlist { max-height:250px; overflow-y:auto; border:1px solid var(--line); border-radius:5px; }
+  .evrow { display:grid; grid-template-columns:132px 118px 1fr; gap:10px; padding:6px 11px;
+    border-bottom:1px solid var(--line); font-size:11px; font-family:ui-monospace,Menlo,monospace; }
+  .evrow:last-child { border-bottom:0; }
+  .evrow:nth-child(even) { background:color-mix(in srgb, var(--sunk) 55%, transparent); }
+  .evrow .t { color:var(--ink-3); }
+  .evrow .d { color:var(--ink-2); }
+  .evtag { font-size:9.5px; letter-spacing:.05em; padding:1px 6px; border-radius:3px;
+    border:1px solid currentColor; justify-self:start; white-space:nowrap; }
+  .ev-SCALE_UP { color:var(--s4); } .ev-DESCALE { color:var(--s1); }
+  .ev-WORKER_JOIN { color:var(--good); } .ev-WORKER_LOST { color:var(--bad); }
+  .ev-PARK_RELEASE { color:var(--s3); } .ev-PARK_EXPIRED { color:var(--bad); }
+  ul.rd { margin:0; padding-left:15px; font-size:11.5px; line-height:1.55; color:var(--ink-2); }
+  ul.rd li { margin-bottom:5px; }
+  ul.rd b { color:var(--ink); } ul.rd i { color:var(--warn); font-style:normal; }
+  ul.rd code { background:var(--sunk); padding:.06em .3em; border-radius:3px; color:var(--ink); font-size:.92em; }
+  .sig h4 { font-size:11.5px; }
+  .lanes { display:grid; grid-template-columns:repeat(auto-fit,minmax(232px,1fr)); gap:14px; }
+  .lane { background:var(--surface-2); border:1px solid var(--line); border-radius:6px;
+    border-top:3px solid var(--line-2); display:flex; flex-direction:column; }
+  .lane.l-delayed { border-top-color:var(--s4); } .lane.l-blocked { border-top-color:var(--s3); }
+  .lane.l-ready   { border-top-color:var(--s1); } .lane.l-parked  { border-top-color:var(--bad); }
+  .lane h4 { margin:0; padding:10px 12px 4px; font-size:11.5px; color:#fff; font-weight:650;
+    display:flex; align-items:center; justify-content:space-between; }
+  .lane h4 b { font-size:15px; font-variant-numeric:tabular-nums; }
+  .lane .why { padding:0 12px 9px; font-size:10px; color:var(--ink-3); line-height:1.45; }
+  .lane .items { padding:0 9px 9px; overflow-y:auto; max-height:260px; display:flex; flex-direction:column; gap:6px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:7px 9px;
+    font-size:10.5px; font-family:ui-monospace,Menlo,monospace; color:var(--ink-2); }
+  .card .jid { color:var(--ink); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .card .meta2 { color:var(--ink-3); font-size:9.5px; margin-top:3px; display:block; }
+  .card .pos { float:right; color:var(--s1); font-weight:600; }
+  .card.hot { border-color:var(--warn); }
+  .card .dep { color:var(--s3); }
+  .lane .none2 { padding:14px 12px; font-size:10.5px; color:var(--good); }
+  .pctl { display:flex; gap:14px; flex-wrap:wrap; font-family:ui-monospace,Menlo,monospace; font-size:11px; }
+  .pctl div { color:var(--ink-3); }
+  .pctl span { color:#fff; font-size:15px; font-weight:600; display:block; font-variant-numeric:tabular-nums; }
+  .histrow { display:flex; align-items:center; gap:7px; font-size:10.5px; margin-bottom:3px;
+    font-family:ui-monospace,Menlo,monospace; color:var(--ink-3); }
+  .histrow i { display:block; height:9px; border-radius:2px; background:var(--s1); }
+
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:18px; }
+  .tile { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:12px 14px; }
+  .tile .k { font-size:10px; letter-spacing:1.1px; text-transform:uppercase; color:var(--ink-3); display:block; margin-bottom:5px; }
+  .tile .v { font-size:21px; font-weight:600; color:#fff; font-variant-numeric:tabular-nums; }
+  .tile .v small { font-size:11px; color:var(--ink-3); font-weight:400; margin-left:3px; }
+  /* A tile only takes a status colour when the number means something is right or wrong; a
+     neutral reading stays white so the coloured ones actually stand out. */
+  .tile .v.s-ok   { color:var(--good); }
+  .tile .v.s-bad  { color:var(--bad); }
+  .tile .v.s-warn { color:var(--warn); }
+  .tile .v .g { font-size:13px; font-weight:700; margin-right:4px; vertical-align:1px; }
+  .tile.s-bad  { border-color:#5c2f33; }
+  .tile.s-warn { border-color:#5c4a1f; }
+  .sig h4 .g { font-weight:700; margin-right:4px; }
+  .sig h4.s-bad  { color:var(--bad); }
+  .sig h4.s-warn { color:var(--warn); }
+  .sig h4.s-ok   { color:var(--good); }
+  .s-ok { color:var(--good); } .s-bad { color:var(--bad); } .s-warn { color:var(--warn); }
+  .bar .sep { width:1px; height:22px; background:var(--line-2); margin:0 4px; display:inline-block; }
+  .bar button.go { background:var(--s3); border-color:var(--s3); color:#fff; font-weight:600; }
+  .bar button.go:disabled { opacity:.5; cursor:default; }
+  .demostrip { background:var(--surface-2); border:1px solid var(--line-2); border-left:3px solid var(--s3);
+    border-radius:6px; padding:11px 14px; margin-bottom:16px; font-size:12px; color:var(--ink-2); }
+  .demostrip b { color:var(--ink); }
+  .demostrip .prog { height:6px; border-radius:3px; background:var(--sunk); margin-top:9px; overflow:hidden; }
+  .demostrip .prog i { display:block; height:100%; background:var(--s3); transition:width .4s ease; }
+  .demostrip .counts { display:flex; gap:14px; flex-wrap:wrap; margin-top:8px;
+    font-family:ui-monospace,Menlo,monospace; font-size:11px; }
+  .g { font-weight:700; margin-right:4px; }
+
+  svg { display:block; width:100%; height:auto; overflow:visible; }
+  .ax { stroke:var(--line); stroke-width:1; }
+  .axt { fill:var(--ink-2); font-size:10px; font-family:ui-monospace,Menlo,monospace; }
+  .axl2 { font-family:ui-monospace,Menlo,monospace; font-size:10px; color:var(--ink-3); }
+  .axl { fill:var(--ink-3); font-size:9.5px; font-family:ui-monospace,Menlo,monospace; letter-spacing:.06em; }
+  .gl { stroke:var(--line); stroke-width:1; stroke-dasharray:2 3; }
+
+  .lg { display:flex; flex-wrap:wrap; gap:12px; margin-top:10px; font-size:11px; color:var(--ink-2); }
+  .lg i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+
+  /* topology */
+  .topo-wrap { display:grid; grid-template-columns:1fr 280px; gap:16px; align-items:start; }
+  @media (max-width:900px){ .topo-wrap { grid-template-columns:1fr; } }
+  .detail { background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:12px 14px; min-height:150px; }
+  .detail h3 { margin:0 0 2px; font-size:12px; color:#fff; font-family:ui-monospace,Menlo,monospace; }
+  .detail .meta { font-size:10px; color:var(--ink-3); margin-bottom:10px; }
+  .detail dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:4px 10px; font-size:11px; }
+  .detail dt { color:var(--ink-3); }
+  .detail dd { margin:0; color:var(--ink); font-family:ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums; }
+  .detail .hint { font-size:11px; color:var(--ink-3); line-height:1.5; }
+  .detail ul { margin:8px 0 0; padding-left:15px; font-size:10px; color:var(--ink-2); font-family:ui-monospace,Menlo,monospace; }
+  .detail li { margin-bottom:2px; }
+  /* The global svg{width:100%} rule would stretch the topology to the panel width and blow the
+     node text up with it. Cap it so the diagram renders near its natural size and stays left-aligned. */
+  #topo svg { max-width:640px; max-height:300px; width:100%; }
+  /* Same reason as the topology: width:100% blows a 980-wide viewBox up to full page height. */
+  #scalingChart svg { max-width:760px; max-height:150px; width:100%; }
+  .nodehit { cursor:pointer; }
+  .nodehit:hover rect, .nodehit:hover circle.card { stroke-width:2.5; }
+  .nodehit.sel rect { stroke:#fff; }
+  .node-lbl { fill:var(--ink); font-size:11px; font-family:ui-monospace,Menlo,monospace; }
+  .node-sub { fill:var(--ink-2); font-size:9.5px; font-family:ui-monospace,Menlo,monospace; }
+  .edge { stroke:var(--line); stroke-width:1.5; fill:none; }
+  .edge.busy { stroke:var(--s1); stroke-width:2; }
+
+  .tip { position:fixed; pointer-events:none; background:#0d1117; border:1px solid #333; border-radius:4px;
+    padding:7px 10px; font-size:11px; color:var(--ink); z-index:99; display:none; white-space:pre;
+    font-family:ui-monospace,Menlo,monospace; box-shadow:0 4px 14px #0008; }
+  .empty { color:var(--ink-3); font-size:12px; padding:26px 0; text-align:center; }
+  table.tv { width:100%; border-collapse:collapse; font-size:11px; margin-top:10px; }
+  table.tv th, table.tv td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
+  table.tv th { color:var(--ink-3); font-weight:600; font-size:10px; text-transform:uppercase; letter-spacing:.8px; }
+  table.tv td { font-variant-numeric:tabular-nums; font-family:ui-monospace,Menlo,monospace; color:var(--ink-2); }
+  details { margin-top:8px; } summary { font-size:11px; color:var(--ink-3); cursor:pointer; }
+</style>
+
+<div class="topnav">
+  <div class="topnav-brand">TITAN</div>
+  <a class="tab" href="/">🖥 Orchestrator</a>
+  <a class="tab" href="/dags">🔀 DAG Pipelines</a>
+  <a class="tab" href="/dags/new">✏️ Constructor</a>
+  <a class="tab" href="/agents">🤖 Agent Runs</a>
+  <a class="tab" href="/timeline">📊 Timeline</a>
+  <a class="tab active" href="/cluster">🌐 Cluster</a>
+  <div class="topnav-right"><span id="conn" class="pill">—</span></div>
+</div>
+
+<div class="wrap">
+  <h1>Cluster &amp; Control Plane</h1>
+  <p class="sub">Live topology plus the scheduler's own vitals. Two requests per refresh, paused while this tab is hidden.</p>
+
+  <details class="panel howto">
+    <summary><b>How to read this page</b> — click to collapse</summary>
+    <div class="grid3" style="margin-top:12px">
+      <div class="sig">
+        <h4 style="color:var(--bad)">Work isn't moving</h4>
+        <ul class="rd">
+          <li><b>Pending reasons</b> names the blocker directly.</li>
+          <li><b>Capability</b> row with <code>waiting&gt;0, workers=0</code> can <i>never</i> run — start a matching worker.</li>
+          <li><b>Parked</b> jobs left the queue and wait for a capability; they cost nothing while parked.</li>
+          <li><b>Dead-letter</b> above zero means jobs gave up entirely.</li>
+        </ul>
+      </div>
+      <div class="sig">
+        <h4 style="color:var(--warn)">Work is slow</h4>
+        <ul class="rd">
+          <li><b>Queue wait p99</b> high, execution normal → the scheduler is the bottleneck, not your scripts.</li>
+          <li><b>Dispatch loop</b> spiking → one slow placement stalls the whole cluster; the loop is single-threaded.</li>
+          <li><b>Store write latency</b> matters here too — two writes sit inside that loop.</li>
+          <li>Use the <b>latency budget</b> table to see which layer dominates.</li>
+        </ul>
+      </div>
+      <div class="sig">
+        <h4 style="color:var(--s1)">A node misbehaves</h4>
+        <ul class="rd">
+          <li><b>Heartbeat RTT</b> climbing on one line = that link is degrading before it is declared dead.</li>
+          <li>Solid line = permanent node, dashed = ephemeral.</li>
+          <li><b>Click a node</b> in Topology for slots, services, what's running now and RTT history.</li>
+        </ul>
+      </div>
+      <div class="sig">
+        <h4 style="color:var(--s3)">Queue composition</h4>
+        <ul class="rd">
+          <li><b>Blocked</b> growing is normal in a deep DAG — those jobs wait on parents.</li>
+          <li><b>Ready</b> growing is not — work is eligible and nothing is dispatching it.</li>
+          <li><b>Delayed</b> is the DelayQueue; those cost no CPU while waiting.</li>
+        </ul>
+      </div>
+      <div class="sig">
+        <h4 style="color:var(--s4)">Topology</h4>
+        <ul class="rd">
+          <li><b>Solid</b> outline = permanent node you started.</li>
+          <li><b>Dashed</b> = ephemeral, spawned by the scaler, reclaimed after 45s idle.</li>
+          <li>The ring shows occupied slots; a full red ring means saturated.</li>
+        </ul>
+      </div>
+      <div class="sig">
+        <h4 style="color:var(--alt)">Store &amp; retention</h4>
+        <ul class="rd">
+          <li><b>Dropped writes</b> is the real outage signal — the store fails open, so errors stay at 0.</li>
+          <li><b>State drift</b> means the store lists nodes the Master no longer has.</li>
+          <li>Series are in-memory rings: pick a window with the <b>history</b> selector. <b>All of it is lost on Master restart.</b></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <nav class="secnav" id="secnav">
+    <span class="navlbl">Jump to</span>
+    <a href="#s-health">Health</a>
+    <a href="#s-blocked">Blocked</a>
+    <a href="#s-queue">Before dispatch</a>
+    <a href="#s-perf">Performance</a>
+    <a href="#s-topo">Topology</a>
+    <a href="#a-fail">Failure rate</a>
+    <a href="#a-sat">Saturation</a>
+    <a href="#a-svc">Services</a>
+    <a href="#a-phases">Dispatch cost</a>
+    <a href="#a-storelat">Store latency</a>
+    <a href="#s-trends">Trends</a>
+    <a href="#s-scaling">Scaling</a>
+  </nav>
+  <div class="subtabs">
+    <button id="tabLive" class="on" onclick="showView('live')">Live</button>
+    <button id="tabAna" onclick="showView('analytics')">Analytics</button>
+  </div>
+
+  <div id="demoStrip" class="demostrip" style="display:none"></div>
+
+  <div class="subview" id="view-live">
+
+  <div class="bar">
+    <button id="btnPoll" class="on" onclick="togglePoll()">Auto-refresh</button>
+    <select id="iv" onchange="restart()">
+      <option value="2000">2s</option>
+      <option value="3000" selected>3s</option>
+      <option value="5000">5s</option>
+      <option value="10000">10s</option>
+    </select>
+    <button onclick="tick()">Refresh now</button>
+    <span class="sep"></span>
+    <label>demo
+      <select id="demoPreset" title="A preset workflow that lights up specific panels">
+        <option value="">— pick a workflow —</option>
+      </select>
+    </label>
+    <button id="btnDemo" class="go" onclick="runDemo()">Run demo</button>
+    <label>history
+      <select id="res" onchange="tick()">
+        <option value="fine">10 min · 1s</option>
+        <option value="mid">~1.7 h · 10s</option>
+        <option value="coarse">~16 h · 100s</option>
+      </select>
+    </label>
+    <label>nodes
+      <select id="nf" onchange="NODE_FILTER=this.value; if(LAST.stats) drawTopo(LAST.stats,LAST.metrics);">
+        <option value="all">all</option>
+        <option value="permanent">permanent only</option>
+        <option value="ephemeral">ephemeral only</option>
+        <option value="busy">busy only</option>
+      </select>
+    </label>
+    <div class="spacer"></div>
+    <a class="btnlink" href="/api/export?fmt=md" download>⬇ Report (.md)</a>
+    <a class="btnlink" href="/api/export?fmt=json" download>⬇ Raw (.json)</a>
+    <span class="pill" id="reqs">0 requests</span>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div id="s-health" class="anchor"></div>
+  <div id="storeStrip"></div>
+
+  <div class="panel">
+    <span id="s-blocked" class="anchor"></span>
+    <h2>Why work isn't moving <span style="font-size:10px;color:var(--ink-3);font-weight:400">— read this first when the cluster looks stuck</span></h2>
+    <p class="cap">A queued job is either <em>next in line</em> or <em>unschedulable</em>. These three tables tell them apart.</p>
+    <div id="diagAllClear" class="allclear" style="display:none">
+      <i></i><b>Nothing is blocked.</b>
+      <span>No unschedulable jobs, no parked work, no dead-letter entries. Details appear here when something needs attention.</span>
+    </div>
+    <div class="grid3" id="diagPanels"></div>
+  </div>
+
+  <details class="panel fold" open>
+    <summary id="s-queue" class="anchor"><b>Before dispatch <span class="sm2">— every job waiting to run, and what it&#39;s waiting for</span></b></summary>
+    <p class="cap">A job sits in exactly one of these four places before it executes. <b>Ready</b> is in true dispatch order — position 1 runs next.</p>
+    <div class="lanes" id="lanes"></div>
+  </details>
+
+  <div class="panel">
+    <span id="s-perf" class="anchor"></span>
+    <h2>Performance across the system</h2>
+    <p class="cap">Every layer a job passes through. <b>Share of p99 latency</b> splits the total across layers, so the percentages add to 100 and the widest bar is your bottleneck.</p>
+    <div style="overflow-x:auto"><table class="budget" id="budget"></table></div>
+    <p class="cap" id="budgetNote" style="margin:11px 0 0; padding:9px 11px; background:var(--surface-2);
+       border-left:2px solid var(--s2); border-radius:0 4px 4px 0; line-height:1.55"></p>
+  </div>
+
+  <div class="panel">
+    <span id="s-topo" class="anchor"></span>
+    <h2>Topology</h2>
+    <p class="cap">Master and every registered worker. Dashed outline = ephemeral node spawned by the scaler and eligible for reclaim. Ring shows slot occupancy; edge label is the last heartbeat round-trip. <b>Click any node</b> for detail.</p>
+    <div class="topo-wrap"><div id="topo"><div class="empty">Loading…</div></div><div class="detail" id="detail"><p class="hint">Click the Master or any worker to inspect it.</p></div></div>
+  </div>
+
+  <details class="panel fold" open>
+    <summary id="s-trends" class="anchor"><b>Trends <span class="sm2">— queue, dispatch, throughput and heartbeat over time</span></b></summary>
+  <div class="grid2">
+    <div class="panel">
+      <h2>Queue composition</h2>
+      <p class="cap">Where jobs are sitting, sampled every second. A growing <em>blocked</em> band is normal in a deep DAG; a growing <em>ready</em> band means dispatch is the bottleneck.</p>
+      <div id="cQueue"><div class="empty">Collecting…</div></div>
+      <div class="lg">
+        <span><i style="background:var(--s1)"></i>running</span>
+        <span><i style="background:var(--s2)"></i>ready (queued)</span>
+        <span><i style="background:var(--s3)"></i>blocked on parents</span>
+        <span><i style="background:var(--s4)"></i>delayed</span>
+      </div>
+      <details><summary>View as table</summary><div id="tQueue"></div></details>
+    </div>
+
+    <div class="panel">
+      <h2>Dispatch loop duration</h2>
+      <p class="cap">Time to place one job. The loop is single-threaded, so this is the window during which nothing else in the cluster is dispatched.</p>
+      <div id="cDispatch"><div class="empty">Collecting…</div></div>
+      <details><summary>View as table</summary><div id="tDispatch"></div></details>
+    </div>
+
+    <div class="panel">
+      <h2>Throughput</h2>
+      <p class="cap">Jobs reaching a terminal state per sample.</p>
+      <div id="cThru"><div class="empty">Collecting…</div></div>
+      <div class="lg">
+        <span><i style="background:var(--ok)"></i>✓ completed</span>
+        <span><i style="background:var(--bad)"></i>✕ failed</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span id="a-fail" class="anchor"></span>
+      <h2>Failure rate</h2>
+      <p class="cap">Share of settled jobs that failed, per sample, with the raw failure count behind it. Throughput tells you work is moving; this tells you whether it is <i>landing</i>. A run can hold a flat completion rate while every third job dies.<br><span class="axl2">X: time — seconds before now · Y: percent of settled jobs that failed</span></p>
+      <div id="cFail"><div class="empty">Collecting…</div></div>
+      <div class="lg" id="lgFail"></div>
+    </div>
+
+    <div class="panel">
+      <span id="a-sat" class="anchor"></span>
+      <h2>Saturation</h2>
+      <p class="cap">Occupied slots as a share of total slots across the fleet. The <b>Running</b> tile gives the instant; this gives the approach — whether you are drifting toward the ceiling or already pinned against it, which is the difference between "busy" and "starving work".<br><span class="axl2">X: time — seconds before now · Y: percent of all job slots occupied</span></p>
+      <div id="cSat"><div class="empty">Collecting…</div></div>
+      <div class="lg" id="lgSat"></div>
+    </div>
+
+    <div class="panel">
+      <span id="a-svc" class="anchor"></span>
+      <h2>Services</h2>
+      <p class="cap">Long-running work, which the job-centric charts cannot describe: a service has no duration, so it never lands in throughput or a duration histogram. These are the processes Titan deployed, gated on readiness, and now resolves by name — with the address a caller would actually dial.</p>
+      <div id="svcPanel"><div class="empty">Collecting…</div></div>
+    </div>
+
+    <div class="panel">
+      <span id="a-phases" class="anchor"></span>
+      <h2>Where dispatch time goes</h2>
+      <p class="cap">The dispatch loop is serialized — while one iteration runs, nothing else in the cluster is dispatched — so its cost is the scheduler's own throughput ceiling. <b>Dispatch loop duration</b> above says it got slower; this says which phase did it.<br><span class="axl2">X: time — seconds before now · Y: milliseconds, stacked to the iteration total</span></p>
+      <div id="cPhases"><div class="empty">Collecting…</div></div>
+      <div id="tPhases"></div>
+      <div class="lg">
+        <span><i style="background:var(--s1)"></i>route — capability lookup</span>
+        <span><i style="background:var(--s2)"></i>select — worker choice</span>
+        <span><i style="background:var(--s3)"></i>record — span + bookkeeping</span>
+        <span><i style="background:var(--s4)"></i>store — writes on the dispatch path</span>
+        <span><i style="background:var(--s5)"></i>send — hand-off to the worker</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span id="a-storelat" class="anchor"></span>
+      <h2>Store latency</h2>
+      <p class="cap">TitanStore is the only external dependency in the dispatch path: every status write and every discovery read goes through it. When it slows, dispatch slows with it — and the strip above only shows the current number, not the trend.<br><span class="axl2">X: time — seconds before now · Y: milliseconds per operation</span></p>
+      <div id="cStoreLat"><div class="empty">Collecting…</div></div>
+      <div class="lg" id="lgStoreLat"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Heartbeat round-trip</h2>
+      <p class="cap">Master→worker latency, one line per node. Solid = permanent node, dashed = ephemeral. The only continuous network signal available: a degrading link shows here long before the node is declared dead.</p>
+      <div id="cHb"><div class="empty">Collecting…</div></div>
+      <div class="lg" id="lgHb"></div>
+    </div>
+  </div>
+  </details>
+
+  <details class="panel fold">
+    <summary id="s-scaling" class="anchor"><b>Scaling history <span class="sm2">— ephemeral nodes brought up and reclaimed, with the pressure behind each</span></b></summary>
+    <p class="cap">Ephemeral workers are spawned when the general pool saturates and reclaimed after 45s idle. This is the full record, newest first.</p>
+    <div id="scalingChart"></div>
+    <div id="scalingBox"></div>
+  </details>
+  </div>
+
+  <div class="subview" id="view-analytics" hidden>
+    <p class="cap" style="margin:0 0 16px">Behaviour <em>over time</em>, as opposed to the Live tab's view of <em>right now</em>. These are the numbers you compare between runs.</p>
+
+    <div class="tiles" id="anaTiles"></div>
+
+    <div class="grid2">
+      <div class="panel">
+        <span id="a-success" class="anchor"></span>
+        <h2>Success rate</h2>
+        <p class="cap">Share of terminal jobs that completed, per sample — the reliability SLI. A dip marks <em>when</em> things started failing, which a total count never shows.<br><span class="axl2">X: time — seconds before now · Y: percent completed</span></p>
+        <div id="cSuccess"><div class="empty">Collecting…</div></div>
+      </div>
+
+      <div class="panel">
+        <span id="a-hist" class="anchor"></span>
+        <h2>Job duration distribution</h2>
+        <p class="cap">How long jobs take, in fixed buckets. Percentiles say a tail exists; this shows its shape — and the buckets never rescale, so two runs compare directly.<br><span class="axl2">X: duration bucket · Y: number of jobs</span></p>
+        <div id="cHist"><div class="empty">Collecting…</div></div>
+      </div>
+
+      <div class="panel">
+        <span id="a-pct" class="anchor"></span>
+        <h2>Queue wait percentiles over time</h2>
+        <p class="cap">p50 / p95 / p99 of submit→dispatch over a rolling minute. The <b>gap between p50 and p99 is your fairness signal</b> — a wide gap means some jobs are starved while most are fine.<br><span class="axl2">X: time — seconds before now · Y: milliseconds waiting</span></p>
+        <div id="cPct"><div class="empty">Collecting…</div></div>
+        <div class="lg">
+          <span><i style="background:var(--s3)"></i>p50</span>
+          <span><i style="background:var(--s4)"></i>p95</span>
+          <span><i style="background:var(--s2)"></i>p99</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <span id="a-util" class="anchor"></span>
+        <h2>Per-worker slot utilisation</h2>
+        <p class="cap">Occupied slots per node. An aggregate hides imbalance — this shows whether one worker is pinned while others idle, which points at capability routing or affinity.<br><span class="axl2">X: time — seconds before now · Y: occupied slots</span></p>
+        <div id="cUtil"><div class="empty">Collecting…</div></div>
+        <div class="lg" id="lgUtil"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <span id="a-prio" class="anchor"></span>
+      <h2>Does priority actually work?</h2>
+      <p class="cap">Queue wait grouped by the priority each job declared. The queue is a priority queue, so a higher band should wait <i>less</i> — if the bars are level, the ordering is being ignored and the priority field is decoration. This is a correctness check, not a performance one.<br><span class="axl2">X: declared priority · Y: milliseconds waited (median, with p95 marked)</span></p>
+      <div id="cPrio"><div class="empty">Collecting…</div></div>
+      <div id="prioNote" class="cap" style="margin-top:8px"></div>
+    </div>
+
+    <div class="panel">
+      <span id="a-trend" class="anchor"></span>
+      <h2>Pipeline duration trend</h2>
+      <p class="cap">Wall-clock per completed run, grouped by pipeline. This is the regression detector — the same DAG getting slower across runs is what you want to notice.<br><span class="axl2">X: run (oldest → newest) · Y: seconds</span></p>
+      <div id="cTrend"><div class="empty">Collecting…</div></div>
+      <div id="trendTable" class="tscroll" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+<div class="modal" id="zoom" onclick="if(event.target===this)closeZoom()">
+  <div class="sheet">
+    <button class="x" onclick="closeZoom()" aria-label="Close">&times;</button>
+    <h3 id="zoomTitle"></h3>
+    <p class="cap" id="zoomCap"></p>
+    <div id="zoomBody"></div>
+  </div>
+</div>
+
+<script>
+var SERIES = ['--s1','--s2','--s3','--s4','--s5'];
+
+/* Element helpers. Reading .value off a missing node throws and aborts the whole render callback —
+   which is exactly how a missing el() silently blanked every chart below scalingPanel(). */
+function el(id) { return document.getElementById(id); }
+
+/* Render one panel, and if it throws, say so in that panel instead of blanking the page. */
+function safe(label, fn) {
+  try { fn(); }
+  catch (e) {
+    console.error('[cluster] ' + label + ' failed:', e);
+    var c = el('conn');
+    if (c) { c.textContent = 'PARTIAL'; c.className = 'pill'; }
+  }
+}
+function val(id, dflt) { var e = el(id); return e ? e.value : (dflt === undefined ? '' : dflt); }
+function setVal(id, v) { var e = el(id); if (e) e.value = v; }
+
+/* Click-to-expand. The chart SVG is cloned into a modal at full width, so the same viewBox
+   renders large without re-implementing any chart. */
+function makeZoomable(hostId, title, caption) {
+  var h = el(hostId);
+  if (!h || h.dataset.zoomWired) return;
+  h.dataset.zoomWired = '1';
+  h.classList.add('zoomable');
+  h.title = 'Click to expand';
+  h.addEventListener('click', function (e) {
+    if (e.target.closest('a,button,select,input,summary')) return;
+    var svg = h.querySelector('svg');
+    if (!svg) return;
+    el('zoomTitle').textContent = title;
+    el('zoomCap').innerHTML = caption || '';
+    el('zoomBody').innerHTML = svg.outerHTML;
+    var big = el('zoomBody').querySelector('svg');
+    if (big) { big.removeAttribute('style'); big.style.width = '100%'; big.style.height = 'auto'; }
+    el('zoom').classList.add('open');
+  });
+}
+function closeZoom() { el('zoom').classList.remove('open'); }
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeZoom(); });
+var timer = null, reqCount = 0, polling = true;
+function cv(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function esc(t){ return String(t).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+function fmtMs(v){ return v < 1000 ? v + 'ms' : (v/1000).toFixed(2) + 's'; }
+
+var tip = document.getElementById('tip');
+function showTip(e, text){ tip.textContent = text; tip.style.display='block';
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - 240) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; }
+function hideTip(){ tip.style.display='none'; }
+
+/* Host vitals are -1 when the worker could not measure them, or absent from a worker built
+   before the heartbeat carried them. Both cases read as "not reported", never as zero. */
+function hostPct(v) {
+  if (v === undefined || v === null || v < 0) return '<span style="color:var(--ink-3)">n/a</span>';
+  var cls = v >= 90 ? 's-bad' : v >= 70 ? 's-warn' : 's-ok';
+  return '<span class="' + cls + '">' + v + '%</span>';
+}
+
+/* The reading that slots alone cannot give: is a full pool actually working? */
+function hostNote(w) {
+  var cpu = w.host_cpu_pct, load = w.load || '';
+  if (cpu === undefined || cpu === null || cpu < 0) {
+    return '<p class="cap" style="margin:8px 0 0">Host vitals not reported &mdash; this worker ' +
+           'predates the heartbeat carrying them, or its JVM withholds them.</p>';
+  }
+  var m = /^(\d+)\s*\/\s*(\d+)$/.exec(String(load).trim());
+  if (!m) return '';
+  var used = +m[1], cap = +m[2];
+  if (!cap) return '';
+  var slotPct = 100 * used / cap;
+  var msg;
+  if (slotPct >= 99 && cpu < 30) {
+    msg = '<b class="s-warn"><span class="g">!</span>Slots full, machine idle</b> &mdash; work is ' +
+          'holding slots without using the box. Raising this node\'s capacity would admit more work.';
+  } else if (slotPct >= 99) {
+    msg = '<b class="s-ok"><span class="g">✓</span>Slots full and the machine is busy</b> &mdash; ' +
+          'this node is genuinely at its limit.';
+  } else if (cpu >= 90) {
+    msg = '<b class="s-bad"><span class="g">✕</span>Free slots but the machine is pinned</b> &mdash; ' +
+          'admitting more work here will slow what is already running.';
+  } else {
+    return '';
+  }
+  return '<p class="cap" style="margin:8px 0 0">' + msg + '</p>';
+}
+
+/* ---------------- topology ---------------- */
+var SELECTED = null, NODE_FILTER = 'all', LAST = { stats: null, metrics: null };
+
+function drawTopo(stats, metrics) {
+  LAST.stats = stats; LAST.metrics = metrics;
+  var ws = (stats.workers || []).slice().sort(function (a, b) { return a.port - b.port; });
+  if (NODE_FILTER === 'permanent') ws = ws.filter(function (w) { return w.permanent !== false; });
+  else if (NODE_FILTER === 'ephemeral') ws = ws.filter(function (w) { return w.permanent === false; });
+  else if (NODE_FILTER === 'busy') ws = ws.filter(function (w) { return !!w.active_job; });
+  var host = document.getElementById('topo');
+  if (!ws.length) { host.innerHTML = '<div class="empty">No workers registered.</div>'; return; }
+
+  // Two columns once the fleet grows, so height stays bounded as the scaler adds nodes.
+  var cols = ws.length > 4 ? 2 : 1;
+  var rows = Math.ceil(ws.length / cols);
+  var NW = 226, NH = 34, GAPY = 9, GAPX = 14;
+  var colX = [214, 214 + NW + GAPX];
+  var H = Math.max(rows * (NH + GAPY) + 22, 112);
+  var W = colX[cols - 1] + NW + 12;
+  var mx = 46, my = H / 2;
+
+  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Cluster topology: Master plus ' +
+          ws.length + ' workers. Dashed nodes are ephemeral.">';
+
+  function pos(i) {
+    var c = Math.floor(i / rows), r = i % rows;
+    return { x: colX[c], y: 16 + r * (NH + GAPY) + NH / 2 };
+  }
+
+  // edges first
+  ws.forEach(function (w, i) {
+    var p = pos(i);
+    var key = (w.host || '127.0.0.1') + ':' + w.port;
+    var hb = (metrics.heartbeat || {})[key];
+    var rtt = hb && hb.length ? hb[hb.length - 1][1] : null;
+    s += '<path class="edge' + (w.active_job ? ' busy' : '') + '" d="M ' + (mx + 26) + ' ' + my +
+         ' C ' + (mx + 96) + ' ' + my + ', ' + (p.x - 62) + ' ' + p.y + ', ' + p.x + ' ' + p.y + '"/>';
+    if (rtt !== null && Math.floor(i / rows) === 0) {
+      s += '<text class="node-sub" x="' + (p.x - 50) + '" y="' + (p.y - 4) + '">' + rtt + 'ms</text>';
+    }
+  });
+
+  // master
+  s += '<g class="nodehit" data-kind="master">';
+  s += '<circle class="card" cx="' + mx + '" cy="' + my + '" r="25" fill="' + cv('--surface-2') + '" stroke="' + cv('--s1') + '" stroke-width="1.8"/>';
+  s += '<text class="node-lbl" x="' + mx + '" y="' + (my - 1) + '" text-anchor="middle" font-size="9">MASTER</text>';
+  s += '<text class="node-sub" x="' + mx + '" y="' + (my + 11) + '" text-anchor="middle">:9090</text>';
+  s += '</g>';
+  s += '<text class="node-sub" x="' + mx + '" y="' + (my + 38) + '" text-anchor="middle">q ' + (stats.queue_size || 0) + '</text>';
+
+  ws.forEach(function (w, i) {
+    var p = pos(i), x = p.x, y = p.y;
+    var lp = String(w.load || '0/0').split('/');
+    var used = parseInt(lp[0], 10) || 0, cap = parseInt(lp[1], 10) || 1;
+    var frac = Math.min(used / cap, 1);
+    var ephem = w.permanent === false;
+    var col = used === 0 ? cv('--ink-3') : (frac >= 1 ? cv('--bad') : cv('--s3'));
+
+    s += '<g class="nodehit' + (SELECTED === w.port ? ' sel' : '') + '" data-port="' + w.port + '">';
+    s += '<rect x="' + x + '" y="' + (y - NH / 2) + '" width="' + NW + '" height="' + NH + '" rx="5" fill="' + cv('--surface-2') +
+         '" stroke="' + (ephem ? cv('--s4') : cv('--s1')) + '" stroke-width="1.4"' + (ephem ? ' stroke-dasharray="4 3"' : '') + '/>';
+    // Two lines, and the text box stops short of the ring so nothing overlaps.
+    s += '<text class="node-lbl" x="' + (x + 9) + '" y="' + (y - 6) + '" font-size="10">' +
+         esc(w.host || '?') + ':' + w.port + '</text>';
+    s += '<text class="node-sub" x="' + (x + 9) + '" y="' + (y + 6) + '">' +
+         esc(w.capabilities || '') + ' · ' + (ephem ? 'ephemeral' : 'permanent') + '</text>';
+    s += '<text class="node-sub" x="' + (x + 9) + '" y="' + (y + 17) + '">slots ' + esc(w.load || '') +
+         ((w.services || []).length ? ' · ' + w.services.length + ' service' + (w.services.length > 1 ? 's' : '') : '') +
+         (w.active_job ? ' · running' : '') + '</text>';
+
+    var cx = x + NW - 22, cy = y, r = 11, circ = 2 * Math.PI * r;
+    s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + cv('--line') + '" stroke-width="3"/>';
+    if (frac > 0) {
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + col +
+           '" stroke-width="3" stroke-linecap="round" stroke-dasharray="' + (circ * frac) + ' ' + circ +
+           '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
+    }
+    s += '<text class="node-sub" x="' + cx + '" y="' + (cy + 3) + '" text-anchor="middle" font-size="8">' + used + '</text>';
+    s += '</g>';
+  });
+
+  host.innerHTML = s + '</svg>';
+
+  Array.prototype.forEach.call(host.querySelectorAll('.nodehit'), function (g) {
+    g.addEventListener('click', function () {
+      var port = g.getAttribute('data-port');
+      SELECTED = g.getAttribute('data-kind') === 'master' ? 'master' : parseInt(port, 10);
+      drawTopo(LAST.stats, LAST.metrics);
+      showDetail();
+    });
+  });
+  showDetail();
+}
+
+function showDetail() {
+  var box = document.getElementById('detail');
+  var stats = LAST.stats || {}, metrics = LAST.metrics || {};
+  if (SELECTED === null) {
+    box.innerHTML = '<p class="hint">Click the Master or any worker to inspect it — capability, slot occupancy, hosted services, current job, and its heartbeat history.</p>';
+    return;
+  }
+  if (SELECTED === 'master') {
+    var q = (metrics.queue || []).slice(-1)[0] || [0, 0, 0, 0, 0];
+    var ev = (metrics.scaler_events || []).slice(-5).reverse();
+    box.innerHTML = '<h3>Master</h3><div class="meta">control plane · :9090</div><dl>' +
+      d('workers', stats.active_workers || 0) + d('ready queue', q[1]) + d('blocked', q[2]) +
+      d('running', q[3]) + d('delayed', q[4]) + '</dl>' +
+      (ev.length ? '<div class="meta" style="margin-top:12px">recent scaler decisions</div><ul>' +
+        ev.map(function (e) { return '<li>' + esc(e.type) + ' — ' + esc(e.detail) + '</li>'; }).join('') + '</ul>' : '');
+    return;
+  }
+  var w = (stats.workers || []).filter(function (x) { return x.port === SELECTED; })[0];
+  if (!w) { box.innerHTML = '<p class="hint">That worker is no longer registered — it may have been reclaimed.</p>'; return; }
+  var key = (w.host || '127.0.0.1') + ':' + w.port;
+  var hb = (metrics.heartbeat || {})[key] || [];
+  var rtts = hb.map(function (p) { return p[1]; });
+  var hist = (w.history || []);
+
+  // Anything the stats payload marks RUNNING on this node, plus the active_job flag.
+  var live = hist.filter(function (h) { return h.status === 'RUNNING'; });
+  if (w.active_job && !live.some(function (h) { return h.id === w.active_job; })) {
+    live = [{ id: w.active_job, status: 'RUNNING', time: '' }].concat(live);
+  }
+  var done = hist.filter(function (h) { return h.status !== 'RUNNING'; }).slice(0, 6);
+
+  var spark = '';
+  if (rtts.length > 1) {
+    var mx2 = Math.max.apply(null, rtts.concat([5]));
+    var pts = rtts.map(function (v, i) { return (i / (rtts.length - 1) * 246) + ',' + (26 - 24 * v / mx2); }).join(' ');
+    spark = '<svg viewBox="0 0 246 28" style="margin-top:10px;height:28px"><polyline points="' + pts +
+            '" fill="none" stroke="' + cv('--s1') + '" stroke-width="1.5"/></svg>' +
+            '<div class="meta">heartbeat rtt · max ' + mx2 + 'ms</div>';
+  }
+
+  box.innerHTML = '<h3>' + esc(w.host || '') + ':' + w.port + '</h3>' +
+    '<div class="meta">' + esc(w.capabilities || '') + ' · ' + (w.permanent === false ? 'ephemeral' : 'permanent') + '</div>' +
+    '<dl>' + d('slots', esc(w.load || '')) + d('running', live.length) + d('services', (w.services || []).length) +
+    d('rtt', rtts.length ? rtts[rtts.length - 1] + 'ms' : '—') +
+    // Slot occupancy says how many jobs a node holds; these say how hard the box is working.
+    // A full pool at 12% CPU and a full pool at 95% mean very different things.
+    d('host cpu', hostPct(w.host_cpu_pct)) +
+    d('host mem', hostPct(w.host_mem_pct)) +
+    d('load avg', w.host_load_x100 === undefined || w.host_load_x100 < 0
+        ? '<span style="color:var(--ink-3)">n/a</span>'
+        : (w.host_load_x100 / 100).toFixed(2)) + '</dl>' +
+    hostNote(w) +
+    (live.length ? '<div class="meta" style="margin-top:11px;color:var(--s1)">running now</div><ul>' +
+      live.map(function (h) {
+        return '<li style="color:var(--s1)">▶ ' + esc(h.id) + (h.time ? ' <span style="color:var(--ink-3)">' + esc(h.time) + '</span>' : '') + '</li>';
+      }).join('') + '</ul>' : '<div class="meta" style="margin-top:11px">idle — nothing running</div>') +
+    ((w.services || []).length ? '<div class="meta" style="margin-top:10px;color:var(--good)">services hosted</div><ul>' +
+      w.services.map(function (sv) { return '<li style="color:var(--good)">⚙ ' + esc(sv) + '</li>'; }).join('') + '</ul>' : '') +
+    (done.length ? '<div class="meta" style="margin-top:10px">recently finished</div><ul>' +
+      done.map(function (h) {
+        var col = h.status === 'COMPLETED' ? 'var(--ink-2)' : 'var(--bad)';
+        return '<li style="color:' + col + '">' + esc(h.id) + ' · ' + esc(h.status) + ' · ' + esc(h.time || '') + '</li>';
+      }).join('') + '</ul>' : '') + spark;
+}
+
+function d(k, v) { return '<dt>' + k + '</dt><dd>' + v + '</dd>'; }
+
+/* ---------------- chart primitives ---------------- */
+function frame(w, h, pad) { return { w: w, h: h, p: pad, iw: w - pad.l - pad.r, ih: h - pad.t - pad.b }; }
+/* Axis titles. Y is rotated along the left edge, X sits under the tick row. Every chart declares
+   its own units so a reader never has to infer them from the numbers. */
+function axisTitles(f, yLabel, xLabel) {
+  var s = '';
+  if (yLabel) {
+    s += '<text class="axl" transform="rotate(-90 10 ' + (f.p.t + f.ih / 2) + ')" x="10" y="' +
+         (f.p.t + f.ih / 2) + '" text-anchor="middle">' + yLabel + '</text>';
+  }
+  if (xLabel) {
+    s += '<text class="axl" x="' + (f.p.l + f.iw / 2) + '" y="' + (f.h - 1) + '" text-anchor="middle">' +
+         xLabel + '</text>';
+  }
+  return s;
+}
+
+function axes(f, yMax, xLabels) {
+  var s = '';
+  for (var g = 0; g <= 4; g++) {
+    var y = f.p.t + f.ih - (f.ih * g / 4);
+    s += '<line class="gl" x1="' + f.p.l + '" y1="' + y + '" x2="' + (f.p.l + f.iw) + '" y2="' + y + '"/>';
+    s += '<text class="axt" x="' + (f.p.l - 6) + '" y="' + (y + 3) + '" text-anchor="end">' +
+         Math.round(yMax * g / 4) + '</text>';
+  }
+  s += '<line class="ax" x1="' + f.p.l + '" y1="' + (f.p.t + f.ih) + '" x2="' + (f.p.l + f.iw) + '" y2="' + (f.p.t + f.ih) + '"/>';
+  (xLabels || []).forEach(function (L) {
+    s += '<text class="axt" x="' + L.x + '" y="' + (f.p.t + f.ih + 13) + '" text-anchor="middle">' + L.t + '</text>';
+  });
+  return s;
+}
+function xTicks(f, pts) {
+  if (pts.length < 2) return [];
+  var out = [], n = Math.min(4, pts.length - 1);
+  for (var i = 0; i <= n; i++) {
+    var idx = Math.round(i * (pts.length - 1) / n);
+    var ago = Math.round((pts[pts.length - 1][0] - pts[idx][0]) / 1000);
+    out.push({ x: f.p.l + f.iw * idx / (pts.length - 1), t: ago === 0 ? 'now' : '-' + ago + 's' });
+  }
+  return out;
+}
+
+/* stacked area — composition of a whole over time */
+function stackedArea(el, pts, cols, names, tblEl) {
+  var host = document.getElementById(el);
+  if (pts.length < 2) { host.innerHTML = '<div class="empty">Collecting…</div>'; return; }
+  var f = frame(430, 196, { l: 46, r: 10, t: 8, b: 34 });
+  var totals = pts.map(function (p) { return cols.reduce(function (a, c) { return a + p[c]; }, 0); });
+  var yMax = Math.max.apply(null, totals.concat([4]));
+  var X = function (i) { return f.p.l + f.iw * i / (pts.length - 1); };
+  var Y = function (v) { return f.p.t + f.ih - (f.ih * v / yMax); };
+
+  var s = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">' + axes(f, yMax, xTicks(f, pts)) +
+          axisTitles(f, 'jobs', 'time — seconds before now');
+  var base = pts.map(function () { return 0; });
+  cols.forEach(function (c, ci) {
+    var top = pts.map(function (p, i) { return base[i] + p[c]; });
+    var d = 'M ' + X(0) + ' ' + Y(base[0]);
+    for (var i = 0; i < pts.length; i++) d += ' L ' + X(i) + ' ' + Y(top[i]);
+    for (var j = pts.length - 1; j >= 0; j--) d += ' L ' + X(j) + ' ' + Y(base[j]);
+    // 2px surface gap between stacked segments keeps the boundary readable
+    s += '<path d="' + d + ' Z" fill="' + cv(SERIES[ci]) + '" opacity="0.85" stroke="' + cv('--surface') + '" stroke-width="2"/>';
+    base = top;
+  });
+  // hover crosshair
+  s += '<rect x="' + f.p.l + '" y="' + f.p.t + '" width="' + f.iw + '" height="' + f.ih +
+       '" fill="transparent" id="' + el + '_hit"/>';
+  s += '<line id="' + el + '_cx" class="ax" y1="' + f.p.t + '" y2="' + (f.p.t + f.ih) + '" style="display:none"/>';
+  host.innerHTML = s + '</svg>';
+
+  var hit = document.getElementById(el + '_hit'), cx = document.getElementById(el + '_cx');
+  hit.addEventListener('mousemove', function (e) {
+    var r = hit.getBoundingClientRect();
+    var i = Math.round((e.clientX - r.left) / r.width * (pts.length - 1));
+    i = Math.max(0, Math.min(pts.length - 1, i));
+    cx.setAttribute('x1', X(i)); cx.setAttribute('x2', X(i)); cx.style.display = '';
+    showTip(e, names.map(function (n, k) { return n + ': ' + pts[i][cols[k]]; }).join('\n'));
+  });
+  hit.addEventListener('mouseleave', function () { cx.style.display = 'none'; hideTip(); });
+
+  if (tblEl) {
+    var rows = pts.slice(-8).reverse().map(function (p) {
+      return '<tr><td>-' + Math.round((pts[pts.length-1][0]-p[0])/1000) + 's</td>' +
+             cols.map(function (c) { return '<td>' + p[c] + '</td>'; }).join('') + '</tr>';
+    }).join('');
+    document.getElementById(tblEl).innerHTML =
+      '<table class="tv"><thead><tr><th>t</th>' + names.map(function (n) { return '<th>' + n + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+}
+
+/* single-series line — no legend needed, the title names it */
+function line(el, pts, col, unit, tblEl) {
+  var host = document.getElementById(el);
+  if (pts.length < 2) { host.innerHTML = '<div class="empty">No samples yet &mdash; dispatch a job.</div>'; return; }
+  var f = frame(430, 196, { l: 46, r: 10, t: 8, b: 34 });
+  var yMax = Math.max.apply(null, pts.map(function (p) { return p[1]; }).concat([10]));
+  var X = function (i) { return f.p.l + f.iw * i / (pts.length - 1); };
+  var Y = function (v) { return f.p.t + f.ih - (f.ih * v / yMax); };
+  var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i) + ' ' + Y(p[1]); }).join(' ');
+  var s = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">' + axes(f, yMax, xTicks(f, pts)) +
+          axisTitles(f, 'milliseconds', 'time — seconds before now');
+  s += '<path d="' + d + '" fill="none" stroke="' + cv(col) + '" stroke-width="2" stroke-linejoin="round"/>';
+  // emphasized endpoint
+  s += '<circle cx="' + X(pts.length - 1) + '" cy="' + Y(pts[pts.length - 1][1]) + '" r="4" fill="' + cv(col) +
+       '" stroke="' + cv('--surface') + '" stroke-width="2"/>';
+  s += '<rect x="' + f.p.l + '" y="' + f.p.t + '" width="' + f.iw + '" height="' + f.ih + '" fill="transparent" id="' + el + '_hit"/>';
+  host.innerHTML = s + '</svg>';
+  var hit = document.getElementById(el + '_hit');
+  hit.addEventListener('mousemove', function (e) {
+    var r = hit.getBoundingClientRect();
+    var i = Math.max(0, Math.min(pts.length - 1, Math.round((e.clientX - r.left) / r.width * (pts.length - 1))));
+    showTip(e, pts[i][1] + unit);
+  });
+  hit.addEventListener('mouseleave', hideTip);
+  if (tblEl) {
+    document.getElementById(tblEl).innerHTML = '<table class="tv"><thead><tr><th>t</th><th>' + unit + '</th></tr></thead><tbody>' +
+      pts.slice(-8).reverse().map(function (p) {
+        return '<tr><td>-' + Math.round((pts[pts.length-1][0]-p[0])/1000) + 's</td><td>' + p[1] + '</td></tr>'; }).join('') +
+      '</tbody></table>';
+  }
+}
+
+/* grouped bars — discrete counts per sample; status colours, always labelled */
+function bars(el, pts) {
+  var host = document.getElementById(el);
+  var recent = pts.slice(-30);
+  if (!recent.length) { host.innerHTML = '<div class="empty">Collecting…</div>'; return; }
+  var f = frame(430, 196, { l: 46, r: 10, t: 8, b: 34 });
+  var yMax = Math.max.apply(null, recent.map(function (p) { return Math.max(p[1], p[2]); }).concat([2]));
+  var bw = Math.max(f.iw / recent.length - 3, 2);
+  var s = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">' + axes(f, yMax, xTicks(f, recent)) +
+          axisTitles(f, 'jobs per sample', 'time — seconds before now');
+  recent.forEach(function (p, i) {
+    var x = f.p.l + f.iw * i / recent.length;
+    [[1, '--ok'], [2, '--bad']].forEach(function (pair, k) {
+      var v = p[pair[0]]; if (!v) return;
+      var h = f.ih * v / yMax;
+      // 4px rounded data-end anchored to the baseline
+      s += '<rect x="' + (x + k * bw / 2) + '" y="' + (f.p.t + f.ih - h) + '" width="' + (bw / 2 - 1) +
+           '" height="' + h + '" rx="2" fill="' + cv(pair[1]) + '"/>';
+    });
+  });
+  host.innerHTML = s + '</svg>';
+}
+
+/* multi-series line, one per worker — legend always present for >= 2 */
+function multiLine(el, seriesMap, legendEl, stats) {
+  var perm = {};
+  (((stats || {}).workers) || []).forEach(function (w) { perm[(w.host || '127.0.0.1') + ':' + w.port] = w.permanent !== false; });
+  var host = document.getElementById(el), keys = Object.keys(seriesMap).sort();
+  if (!keys.length) { host.innerHTML = '<div class="empty">No heartbeats yet.</div>'; return; }
+  var f = frame(430, 196, { l: 46, r: 10, t: 8, b: 34 });
+  var all = [];
+  keys.forEach(function (k) { seriesMap[k].forEach(function (p) { all.push(p[1]); }); });
+  var yMax = Math.max.apply(null, all.concat([20]));
+  var s = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">';
+  var longest = keys.reduce(function (a, k) { return Math.max(a, seriesMap[k].length); }, 0);
+  s += axes(f, yMax, xTicks(f, seriesMap[keys[0]])) +
+       axisTitles(f, 'round-trip ms', 'time — seconds before now');
+  keys.forEach(function (k, ki) {
+    var pts = seriesMap[k]; if (pts.length < 2) return;
+    var X = function (i) { return f.p.l + f.iw * i / (longest - 1); };
+    var Y = function (v) { return f.p.t + f.ih - (f.ih * v / yMax); };
+    var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i) + ' ' + Y(p[1]); }).join(' ');
+    var isEphem = perm[k] === false;
+    s += '<path d="' + d + '" fill="none" stroke="' + cv(SERIES[ki % SERIES.length]) +
+         '" stroke-width="2"' + (isEphem ? ' stroke-dasharray="5 3"' : '') + '/>';
+    var last = pts[pts.length - 1];
+    s += '<circle cx="' + X(pts.length - 1) + '" cy="' + Y(last[1]) + '" r="4" fill="' + cv(SERIES[ki % SERIES.length]) +
+         '" stroke="' + cv('--surface') + '" stroke-width="2"/>';
+  });
+  host.innerHTML = s + '</svg>';
+  if (legendEl) {
+    document.getElementById(legendEl).innerHTML = keys.map(function (k, ki) {
+      var pts = seriesMap[k], last = pts.length ? pts[pts.length - 1][1] : '—';
+      var tag = perm[k] === false ? ' <span style="color:var(--s4)">ephemeral</span>' : ' permanent';
+      return '<span><i style="background:' + cv(SERIES[ki % SERIES.length]) + '"></i>' + esc(k) + ' · ' + last + 'ms' + tag + '</span>';
+    }).join('');
+  }
+}
+
+/* Percentage-over-time line. Shares a shape with line() but the axis is a fixed 0-100 scale, so
+   a 4% failure rate does not get drawn as a mountain by auto-scaling to its own max. */
+function pctLine(elId, pts, col, legendEl, legendFmt, warnAt, badAt) {
+  var host = el(elId);
+  if (!host) return;
+  if (pts.length < 2) { host.innerHTML = '<div class="empty">Collecting…</div>'; return; }
+  var f = frame(430, 196, { l: 46, r: 10, t: 8, b: 34 });
+  var X = function (i) { return f.p.l + f.iw * i / (pts.length - 1); };
+  var Y = function (v) { return f.p.t + f.ih - (f.ih * Math.max(0, Math.min(100, v)) / 100); };
+  var g = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">';
+  for (var k = 0; k <= 4; k++) {
+    var yv = 25 * k, y = Y(yv);
+    g += '<line class="gl" x1="' + f.p.l + '" y1="' + y + '" x2="' + (f.w - f.p.r) + '" y2="' + y + '"/>' +
+         '<text class="axt" x="' + (f.p.l - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + yv + '%</text>';
+  }
+  g += axisTitles(f, 'percent', 'time — seconds before now');
+  g += '<path d="' + pts.map(function (pt, i) { return (i ? 'L' : 'M') + X(i) + ' ' + Y(pt[1]); }).join(' ') +
+       '" fill="none" stroke="' + cv(col) + '" stroke-width="2"/>';
+  var last = pts[pts.length - 1];
+  g += '<circle cx="' + X(pts.length - 1) + '" cy="' + Y(last[1]) + '" r="4" fill="' + cv(col) +
+       '" stroke="' + cv('--surface') + '" stroke-width="2"/>';
+  host.innerHTML = g + '</svg>';
+  if (legendEl && el(legendEl)) {
+    var cur = last[1];
+    var st = (badAt !== undefined && cur >= badAt) ? 's-bad'
+           : (warnAt !== undefined && cur >= warnAt) ? 's-warn' : 's-ok';
+    var gly = st === 's-bad' ? '✕' : st === 's-warn' ? '!' : '✓';
+    el(legendEl).innerHTML = '<span class="' + st + '"><span class="g">' + gly + '</span>' +
+      legendFmt(cur, pts) + '</span>';
+  }
+}
+
+/* Failure rate per sample, derived from the throughput series: [ts, completed, failed]. */
+function failureRate(thru) {
+  var pts = [], totalDone = 0, totalFail = 0;
+  (thru || []).forEach(function (p) {
+    var done = p[1] || 0, failed = p[2] || 0, settled = done + failed;
+    totalDone += done; totalFail += failed;
+    // A sample with no settled job is not 0% failure, it is no data — carry the last known rate
+    // forward so an idle gap does not draw a false recovery to zero.
+    var rate = settled ? 100 * failed / settled : (pts.length ? pts[pts.length - 1][1] : 0);
+    pts.push([p[0], rate]);
+  });
+  pctLine('cFail', pts, '--s2', 'lgFail', function (cur) {
+    var overall = (totalDone + totalFail) ? 100 * totalFail / (totalDone + totalFail) : 0;
+    return 'now ' + cur.toFixed(1) + '% · ' + overall.toFixed(1) + '% over the window · ' +
+           totalFail + ' failed of ' + (totalDone + totalFail) + ' settled';
+  }, 5, 20);
+}
+
+/* Occupied slots as a share of total slots, from the queue series [ts,...,running,...,workers,slots]. */
+function saturation(queue) {
+  var pts = [];
+  // Occupancy (field 7) rather than `running` (field 3): runningJobs keeps a job until its
+  // callback arrives, so a job orphaned by a reclaimed worker stays counted there and the ratio
+  // can exceed 100%. Field 7 is summed from the live workers' own load counters.
+  (queue || []).forEach(function (p) {
+    if (p.length < 7) return;
+    var occupied = p.length > 7 ? (p[7] || 0) : (p[3] || 0);
+    var slots = p[6] || 0;
+    pts.push([p[0], slots ? Math.min(100, 100 * occupied / slots) : 0]);
+  });
+  pctLine('cSat', pts, '--s1', 'lgSat', function (cur, all) {
+    var peak = Math.max.apply(null, all.map(function (x) { return x[1]; }));
+    var last = (queue || [])[queue.length - 1] || [];
+    var occ = last.length > 7 ? (last[7] || 0) : (last[3] || 0);
+    var orphan = (last[3] || 0) - occ;
+    return 'now ' + cur.toFixed(0) + '% (' + occ + ' of ' + (last[6] || 0) +
+           ' slots) · peak ' + peak.toFixed(0) + '% in this window' +
+           // A positive gap means the Master still counts jobs no live worker is running.
+           (orphan > 0 ? ' · ' + orphan + ' job(s) counted running with no live slot' : '');
+  }, 80, 100);
+}
+
+/* The live services. A service has no duration, so nothing else on this page can show it. */
+function servicesPanel(m) {
+  var host = el('svcPanel');
+  if (!host) return;
+  var svcs = (m.services || []).slice().sort(function (a, b) {
+    return (b.uptime_ms || 0) - (a.uptime_ms || 0);
+  });
+  if (!svcs.length) {
+    host.innerHTML = '<div class="allclear" style="color:var(--ink-3)">' +
+      '<i style="background:var(--ink-3);box-shadow:none"></i><span>No services deployed. ' +
+      'Submit a job with <code>job_type="SERVICE"</code> and a port, or run the demo — a service ' +
+      'stays up until stopped, unlike a batch job.</span></div>';
+    return;
+  }
+  host.innerHTML = '<div style="overflow-x:auto"><table class="budget"><thead><tr>' +
+    '<th>Service</th><th>Address</th><th>Uptime</th><th>Host node</th><th>Deploys</th>' +
+    '<th>Service</th><th>Deploy job</th></tr></thead><tbody>' +
+    svcs.map(function (sv) {
+      var up = sv.uptime_ms;
+      // Being in this list IS the liveness statement — the Master drops a service from it when
+      // it is stopped or its host is lost. The job status is a different fact: a SERVICE deploy
+      // job COMPLETES once readiness passes, while the process it started keeps running, so
+      // reading "COMPLETED" as "not live" would invert the meaning.
+      var deploy = String(sv.status || 'UNKNOWN').toUpperCase();
+      var deployBad = deploy.indexOf('FAIL') >= 0 || deploy === 'DEAD';
+      var addr = sv.port ? sv.host + ':' + sv.port : '—';
+      return '<tr><td class="layer">' + esc(sv.id) + '</td>' +
+        '<td>' + (sv.port
+          ? '<a href="http://' + esc(addr) + '" target="_blank" rel="noopener" ' +
+            'style="color:var(--accent)">' + esc(addr) + '</a>'
+          : '<span style="color:var(--ink-3)">portless</span>') + '</td>' +
+        '<td>' + (up >= 0 ? fmtUptime(up) : '—') + '</td>' +
+        '<td>' + esc(sv.worker || '—') +
+          (sv.worker_permanent === false
+            ? ' <span style="color:var(--s4)">ephemeral</span>'
+            : '') + '</td>' +
+        // More than one deploy attempt means readiness probing failed and the deploy was retried.
+        '<td class="' + ((sv.deploy_attempts || 1) > 1 ? 's-warn' : '') + '">' +
+          ((sv.deploy_attempts || 1) > 1 ? '! ' : '') + (sv.deploy_attempts || 1) + '</td>' +
+        '<td class="s-ok"><span class="g">✓</span>LIVE</td>' +
+        '<td class="' + (deployBad ? 's-bad' : '') + '">' +
+          (deployBad ? '<span class="g">✕</span>' : '') + esc(deploy) + '</td></tr>';
+    }).join('') + '</tbody></table></div>' +
+    '<p class="cap" style="margin-top:9px">Addresses come from the discovery keys the Master ' +
+    'writes when readiness passes, so a service listed here answered a probe on that port. ' +
+    '<b>Deploys</b> counts deploy attempts, not process restarts — a crash-looping service is ' +
+    'restarted by its worker, which does not report that to the Master. A <b>deploy job</b> of ' +
+    'COMPLETED is normal and means readiness passed: the job finishes, the process it launched ' +
+    'keeps serving. Anything listed here is live by definition — the Master removes a service ' +
+    'from this set when it is stopped or its host is lost.</p>';
+}
+
+function fmtUptime(ms) {
+  var s = Math.floor(ms / 1000);
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+  return Math.floor(s / 86400) + 'd ' + Math.floor((s % 86400) / 3600) + 'h';
+}
+
+/* ---------------- demo runner ---------------- */
+/* A preset workflow you can fire while someone is watching. The request carries a preset NAME and
+   nothing else — no script, no job spec — so the page cannot be used to run arbitrary work. */
+var DEMO = { timer: null, expect: 0 };
+
+function loadDemoPresets() {
+  fetch('/api/demo/presets').then(function (r) { return r.json(); }).then(function (d) {
+    var sel = el('demoPreset'), btn = el('btnDemo');
+    if (!sel) return;
+    if (!d.enabled) {
+      sel.innerHTML = '<option value="">demo disabled</option>';
+      sel.disabled = true; if (btn) btn.disabled = true;
+      return;
+    }
+    sel.innerHTML = '<option value="">— pick a workflow —</option>' +
+      (d.presets || []).map(function (p) {
+        return '<option value="' + p.id + '" title="' + esc(p.shows) + '">' + esc(p.label) +
+               ' · ~' + p.seconds + 's</option>';
+      }).join('');
+    // Fan-out is the best opener: it shows parallelism and a critical path in 25 seconds.
+    sel.value = 'fanout';
+  }).catch(function () {});
+}
+
+function runDemo() {
+  var sel = el('demoPreset'), btn = el('btnDemo');
+  var preset = sel ? sel.value : '';
+  if (!preset) { alert('Pick a demo workflow first.'); return; }
+  var label = sel.options[sel.selectedIndex].textContent;
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting…'; }
+  fetch('/api/demo/run', { method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preset: preset }) })
+    .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+    .then(function (res) {
+      if (!res.ok) { showDemo('<b class="s-bad"><span class="g">✕</span>' + esc(res.j.error || 'failed') + '</b>'); return; }
+      DEMO.expect = res.j.expect_seconds || 30;
+      showDemo('<b>' + esc(label) + '</b> submitted — watching it land.');
+      pollDemo();
+    })
+    .catch(function (e) { showDemo('<b class="s-bad"><span class="g">✕</span>' + esc(e.message) + '</b>'); })
+    .finally(function () { if (btn) { btn.disabled = false; btn.textContent = 'Run demo'; } });
+}
+
+function showDemo(html) {
+  var strip = el('demoStrip');
+  if (!strip) return;
+  strip.style.display = '';
+  strip.innerHTML = html;
+}
+
+function pollDemo() {
+  if (DEMO.timer) clearInterval(DEMO.timer);
+  DEMO.timer = setInterval(function () {
+    fetch('/api/demo/status').then(function (r) { return r.json(); }).then(function (d) {
+      if (d.error) {
+        showDemo('<b class="s-bad"><span class="g">✕</span>Demo failed</b> — ' + esc(d.error));
+        clearInterval(DEMO.timer); DEMO.timer = null; return;
+      }
+      var c = d.counts || {}, total = d.total || 0, done = d.done || 0;
+      var pct = total ? Math.round(100 * done / total) : 0;
+      var settled = total > 0 && done >= total && !d.running;
+      // A dead-end preset is SUPPOSED to leave its job pending, so "never settles" is the result.
+      var parked = (c.PENDING || 0) > 0 && (c.RUNNING || 0) === 0 && !d.running;
+      showDemo(
+        '<b class="' + (settled ? 's-ok' : '') + '">' +
+          (settled ? '<span class="g">✓</span>' : '') +
+          esc(d.pipeline || d.preset || 'demo') + '</b> · ' + done + ' of ' + total +
+          ' jobs settled' + (settled ? ' — done' : '') +
+        ' &nbsp;<a href="/timeline?dag=' + encodeURIComponent(d.pipeline || '') +
+          '" style="color:var(--accent)">open in the timeline →</a>' +
+        '<div class="prog"><i style="width:' + pct + '%"></i></div>' +
+        '<div class="counts">' +
+          '<span class="s-ok">✓ completed ' + (c.COMPLETED || 0) + '</span>' +
+          '<span>running ' + (c.RUNNING || 0) + '</span>' +
+          '<span class="' + (parked ? 's-warn' : '') + '">' + (parked ? '! ' : '') +
+            'pending ' + (c.PENDING || 0) + '</span>' +
+          '<span class="' + ((c.FAILED || 0) ? 's-bad' : '') + '">' +
+            ((c.FAILED || 0) ? '✕ ' : '') + 'failed ' + (c.FAILED || 0) + '</span>' +
+          '<span class="' + ((c.DEAD || 0) ? 's-bad' : '') + '">' +
+            ((c.DEAD || 0) ? '✕ ' : '') + 'dead ' + (c.DEAD || 0) + '</span>' +
+        '</div>');
+      if (settled || parked) { clearInterval(DEMO.timer); DEMO.timer = null; }
+    }).catch(function () {});
+  }, 1500);
+}
+
+/* Two comparable series on one scale — write vs read, not two different measures. */
+function dualLine(elId, seriesA, seriesB, nameA, nameB, unit, legendEl) {
+  var host = el(elId);
+  if (!host) return;
+  var a = seriesA || [], b = seriesB || [];
+  if (a.length < 2 && b.length < 2) { host.innerHTML = '<div class="empty">Collecting…</div>'; return; }
+  var f = frame(430, 196, { l: 46, r: 10, t: 8, b: 34 });
+  var all = a.map(function (p) { return p[1]; }).concat(b.map(function (p) { return p[1]; }));
+  var yMax = Math.max.apply(null, all.concat([5]));
+  var longest = Math.max(a.length, b.length);
+  var g = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">' +
+          axes(f, yMax, xTicks(f, a.length ? a : b)) + axisTitles(f, unit, 'time — seconds before now');
+  [[a, '--s1'], [b, '--s3']].forEach(function (pair) {
+    var pts = pair[0]; if (pts.length < 2) return;
+    var X = function (i) { return f.p.l + f.iw * i / (longest - 1); };
+    var Y = function (v) { return f.p.t + f.ih - (f.ih * v / yMax); };
+    g += '<path d="' + pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i) + ' ' + Y(p[1]); }).join(' ') +
+         '" fill="none" stroke="' + cv(pair[1]) + '" stroke-width="2"/>';
+  });
+  host.innerHTML = g + '</svg>';
+  if (legendEl && el(legendEl)) {
+    function lastOf(pts) { return pts.length ? pts[pts.length - 1][1] : '—'; }
+    function peakOf(pts) { return pts.length ? Math.max.apply(null, pts.map(function (p) { return p[1]; })) : '—'; }
+    el(legendEl).innerHTML =
+      '<span><i style="background:' + cv('--s1') + '"></i>' + nameA + ' · now ' + lastOf(a) +
+        unit.replace('milliseconds', 'ms') + ' · peak ' + peakOf(a) + '</span>' +
+      '<span><i style="background:' + cv('--s3') + '"></i>' + nameB + ' · now ' + lastOf(b) +
+        unit.replace('milliseconds', 'ms') + ' · peak ' + peakOf(b) + '</span>';
+  }
+}
+
+/* A phase table under the stack, because reading five stacked bands off an axis is guesswork. */
+function phaseTable(pts) {
+  var host = el('tPhases');
+  if (!host) return;
+  if (!pts.length) { host.innerHTML = ''; return; }
+  var names = ['route', 'select', 'record', 'store', 'send'];
+  var recent = pts.slice(-120);
+  var sums = [0, 0, 0, 0, 0], peaks = [0, 0, 0, 0, 0];
+  recent.forEach(function (p) {
+    for (var i = 0; i < 5; i++) { sums[i] += p[i + 1] || 0; peaks[i] = Math.max(peaks[i], p[i + 1] || 0); }
+  });
+  var total = sums.reduce(function (x, y) { return x + y; }, 0) || 1;
+  host.innerHTML = '<table class="budget"><thead><tr><th>Phase</th><th>Share</th><th>Mean</th>' +
+    '<th>Peak</th></tr></thead><tbody>' + names.map(function (n, i) {
+      var share = 100 * sums[i] / total;
+      return '<tr><td class="layer">' + n + '</td><td>' +
+        '<span class="bar" style="width:' + Math.max(share, 1) + '%;background:' +
+        cv('--s' + (i + 1)) + '"></span>' + share.toFixed(1) + '%</td><td>' +
+        (sums[i] / recent.length).toFixed(2) + 'ms</td><td>' + peaks[i] + 'ms</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+
+/* ---------------- poll ---------------- */
+function tiles(stats, m) {
+  var metrics = m;
+  var q = metrics.queue || [], last = q.length ? q[q.length - 1] : [0, 0, 0, 0, 0];
+  var disp = metrics.dispatch || [];
+  var dv = disp.map(function (p) { return p[1]; }).sort(function (a, b) { return a - b; });
+  var p50 = dv.length ? dv[Math.floor(dv.length * 0.5)] : null;
+  var p99 = dv.length ? dv[Math.min(dv.length - 1, Math.floor(dv.length * 0.99))] : null;
+  var hbs = Object.values(metrics.heartbeat || {}).map(function (a) { return a.length ? a[a.length - 1][1] : 0; });
+  var thru = (metrics.throughput || []).slice(-10).reduce(function (a, p) { return a + p[1]; }, 0);
+  var ephem = (stats.workers || []).filter(function (w) { return w.permanent === false; }).length;
+
+  var workers = stats.active_workers || 0;
+  var ready = last[1], running = last[3];
+  var slots = last.length > 6 ? last[6] : 0;
+  var dlq = (metrics.dlq || {}).depth || 0;
+  var parked = (metrics.parked || {}).total || 0;
+  var hbMax = hbs.length ? Math.max.apply(null, hbs) : null;
+  var upStore = !!(m.store && m.store.connected);
+  var dropped = (m.store || {}).dropped_writes || 0;
+  var deadEnd = (metrics.capability || []).filter(function (c) {
+    return c.waiting > 0 && c.workers === 0; }).length;
+
+  // Only states that mean something get a colour. "Ready queue: 12" is healthy under load and
+  // alarming when nothing is running — so the threshold is the stall, not the depth.
+  var stalled = ready > 0 && running === 0 && workers > 0;
+
+  document.getElementById('tiles').innerHTML =
+    t('Workers', workers + (ephem ? '<small>' + ephem + ' ephemeral</small>' : ''),
+      workers === 0 ? 'bad' : 'ok') +
+    t('Ready queue', ready, stalled ? 'bad' : '') +
+    t('Blocked', last[2]) +
+    t('Running', running + (slots ? '<small>of ' + slots + ' slots</small>' : ''),
+      running > 0 ? 'ok' : '') +
+    t('Dispatch p50', p50 === null ? '—' : p50 + '<small>ms</small>',
+      p50 === null ? '' : band(p50, 100, 1000)) +
+    t('Dispatch p99', p99 === null ? '—' : p99 + '<small>ms</small>',
+      p99 === null ? '' : band(p99, 500, 3000)) +
+    t('Max heartbeat', hbMax === null ? '—' : hbMax + '<small>ms</small>',
+      hbMax === null ? '' : band(hbMax, 1000, 5000)) +
+    t('Done /10s', thru, thru > 0 ? 'ok' : '') +
+    t('Dead letter', dlq, dlq > 0 ? 'bad' : 'ok') +
+    t('Parked', parked, parked > 0 ? 'warn' : 'ok') +
+    t('Capability gaps', deadEnd, deadEnd > 0 ? 'bad' : 'ok') +
+    t('Store', upStore ? 'UP' : 'DOWN', upStore ? (dropped ? 'warn' : 'ok') : 'bad');
+}
+function drawLanes(b) {
+  if (!b || b.error) return;
+  var host = document.getElementById('lanes');
+  var t = b.totals || {};
+
+  function lane(cls, title, count, why, items) {
+    return '<div class="lane l-' + cls + '"><h4>' + title + '<b>' + count + '</b></h4>' +
+           '<p class="why">' + why + '</p>' +
+           (items.length ? '<div class="items">' + items.join('') + '</div>'
+                         : '<p class="none2">✓ empty</p>') + '</div>';
+  }
+
+  var delayed = (b.delayed || []).map(function (x) {
+    return '<div class="card"><span class="jid">' + esc(x.id) + '</span>' +
+           '<span class="meta2">fires in ' + fmtMs(x.eligible_in_ms) + ' · priority ' + x.priority + '</span></div>';
+  });
+
+  var blocked = (b.blocked || []).map(function (x) {
+    var done = x.total_parents - (x.waiting_on || []).length;
+    return '<div class="card"><span class="jid">' + esc(x.id) + '</span>' +
+           '<span class="meta2">' + done + '/' + x.total_parents + ' parents done · waiting ' + fmtMs(x.waiting_ms) + '</span>' +
+           ((x.waiting_on || []).length ? '<span class="meta2 dep">← ' +
+              x.waiting_on.slice(0, 3).map(esc).join(', ') +
+              (x.waiting_on.length > 3 ? ' +' + (x.waiting_on.length - 3) : '') + '</span>' : '') + '</div>';
+  });
+
+  var ready = (b.ready || []).map(function (x) {
+    return '<div class="card' + (x.waiting_ms > 2000 ? ' hot' : '') + '">' +
+           '<span class="pos">#' + x.position + '</span><span class="jid">' + esc(x.id) + '</span>' +
+           '<span class="meta2">waiting ' + fmtMs(x.waiting_ms) + ' · priority ' + x.priority +
+           ' · needs ' + esc(x.requirement) + (x.attempt > 1 ? ' · attempt ' + x.attempt : '') + '</span></div>';
+  });
+
+  var parked = (b.parked || []).map(function (x) {
+    return '<div class="card hot"><span class="jid">' + esc(x.id) + '</span>' +
+           '<span class="meta2">needs <b style="color:var(--bad)">' + esc(x.capability) + '</b> · parked ' +
+           fmtMs(x.parked_ms) + '</span></div>';
+  });
+
+  var idle = !(t.delayed || t.blocked || t.ready || t.parked);
+  if (idle) {
+    host.innerHTML = '<div class="allclear"><i></i><b>Queue is empty.</b>' +
+      '<span>Nothing delayed, blocked, ready or parked — every submitted job has been dispatched.</span></div>';
+    return;
+  }
+
+  host.innerHTML =
+    lane('delayed', 'Delayed', t.delayed || 0,
+         'Submitted with a delay; the timer has not fired. Costs no CPU while waiting.', delayed) +
+    lane('blocked', 'Blocked', t.blocked || 0,
+         'Waiting on parent jobs. Normal in a deep DAG — these unlock on a completion event.', blocked) +
+    lane('ready', 'Ready', t.ready || 0,
+         'Eligible now, in true dispatch order. A growing lane means dispatch is the bottleneck.', ready) +
+    lane('parked', 'Parked', t.parked || 0,
+         'No worker offers the required capability. Will not run until one registers.', parked);
+}
+
+/* Demand vs capacity on one axis — both are "job slots", so no second scale is needed.
+   Scaler decisions are drawn as vertical markers so you can see whether each one followed
+   real pressure or fired on nothing. */
+function scalingChart(m) {
+  var host = document.getElementById('scalingChart');
+  var pts = (m.queue || []).filter(function (p) { return p.length >= 7; });
+  if (pts.length < 3) {
+    host.innerHTML = '<p class="cap" style="margin:0 0 12px">Collecting samples — the chart appears once a minute of history exists.</p>';
+    return;
+  }
+
+  var f = { w: 980, h: 158, p: { l: 52, r: 10, t: 8, b: 34 } };
+  f.iw = f.w - f.p.l - f.p.r; f.ih = f.h - f.p.t - f.p.b;
+  var t0 = pts[0][0], t1 = pts[pts.length - 1][0], span = Math.max(t1 - t0, 1);
+
+  // demand = queued + running; capacity = total slots across registered workers
+  var demand = pts.map(function (p) { return p[1] + p[3]; });
+  var capacity = pts.map(function (p) { return p[6]; });
+  var yMax = Math.max(Math.max.apply(null, demand), Math.max.apply(null, capacity), 4);
+
+  var X = function (i) { return f.p.l + f.iw * (pts[i][0] - t0) / span; };
+  var Y = function (v) { return f.p.t + f.ih - (f.ih * v / yMax); };
+
+  var g = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '" role="img" aria-label="Demand against capacity over time, both in job slots, with scaler decisions marked.">';
+  // Both series are counts of job slots, so they legitimately share one axis — no second scale.
+  g += '<text class="axl" transform="rotate(-90 12 ' + (f.p.t + f.ih / 2) + ')" x="12" y="' +
+       (f.p.t + f.ih / 2) + '" text-anchor="middle">job slots</text>';
+  g += '<text class="axl" x="' + (f.p.l + f.iw / 2) + '" y="' + (f.h - 1) +
+       '" text-anchor="middle">time — seconds before now</text>';
+  for (var k = 0; k <= 4; k++) {
+    var y = f.p.t + f.ih - f.ih * k / 4;
+    g += '<line class="gl" x1="' + f.p.l + '" y1="' + y + '" x2="' + (f.p.l + f.iw) + '" y2="' + y + '"/>' +
+         '<text class="axt" x="' + (f.p.l - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + Math.round(yMax * k / 4) + '</text>';
+  }
+
+  // capacity as a filled step area — it only changes when the fleet changes
+  var cap = 'M ' + X(0) + ' ' + Y(capacity[0]);
+  for (var i = 1; i < pts.length; i++) cap += ' L ' + X(i) + ' ' + Y(capacity[i - 1]) + ' L ' + X(i) + ' ' + Y(capacity[i]);
+  g += '<path d="' + cap + ' L ' + X(pts.length - 1) + ' ' + Y(0) + ' L ' + X(0) + ' ' + Y(0) + ' Z" fill="' +
+       cv('--s3') + '" opacity="0.16"/>';
+  g += '<path d="' + cap + '" fill="none" stroke="' + cv('--s3') + '" stroke-width="2"/>';
+
+  // demand line on the same scale
+  var dm = demand.map(function (v, i) { return (i ? 'L' : 'M') + X(i) + ' ' + Y(v); }).join(' ');
+  g += '<path d="' + dm + '" fill="none" stroke="' + cv('--s2') + '" stroke-width="2"/>';
+
+  // scaler decisions as markers
+  (m.scaler_events || []).forEach(function (e) {
+    if (e.ts < t0 || e.ts > t1) return;
+    if (e.type !== 'SCALE_UP' && e.type !== 'DESCALE') return;
+    var x = f.p.l + f.iw * (e.ts - t0) / span;
+    var col = e.type === 'SCALE_UP' ? cv('--s4') : cv('--s1');
+    g += '<line x1="' + x + '" y1="' + f.p.t + '" x2="' + x + '" y2="' + (f.p.t + f.ih) +
+         '" stroke="' + col + '" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    g += '<circle cx="' + x + '" cy="' + (f.p.t + 4) + '" r="3.5" fill="' + col + '"><title>' +
+         esc(e.type + ' — ' + e.detail) + '</title></circle>';
+  });
+
+  for (var a = 0; a <= 4; a++) {
+    var xx = f.p.l + f.iw * a / 4;
+    var ago = Math.round((t1 - (t0 + span * a / 4)) / 1000);
+    g += '<text class="axt" x="' + xx + '" y="' + (f.p.t + f.ih + 15) + '" text-anchor="middle">' +
+         (ago === 0 ? 'now' : '-' + ago + 's') + '</text>';
+  }
+  // hover layer: a crosshair plus the demand/capacity values at that instant
+  g += '<line id="scx" class="ax" y1="' + f.p.t + '" y2="' + (f.p.t + f.ih) + '" style="display:none"/>';
+  g += '<rect id="schit" x="' + f.p.l + '" y="' + f.p.t + '" width="' + f.iw + '" height="' + f.ih +
+       '" fill="transparent"/>';
+
+  host.innerHTML = g + '</svg>' +
+    '<div class="lg" style="margin:6px 0 14px">' +
+      '<span><i style="background:' + cv('--s2') + '"></i>demand (queued + running)</span>' +
+      '<span><i style="background:' + cv('--s3') + '"></i>capacity (total slots)</span>' +
+      '<span><i style="background:' + cv('--s4') + '"></i>scale-up</span>' +
+      '<span><i style="background:' + cv('--s1') + '"></i>descale</span>' +
+      '<span style="color:var(--ink-3)">a scale-up marker with demand below capacity is a spurious one</span>' +
+    '</div>';
+
+  var hit = el('schit'), cx = el('scx');
+  if (hit && cx) {
+    hit.addEventListener('mousemove', function (ev) {
+      var r = hit.getBoundingClientRect();
+      var frac = (ev.clientX - r.left) / r.width;
+      var i = Math.max(0, Math.min(pts.length - 1, Math.round(frac * (pts.length - 1))));
+      cx.setAttribute('x1', X(i)); cx.setAttribute('x2', X(i)); cx.style.display = '';
+      var ago = Math.round((t1 - pts[i][0]) / 1000);
+      showTip(ev,
+        (ago === 0 ? 'now' : '-' + ago + 's') +
+        '\ndemand    ' + demand[i] + ' slots  (queued ' + pts[i][1] + ' + running ' + pts[i][3] + ')' +
+        '\ncapacity  ' + capacity[i] + ' slots  (' + pts[i][5] + ' worker' + (pts[i][5] === 1 ? '' : 's') + ')' +
+        '\n' + (demand[i] > capacity[i] ? 'short by ' + (demand[i] - capacity[i]) + ' slots'
+                                        : (capacity[i] - demand[i]) + ' slots spare'));
+    });
+    hit.addEventListener('mouseleave', function () { cx.style.display = 'none'; hideTip(); });
+  }
+}
+
+function scalingPanel(m) {
+  scalingChart(m);
+  var sc = m.scaling || {}, ev = (m.scaler_events || []).slice().reverse();
+  var host = document.getElementById('scalingBox');
+
+  var tiles =
+    '<div class="tiles" style="margin-bottom:12px">' +
+    t('Scale-ups', (sc.scale_ups || 0) + '<small>lifetime</small>') +
+    t('Reclaimed', (sc.descales || 0) + '<small>descales</small>') +
+    t('Ephemeral now', (sc.ephemeral_now || 0)) +
+    t('Peak fleet', (sc.peak_workers || 0) + '<small>of ' + (sc.max_workers || '?') + ' max</small>') +
+    '</div>';
+
+  if (!ev.length) {
+    host.innerHTML = tiles + '<p class="cap" style="margin:0">No scaling activity recorded yet. The scaler fires when every GENERAL worker is saturated.</p>';
+    return;
+  }
+
+  var now = Date.now();
+  var rows = ev.map(function (e) {
+    var d = new Date(e.ts);
+    var hhmm = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2);
+    var ago = fmtMs(Math.max(0, now - e.ts));
+    return '<div class="evrow">' +
+             '<span class="t">' + hhmm + '  <span style="opacity:.65">-' + ago + '</span></span>' +
+             '<span class="evtag ev-' + esc(e.type) + '">' + esc(e.type) + '</span>' +
+             '<span class="d">' + esc(e.detail) + '</span>' +
+           '</div>';
+  }).join('');
+
+  host.innerHTML = tiles + '<div class="evlist">' + rows + '</div>' +
+    '<p class="cap" style="margin:9px 0 0">Showing the last ' + ev.length +
+    ' events (the Master keeps 200). Counts above are lifetime totals and survive that window.</p>';
+}
+
+function storeStrip(m) {
+  var st = m.store || {};
+  var up = !!st.connected;
+  var dropped = st.dropped_writes || 0;
+  var host = document.getElementById('storeStrip');
+
+  // The store view and the Master view of the fleet should agree; divergence means lost writes.
+  var diverged = up && st.live_workers !== st.master_workers;
+
+  host.innerHTML = '<div class="strip' + (up ? '' : ' down') + '">' +
+    '<div class="cell headline"><span class="k">TitanStore</span>' +
+      '<span class="status"><i class="dot ' + (up ? 'up' : 'down') + '"></i>' +
+      '<b class="v ' + (up ? 'ok' : 'bad') + '">' + (up ? 'Connected' : 'Disconnected') + '</b></span></div>' +
+    cell('endpoint', st.endpoint || '—') +
+    cell('write latency', 'p50 ' + (st.latency_p50 || 0) + 'ms · p99 ' + (st.latency_p99 || 0) + 'ms',
+         (st.ops || 0) + ' writes · on the dispatch path') +
+    cell('read latency', 'p50 ' + (st.read_p50 || 0) + 'ms · p99 ' + (st.read_p99 || 0) + 'ms',
+         (st.reads || 0) + ' reads · status + discovery') +
+    cell('last write', st.last_write_age_ms < 0 ? 'never' : fmtMs(st.last_write_age_ms) + ' ago',
+         'staleness of persisted state') +
+    cell('dropped writes', '<span class="v ' + (dropped ? 'bad' : 'ok') + '">' + dropped + '</span>',
+         dropped ? 'state lost while disconnected' : 'nothing lost') +
+    cell('reconnects', '<span class="v ' + (st.reconnects ? 'warn' : '') + '">' + (st.reconnects || 0) + '</span>',
+         st.reconnects ? 'link has flapped' : 'stable link') +
+    cell('recoverable', (st.recoverable_jobs || 0) + ' jobs', 'if the Master restarted now') +
+    (diverged
+      ? '<div class="cell grow"><span class="k">⚠ state drift</span><span class="err">store lists ' +
+        st.live_workers + ' workers but the Master has ' + st.master_workers +
+        ' — the store is holding entries for nodes that no longer exist</span></div>'
+      : cell('store view', st.live_workers + ' workers · ' + st.live_services + ' services',
+             'agrees with the Master')) +
+    (st.last_error ? '<div class="cell grow"><span class="k">last error</span><span class="err">' +
+       esc(st.last_error) + '</span></div>' : '') +
+    (up ? '' : '<div class="cell grow"><span class="k">impact</span><span class="err">' +
+       'job status, service discovery and crash recovery are degraded while this is down</span></div>') +
+    '</div>';
+}
+
+function cell(k, v, sub) {
+  return '<div class="cell"><span class="k">' + k + '</span><span class="v">' + v + '</span>' +
+         (sub ? '<span style="display:block;font-size:9.5px;color:var(--ink-3);margin-top:3px">' + sub + '</span>' : '') +
+         '</div>';
+}
+
+function budget(stats, m) {
+  var qw = m.queue_wait || {}, st = m.store || {};
+  var disp = (m.dispatch || []).map(function (p) { return p[1]; }).sort(function (a, b) { return a - b; });
+  var hbAll = [];
+  Object.values(m.heartbeat || {}).forEach(function (a) { a.forEach(function (p) { hbAll.push(p[1]); }); });
+  hbAll.sort(function (a, b) { return a - b; });
+  function q(arr, p) { return arr.length ? arr[Math.min(arr.length - 1, Math.ceil(p * arr.length) - 1)] : 0; }
+
+  var rows = [
+    { layer: 'Queue wait', sub: 'submit → dispatch · the scheduler itself',
+      p50: qw.p50 || 0, p99: qw.p99 || 0, max: qw.max || 0, n: qw.n || 0 },
+    { layer: 'Dispatch placement', sub: 'one pass of the single-threaded loop',
+      p50: q(disp, .5), p99: q(disp, .99), max: disp.length ? disp[disp.length - 1] : 0, n: disp.length },
+    { layer: 'Store write', sub: 'two of these sit inside the dispatch loop',
+      p50: st.latency_p50 || 0, p99: st.latency_p99 || 0, max: st.latency_max || 0, n: st.ops || 0 },
+    { layer: 'Worker heartbeat', sub: 'master → worker round-trip · network health',
+      p50: q(hbAll, .5), p99: q(hbAll, .99), max: hbAll.length ? hbAll[hbAll.length - 1] : 0, n: hbAll.length }
+  ];
+  var total = rows.reduce(function (a, r) { return a + r.p99; }, 0) || 1;
+  var worst = rows.slice().sort(function (a, b) { return b.p99 - a.p99; })[0];
+
+  document.getElementById('budget').innerHTML =
+    '<thead><tr><th>Layer</th><th>p50</th><th>p99</th><th>max</th><th>samples</th>' +
+    '<th style="width:34%">Share of p99 latency</th></tr></thead><tbody>' +
+    rows.map(function (r) {
+      var pctShare = 100 * r.p99 / total;
+      var dominant = r === worst && r.p99 > 0;
+      // Scaled against the SUM, not the worst, so every row keeps a readable width and the
+      // percentages add to 100 — "where does the time go" rather than "how big vs the biggest".
+      return '<tr><td class="layer">' + r.layer + '<span class="sub">' + r.sub + '</span></td>' +
+             '<td>' + fmtMs(r.p50) + '</td><td>' + fmtMs(r.p99) + '</td><td>' + fmtMs(r.max) + '</td>' +
+             '<td style="color:var(--ink-3)">' + r.n + '</td>' +
+             '<td><div style="display:flex;align-items:center;gap:8px">' +
+               '<i class="bar" style="width:' + Math.max(pctShare, 1.5) + '%;background:' +
+               (dominant ? cv('--s2') : cv('--s1')) + '"></i>' +
+               '<span style="font-variant-numeric:tabular-nums;color:' +
+               (dominant ? cv('--s2') : 'var(--ink-3)') + ';font-size:11px;min-width:42px">' +
+               (pctShare < 0.5 ? '<0.5' : pctShare.toFixed(0)) + '%</span>' +
+             '</div></td></tr>';
+    }).join('') + '</tbody>';
+
+  // Say the conclusion in words — the table shows it, this states it.
+  var note = document.getElementById('budgetNote');
+  if (note) {
+    if (!worst || worst.p99 === 0) {
+      note.innerHTML = 'Not enough samples yet — run a pipeline and this will fill in.';
+    } else {
+      var share = (100 * worst.p99 / total).toFixed(0);
+      var verdict = {
+        'Queue wait': 'jobs are spending their time <b>waiting to be scheduled</b>, not executing — add workers or look for a job blocking the queue head.',
+        'Dispatch placement': 'the <b>single-threaded dispatch loop</b> is the bottleneck — one slow placement stalls the whole cluster.',
+        'Store write': 'the <b>store</b> is slow, and two of its writes sit inside the dispatch loop, so it is slowing scheduling cluster-wide.',
+        'Worker heartbeat': 'the <b>network to a worker</b> is the slowest link — check that node before it is declared dead.'
+      }[worst.layer] || '';
+      note.innerHTML = '<b style="color:' + cv('--s2') + '">' + worst.layer + '</b> dominates at <b>' +
+        share + '%</b> of measured p99 latency (' + fmtMs(worst.p99) + ') — ' + verdict;
+    }
+  }
+}
+
+function diagnostics(stats, m) {
+  var host = document.getElementById('diagPanels');
+
+  // 1. unschedulable / pending reasons
+  var pr = m.pending_reasons || [];
+  var p1 = '<div class="sig"><h4 class="' + (pr.length ? 's-warn' : 's-ok') + '">' +
+    '<span class="g">' + (pr.length ? '!' : '✓') + '</span>Pending reasons</h4><p class="n">Why the scheduler could not place a queued job on its last attempt.</p>' +
+    (pr.length ? '<ul>' + pr.map(function (x) {
+      return '<li>' + esc(x.id) + '<br><b>' + esc(x.reason) + '</b></li>'; }).join('') + '</ul>' +
+      // A capped list that does not admit it is capped reads as the complete picture.
+      ((m.pending_reasons_total || pr.length) > pr.length
+        ? '<p class="cap" style="margin:6px 0 0">Showing the ' + pr.length + ' longest-waiting of <b>' +
+          m.pending_reasons_total + '</b>.</p>'
+        : '')
+      : '<p class="none">✓ nothing blocked</p>') + '</div>';
+
+  // 2. capability supply vs demand
+  var cap = m.capability || [];
+  var starved = cap.filter(function (c) { return c.waiting > 0 && c.workers === 0; });
+  var p2 = '<div class="sig"><h4 class="' + (starved.length ? 's-bad' : 's-ok') + '">' +
+    '<span class="g">' + (starved.length ? '✕' : '✓') + '</span>Capability supply / demand</h4>' +
+    '<p class="n">Jobs waiting for each requirement against workers that offer it. <b>waiting&gt;0 with workers=0 will never run on its own.</b></p>' +
+    (cap.length ? '<ul>' + cap.map(function (c) {
+      var bad = c.waiting > 0 && c.workers === 0;
+      return '<li' + (bad ? ' class="warnrow"' : '') + '>' + esc(c.cap) +
+             ' — waiting ' + c.waiting + (c.parked ? ' (' + c.parked + ' parked)' : '') + ' · workers ' + c.workers +
+             (bad ? '  ✕ dead end' : '') + '</li>'; }).join('') + '</ul>' +
+      (starved.length ? '<div class="fix"><b>To unblock:</b> start a worker offering ' +
+        starved.map(function (x) { return '<code>' + esc(x.cap) + '</code>'; }).join(' / ') + '<br>' +
+        '<code>java -jar Worker.jar &lt;port&gt; &lt;master-host&gt; 9090 ' + esc(starved[0].cap) + '</code><br>' +
+        'Parked jobs are released automatically the moment it registers — no resubmit needed.</div>' : '')
+      : '<p class="none">no demand</p>') + '</div>';
+
+  // 3. dead letter queue
+  var dlq = m.dlq || { depth: 0, jobs: [] };
+  var p3 = '<div class="sig"><h4 class="' + (dlq.depth ? 's-bad' : 's-ok') + '">' +
+    '<span class="g">' + (dlq.depth ? '✕' : '✓') + '</span>Dead-letter queue · ' + dlq.depth + '</h4>' +
+    '<p class="n">Jobs that exhausted their retries. Non-zero means something is genuinely broken.</p>' +
+    (dlq.jobs.length ? '<ul>' + dlq.jobs.map(function (x) {
+      return '<li>' + esc(x.id) + ' <span style="color:var(--ink-3)">×' + x.attempts + '</span><br><b>' +
+             esc(x.reason || 'no reason recorded') + '</b></li>'; }).join('') + '</ul>'
+      : '<p class="none">✓ empty</p>') + '</div>';
+
+  // 4. queue wait percentiles
+  var qw = m.queue_wait || { p50: 0, p95: 0, p99: 0, max: 0, n: 0 };
+  var p4 = '<div class="sig"><h4 class="s-' + band(qw.p99 || 0, 2000, 30000) + '">' +
+    '<span class="g">' + (band(qw.p99 || 0, 2000, 30000) === 'ok' ? '✓' :
+      band(qw.p99 || 0, 2000, 30000) === 'bad' ? '✕' : '!') + '</span>Queue wait</h4><p class="n">Submit → dispatch, over the last ' + qw.n +
+    ' dispatches. The p99 is where starvation hides; an average never shows it.</p><div class="pctl">' +
+    ['p50', 'p95', 'p99', 'max'].map(function (k) {
+      return '<div>' + k + '<span>' + fmtMs(qw[k]) + '</span></div>'; }).join('') + '</div></div>';
+
+  // 5. retry distribution
+  var rt = m.retries || { dispatches: 0, rate: 0, histogram: [] };
+  var mx = Math.max.apply(null, (rt.histogram.map(function (h) { return h.count; })).concat([1]));
+  var p5 = '<div class="sig"><h4>Retries · ' + (100 * rt.rate).toFixed(1) + '% of dispatches</h4>' +
+    '<p class="n">Attempts per dispatch. A rising tail precedes a dead-letter flood.</p>' +
+    rt.histogram.map(function (h) {
+      return '<div class="histrow">#' + h.attempt + '<i style="width:' + (100 * h.count / mx) + '%;max-width:150px"></i>' + h.count + '</div>';
+    }).join('') + '</div>';
+
+  // 6. services / long-running work
+  var svcs = [];
+  (stats.workers || []).forEach(function (w) {
+    (w.services || []).forEach(function (id) { svcs.push({ id: id, host: w.host, port: w.port }); });
+  });
+  var running = (stats.workers || []).filter(function (w) { return w.active_job; })
+    .map(function (w) { return { id: w.active_job, host: w.host, port: w.port }; });
+  var p6 = '<div class="sig"><h4>Long-running work</h4>' +
+    '<p class="n">Services stay up until stopped; active jobs are in flight right now.</p>' +
+    (svcs.length || running.length ?
+      '<ul>' + svcs.map(function (x) {
+        return '<li style="color:var(--good)">⚙ ' + esc(x.id) + '<br><span style="color:var(--ink-3)">service on ' + esc(x.host) + ':' + x.port + '</span></li>'; }).join('') +
+        running.map(function (x) {
+          return '<li style="color:var(--s1)">▶ ' + esc(x.id) + '<br><span style="color:var(--ink-3)">job on ' + esc(x.host) + ':' + x.port + '</span></li>'; }).join('') + '</ul>'
+      : '<p class="none">nothing long-running</p>') + '</div>';
+
+  // When there is genuinely nothing wrong, collapse six panels to one line. The page should get
+  // SHORTER when the cluster is healthy, not longer.
+  var clear = !pr.length && !starved.length && (dlq.depth || 0) === 0;
+  var ac = document.getElementById('diagAllClear');
+  if (ac) ac.style.display = clear ? 'flex' : 'none';
+  host.style.display = clear ? 'none' : 'grid';
+  host.innerHTML = clear ? '' : (p1 + p2 + p3 + p4 + p5 + p6);
+}
+
+/* st: 'ok' | 'bad' | 'warn' | '' — colours the value AND prefixes a glyph, because red and
+   green are all but identical under deuteranopia. Omit it for readings that are just numbers. */
+function t(k, v, st) {
+  var g = st === 'ok' ? '✓' : st === 'bad' ? '✕' : st === 'warn' ? '!' : '';
+  return '<div class="tile' + (st ? ' s-' + st : '') + '"><span class="k">' + k + '</span>' +
+         '<span class="v' + (st ? ' s-' + st : '') + '">' +
+         (g ? '<span class="g">' + g + '</span>' : '') + v + '</span></div>';
+}
+/* Threshold helper: below `okAt` is healthy, above `badAt` is a problem, between is a warning. */
+function band(v, okAt, badAt) { return v <= okAt ? 'ok' : v >= badAt ? 'bad' : 'warn'; }
+
+function tick() {
+  reqCount += 2;
+  document.getElementById('reqs').textContent = reqCount + ' requests';
+  Promise.all([
+    fetch('/api/cluster_stats').then(function (r) { return r.json(); }),
+    fetch('/api/metrics?res=' + val('res', 'fine')).then(function (r) { return r.json(); })
+  ]).then(function (res) {
+    var stats = res[0], metrics = res[1];
+    var c = document.getElementById('conn');
+    if (stats.error || metrics.error) { c.textContent = 'OFFLINE'; c.className = 'pill'; return; }
+    c.textContent = 'LIVE'; c.className = 'pill live';
+    // Each panel is isolated: one bad render must not take the rest of the page with it.
+    safe('tiles', function () { tiles(stats, metrics); });
+    safe('topology', function () { drawTopo(stats, metrics); });
+    safe('diagnostics', function () { diagnostics(stats, metrics); });
+    safe('store', function () { storeStrip(metrics); });
+    safe('scaling', function () { scalingPanel(metrics); });
+    fetch('/api/board?limit=40').then(function (r) { return r.json(); })
+      .then(function (b) { safe('lanes', function () { drawLanes(b); }); }).catch(function () {});
+    safe('budget', function () { budget(stats, metrics); });
+    safe('queue chart', function () {
+      stackedArea('cQueue', metrics.queue || [], [3, 1, 2, 4],
+                  ['running', 'ready', 'blocked', 'delayed'], 'tQueue'); });
+    safe('dispatch chart', function () { line('cDispatch', metrics.dispatch || [], '--s2', 'ms', 'tDispatch'); });
+    safe('throughput chart', function () { bars('cThru', metrics.throughput || []); });
+    safe('heartbeat chart', function () { multiLine('cHb', metrics.heartbeat || {}, 'lgHb', stats); });
+    safe('failure rate', function () { failureRate(metrics.throughput || []); });
+    safe('saturation', function () { saturation(metrics.queue || []); });
+    safe('services', function () { servicesPanel(metrics); });
+    safe('dispatch phases', function () {
+      stackedArea('cPhases', metrics.dispatch_phases || [], [1, 2, 3, 4, 5],
+                  ['route', 'select', 'record', 'store', 'send']);
+      phaseTable(metrics.dispatch_phases || []);
+    });
+    safe('store latency', function () {
+      dualLine('cStoreLat', metrics.store_latency || [], metrics.store_read_latency || [],
+               'write', 'read', 'milliseconds', 'lgStoreLat');
+    });
+
+    makeZoomable('cQueue', 'Queue composition', 'X: time — seconds before now · Y: jobs');
+    makeZoomable('cDispatch', 'Dispatch loop duration', 'X: time — seconds before now · Y: milliseconds');
+    makeZoomable('cThru', 'Throughput', 'X: time — seconds before now · Y: jobs per sample');
+    makeZoomable('cHb', 'Heartbeat round-trip', 'X: time — seconds before now · Y: round-trip ms');
+    makeZoomable('cFail', 'Failure rate', 'X: time — seconds before now · Y: percent of settled jobs that failed');
+    makeZoomable('cSat', 'Saturation', 'X: time — seconds before now · Y: percent of all job slots occupied');
+    makeZoomable('cPhases', 'Where dispatch time goes', 'X: time — seconds before now · Y: milliseconds per phase, stacked');
+    makeZoomable('cStoreLat', 'Store latency', 'X: time — seconds before now · Y: milliseconds per operation');
+    makeZoomable('scalingChart', 'Scaling pressure', 'X: time — seconds before now · Y: job slots (demand = queued + running, capacity = total slots)');
+    if (el('view-analytics') && !el('view-analytics').hidden) loadAnalytics();
+  }).catch(function () {
+    var c = document.getElementById('conn'); c.textContent = 'ERROR'; c.className = 'pill';
+  });
+}
+
+function restart() { if (timer) clearInterval(timer); if (polling) timer = setInterval(tick, +document.getElementById('iv').value); }
+function togglePoll() {
+  polling = !polling;
+  document.getElementById('btnPoll').classList.toggle('on', polling);
+  if (!polling && timer) { clearInterval(timer); timer = null; } else restart();
+}
+/* ============ Analytics tab ============
+   Reuses frame/axes/axisTitles/xTicks/showTip from above; only the five renderers are new. */
+var ANA = { metrics: null, runs: {} };
+
+function showView(v) {
+  var live = v === 'live';
+  el('view-live').hidden = !live;
+  el('view-analytics').hidden = live;
+  el('tabLive').classList.toggle('on', live);
+  el('tabAna').classList.toggle('on', !live);
+  el('secnav').style.display = live ? '' : 'none';
+  if (!live) loadAnalytics();
+}
+
+function anaAxes(f, yMax, unit) {
+  var s = '';
+  for (var k = 0; k <= 4; k++) {
+    var y = f.p.t + f.ih - f.ih * k / 4;
+    s += '<line class="gl" x1="' + f.p.l + '" y1="' + y + '" x2="' + (f.p.l + f.iw) + '" y2="' + y + '"/>' +
+         '<text class="axt" x="' + (f.p.l - 6) + '" y="' + (y + 3) + '" text-anchor="end">' +
+         (unit === 'ms' ? fmtMs(yMax * k / 4) : Math.round(yMax * k / 4)) + '</text>';
+  }
+  return s;
+}
+function anaTimeTicks(f, pts) {
+  var t1 = pts[pts.length - 1][0], g = '';
+  for (var a = 0; a <= 4; a++) {
+    var i = Math.round(a * (pts.length - 1) / 4);
+    var ago = Math.round((t1 - pts[i][0]) / 1000);
+    g += '<text class="axt" x="' + (f.p.l + f.iw * a / 4) + '" y="' + (f.p.t + f.ih + 15) +
+         '" text-anchor="middle">' + (ago === 0 ? 'now' : '-' + ago + 's') + '</text>';
+  }
+  return g;
+}
+
+function anaSuccess(m) {
+  var pts = (m.throughput || []).filter(function (p) { return p[1] + p[2] > 0; });
+  var host = el('cSuccess');
+  if (pts.length < 2) { host.innerHTML = '<div class="empty">No terminal jobs in this window yet.</div>'; return; }
+  var f = frame(440, 200, { l: 50, r: 12, t: 10, b: 36 });
+  var X = function (i) { return f.p.l + f.iw * i / (pts.length - 1); };
+  var Y = function (v) { return f.p.t + f.ih - f.ih * v / 100; };
+  var rate = pts.map(function (p) { return 100 * p[1] / (p[1] + p[2]); });
+  var d = rate.map(function (v, i) { return (i ? 'L' : 'M') + X(i) + ' ' + Y(v); }).join(' ');
+  var g = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">' + anaAxes(f, 100) + anaTimeTicks(f, pts) +
+          axisTitles(f, 'percent completed', 'time — seconds before now');
+  g += '<path d="' + d + ' L ' + X(rate.length - 1) + ' ' + Y(0) + ' L ' + X(0) + ' ' + Y(0) +
+       ' Z" fill="' + cv('--ok') + '" opacity="0.14"/>';
+  g += '<path d="' + d + '" fill="none" stroke="' + cv('--ok') + '" stroke-width="2"/>';
+  rate.forEach(function (v, i) {
+    if (v >= 100) return;
+    g += '<circle cx="' + X(i) + '" cy="' + Y(v) + '" r="3.5" fill="' + cv('--bad') + '" stroke="' +
+         cv('--surface') + '" stroke-width="1.5"><title>' + v.toFixed(0) + '% — ' + pts[i][2] +
+         ' failed of ' + (pts[i][1] + pts[i][2]) + '</title></circle>';
+  });
+  host.innerHTML = g + '</svg>';
+}
+
+function anaHistogram(m) {
+  var b = m.duration_histogram || [], host = el('cHist');
+  var total = b.reduce(function (a, x) { return a + x.count; }, 0);
+  if (!total) { host.innerHTML = '<div class="empty">No spans recorded yet.</div>'; return; }
+  var f = frame(440, 200, { l: 50, r: 12, t: 10, b: 36 });
+  var yMax = Math.max.apply(null, b.map(function (x) { return x.count; }).concat([2]));
+  var bw = f.iw / b.length;
+  var g = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">' + anaAxes(f, yMax) +
+          axisTitles(f, 'number of jobs', 'duration bucket');
+  b.forEach(function (x, i) {
+    var h = f.ih * x.count / yMax;
+    var lbl = x.lt_ms < 0 ? '30s+' : (x.lt_ms >= 1000 ? '<' + (x.lt_ms / 1000) + 's' : '<' + x.lt_ms + 'ms');
+    g += '<rect x="' + (f.p.l + i * bw + 3) + '" y="' + (f.p.t + f.ih - h) + '" width="' + Math.max(bw - 6, 2) +
+         '" height="' + h + '" rx="3" fill="' + cv('--s1') + '"><title>' + lbl + ' — ' + x.count +
+         ' jobs (' + (100 * x.count / total).toFixed(0) + '%)</title></rect>';
+    g += '<text class="axt" x="' + (f.p.l + i * bw + bw / 2) + '" y="' + (f.p.t + f.ih + 15) +
+         '" text-anchor="middle" font-size="8">' + lbl + '</text>';
+  });
+  host.innerHTML = g + '</svg>';
+}
+
+function anaPercentiles(m) {
+  var pts = (m.wait_percentiles || []).filter(function (p) { return p.length >= 4; });
+  var host = el('cPct');
+  if (pts.length < 2) { host.innerHTML = '<div class="empty">Collecting percentile samples…</div>'; return; }
+  var f = frame(440, 200, { l: 56, r: 12, t: 10, b: 36 });
+  var yMax = Math.max(Math.max.apply(null, pts.map(function (p) { return p[3]; })), 50);
+  var X = function (i) { return f.p.l + f.iw * i / (pts.length - 1); };
+  var Y = function (v) { return f.p.t + f.ih - f.ih * Math.min(v, yMax) / yMax; };
+  var g = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">' + anaAxes(f, yMax, 'ms') + anaTimeTicks(f, pts) +
+          axisTitles(f, 'milliseconds waiting', 'time — seconds before now');
+  [[3, '--s2'], [2, '--s4'], [1, '--s3']].forEach(function (pr) {
+    g += '<path d="' + pts.map(function (p, i) { return (i ? 'L' : 'M') + X(i) + ' ' + Y(p[pr[0]]); }).join(' ') +
+         '" fill="none" stroke="' + cv(pr[1]) + '" stroke-width="2"/>';
+  });
+  g += '<rect id="pcthit" x="' + f.p.l + '" y="' + f.p.t + '" width="' + f.iw + '" height="' + f.ih + '" fill="transparent"/>';
+  host.innerHTML = g + '</svg>';
+  var hit = el('pcthit');
+  hit.addEventListener('mousemove', function (ev) {
+    var r = hit.getBoundingClientRect();
+    var i = Math.max(0, Math.min(pts.length - 1, Math.round((ev.clientX - r.left) / r.width * (pts.length - 1))));
+    showTip(ev, 'p50 ' + fmtMs(pts[i][1]) + '\np95 ' + fmtMs(pts[i][2]) + '\np99 ' + fmtMs(pts[i][3]));
+  });
+  hit.addEventListener('mouseleave', hideTip);
+}
+
+function anaUtilisation(m) {
+  var map = m.worker_load || {}, keys = Object.keys(map).sort(), host = el('cUtil');
+  if (!keys.length) { host.innerHTML = '<div class="empty">No per-worker samples yet.</div>'; return; }
+  var longest = keys.reduce(function (a, k) { return Math.max(a, map[k].length); }, 0);
+  if (longest < 2) { host.innerHTML = '<div class="empty">Collecting…</div>'; return; }
+  var f = frame(440, 200, { l: 50, r: 12, t: 10, b: 36 });
+  var yMax = 1;
+  keys.forEach(function (k) { map[k].forEach(function (pt) { yMax = Math.max(yMax, pt[2] || 0, pt[1]); }); });
+  var g = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">' + anaAxes(f, yMax) + anaTimeTicks(f, map[keys[0]]) +
+          axisTitles(f, 'occupied slots', 'time — seconds before now');
+  keys.forEach(function (k, ki) {
+    var pts = map[k]; if (pts.length < 2) return;
+    var X = function (i) { return f.p.l + f.iw * i / (longest - 1); };
+    var Y = function (v) { return f.p.t + f.ih - f.ih * v / yMax; };
+    g += '<path d="' + pts.map(function (pt, i) { return (i ? 'L' : 'M') + X(i) + ' ' + Y(pt[1]); }).join(' ') +
+         '" fill="none" stroke="' + cv(SERIES[ki % SERIES.length]) + '" stroke-width="2"/>';
+  });
+  host.innerHTML = g + '</svg>';
+  el('lgUtil').innerHTML = keys.map(function (k, ki) {
+    var last = map[k][map[k].length - 1];
+    return '<span><i style="background:' + cv(SERIES[ki % SERIES.length]) + '"></i>' + esc(k) +
+           ' · ' + last[1] + '/' + last[2] + '</span>';
+  }).join('');
+}
+
+/* Group spans into per-pipeline runs using the manifest's job -> DAG map.
+   Runs are keyed on the submission stamp (run_ts) when the manifest has one, which separates
+   two runs of the same pipeline exactly. Back-to-back runs seconds apart are the normal case —
+   a time-gap heuristic merges those into one run and reports a single inflated wall clock.
+   The gap rule stays only as the fallback for spans with no stamp. */
+function buildRuns(spans, jobToDag, jobToRun) {
+  jobToRun = jobToRun || {};
+  var byRun = {};
+  spans.forEach(function (sp) {
+    var dag = jobToDag[sp.id];
+    if (!dag) return;
+    var base = dag.replace(/-\d{6,}$/, '');
+    var stamp = jobToRun[sp.id] || 0;
+    var key = base + '\u0000' + stamp;
+    (byRun[key] = byRun[key] || { base: base, stamp: stamp, spans: [] }).spans.push(sp);
+  });
+  var out = {};
+  Object.keys(byRun).forEach(function (key) {
+    var rec = byRun[key];
+    var ss = rec.spans.slice().sort(function (a, b) { return a.started_at - b.started_at; });
+    var groups;
+    if (rec.stamp) {
+      groups = [ss];                              // an exact submission — one run by definition
+    } else {
+      groups = [[ss[0]]];                         // unstamped: fall back to a 30s gap
+      for (var i = 1; i < ss.length; i++) {
+        if (ss[i].started_at - ss[i - 1].started_at > 30000) groups.push([]);
+        groups[groups.length - 1].push(ss[i]);
+      }
+    }
+    out[rec.base] = (out[rec.base] || []).concat(groups.map(function (gp) {
+      var t0 = Math.min.apply(null, gp.map(function (x) { return x.started_at; }));
+      var t1 = Math.max.apply(null, gp.map(function (x) { return x.ended_at || x.started_at; }));
+      return { wall: Math.max(t1 - t0, 1), jobs: gp.length, at: t0 };
+    }));
+  });
+  Object.keys(out).forEach(function (k) { out[k].sort(function (a, b) { return a.at - b.at; }); });
+  return out;
+}
+
+function anaTrend(runs) {
+  var host = el('cTrend');
+  // Only five series fit legibly, so pick the five worth plotting: most runs first, then most
+  // recent. Insertion order put one-off pipelines ahead of the repeated ones, which left the
+  // chart empty while the trend it exists to show sat outside the cut.
+  var names = Object.keys(runs).sort(function (a, b) {
+    return runs[b].length - runs[a].length ||
+           runs[b][runs[b].length - 1].at - runs[a][runs[a].length - 1].at;
+  });
+
+  // A line chart needs at least one pipeline with two runs. With a single run each it is just
+  // scattered dots, so fall back to the table, which is the useful part anyway.
+  var comparable = names.filter(function (n) { return runs[n].length >= 2; });
+  if (names.length && !comparable.length) {
+    host.innerHTML = '<div class="allclear" style="color:var(--ink-3)"><i style="background:var(--ink-3);box-shadow:none"></i>' +
+      '<span>Only one run recorded per pipeline so far — a trend needs at least two. ' +
+      'Re-run a pipeline and the comparison appears here. The table below still shows each run.</span></div>';
+    anaTrendTable(runs);
+    return;
+  }
+
+  if (!names.length) {
+    host.innerHTML = '<div class="empty">No pipelines matched the span window. Spans are in-memory, so runs from before the last Master restart are gone.</div>';
+    el('trendTable').innerHTML = ''; return;
+  }
+  var f = frame(980, 210, { l: 50, r: 12, t: 10, b: 36 });
+  var maxRuns = Math.max.apply(null, names.map(function (n) { return runs[n].length; }));
+  var yMax = 1;
+  names.forEach(function (n) { runs[n].forEach(function (r) { yMax = Math.max(yMax, r.wall); }); });
+  var g = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">' + anaAxes(f, yMax / 1000) +
+          axisTitles(f, 'seconds', 'run (oldest → newest)');
+  names.slice(0, 5).forEach(function (n, ni) {
+    var rs = runs[n];
+    var X = function (i) { return f.p.l + f.iw * (maxRuns <= 1 ? 0.5 : i / (maxRuns - 1)); };
+    var Y = function (v) { return f.p.t + f.ih - f.ih * v / yMax; };
+    var col = cv(SERIES[ni % SERIES.length]);
+    if (rs.length > 1) {
+      g += '<path d="' + rs.map(function (r, i) { return (i ? 'L' : 'M') + X(i) + ' ' + Y(r.wall); }).join(' ') +
+           '" fill="none" stroke="' + col + '" stroke-width="2"/>';
+    }
+    rs.forEach(function (r, i) {
+      g += '<circle cx="' + X(i) + '" cy="' + Y(r.wall) + '" r="4" fill="' + col + '" stroke="' +
+           cv('--surface') + '" stroke-width="1.5"><title>' + esc(n) + ' run ' + (i + 1) + ' — ' +
+           fmtMs(r.wall) + ', ' + r.jobs + ' jobs</title></circle>';
+    });
+  });
+  for (var a = 0; a < maxRuns; a++) {
+    g += '<text class="axt" x="' + (f.p.l + f.iw * (maxRuns <= 1 ? 0.5 : a / (maxRuns - 1))) + '" y="' +
+         (f.p.t + f.ih + 15) + '" text-anchor="middle">' + (a + 1) + '</text>';
+  }
+  var shown = names.slice(0, 5);
+  host.innerHTML = g + '</svg><div class="lg">' + shown.map(function (n, ni) {
+    return '<span><i style="background:' + cv(SERIES[ni % SERIES.length]) + '"></i>' + esc(n) +
+           ' · ' + runs[n].length + (runs[n].length === 1 ? ' run' : ' runs') + '</span>';
+  }).join('') +
+    (names.length > shown.length
+      ? '<span style="color:var(--ink-3)">+' + (names.length - shown.length) +
+        ' more in the table below</span>'
+      : '') + '</div>';
+
+  anaTrendTable(runs);
+}
+
+/* Queue wait by declared priority. Spans carry `priority` as of the control-plane work; older
+   spans do not, so say so rather than plotting a single meaningless band. */
+function anaPriority(spans) {
+  var host = el('cPrio'), note = el('prioNote');
+  if (!host) return;
+  var withPrio = (spans || []).filter(function (s) {
+    return s.priority !== undefined && s.priority !== null && s.enqueued_at > 0;
+  });
+  if (withPrio.length < 4) {
+    host.innerHTML = '<div class="empty">Not enough spans carrying a priority yet. Submit jobs at ' +
+      'different priorities — the Demo runner\'s <b>priority test</b> preset does exactly this.</div>';
+    if (note) note.innerHTML = '';
+    return;
+  }
+  // Only CONTENDED dispatches are comparable. A job dispatched into a free slot waits ~0
+  // whatever its priority, so mixing those in drags every band's median toward zero and makes
+  // the comparison meaningless — which is how a band with a handful of samples, all taken under
+  // load, can look "slower" than a band dominated by uncontended ones. Priority only expresses
+  // itself when there is a queue to jump, so that is the population measured here.
+  var CONTENDED_MS = 250;
+  var bands = {}, bandsAll = {};
+  withPrio.forEach(function (s) {
+    var w = s.queue_wait_ms || 0;
+    (bandsAll[s.priority] = bandsAll[s.priority] || []).push(w);
+    if (w >= CONTENDED_MS) (bands[s.priority] = bands[s.priority] || []).push(w);
+  });
+  var keys = Object.keys(bands).map(Number).sort(function (a, b) { return a - b; });
+  if (!keys.length) {
+    host.innerHTML = '<div class="empty">No contended dispatches recorded: every job so far went ' +
+      'straight into a free slot, so there was never a queue for priority to reorder. Saturate ' +
+      'the pool first — the <b>priority test</b> demo preset does that, then submits a ' +
+      'priority-9 job into the backlog.</div>';
+    if (note) note.innerHTML = '';
+    return;
+  }
+  var stat = {};
+  keys.forEach(function (k) {
+    var v = bands[k].slice().sort(function (a, b) { return a - b; });
+    stat[k] = { n: v.length, p50: v[Math.floor(v.length * 0.5)],
+                p95: v[Math.min(v.length - 1, Math.floor(v.length * 0.95))] };
+  });
+  var yMax = Math.max.apply(null, keys.map(function (k) { return stat[k].p95; }).concat([10]));
+  var f = frame(980, 210, { l: 58, r: 12, t: 10, b: 38 });
+  var g = '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '">' + anaAxes(f, yMax) +
+          axisTitles(f, 'ms waited', 'declared priority');
+  var bw = f.iw / keys.length;
+  keys.forEach(function (k, ki) {
+    var st = stat[k];
+    var x = f.p.l + bw * ki + bw * 0.22, w = bw * 0.56;
+    var yb = f.p.t + f.ih, y50 = yb - f.ih * st.p50 / yMax, y95 = yb - f.ih * st.p95 / yMax;
+    g += '<rect x="' + x + '" y="' + y50 + '" width="' + w + '" height="' + Math.max(yb - y50, 2) +
+         '" rx="4" fill="' + cv(SERIES[ki % SERIES.length]) + '"><title>priority ' + k + ' — median ' +
+         fmtMs(st.p50) + ', p95 ' + fmtMs(st.p95) + ', ' + st.n + ' jobs</title></rect>';
+    g += '<line x1="' + x + '" x2="' + (x + w) + '" y1="' + y95 + '" y2="' + y95 +
+         '" stroke="' + cv('--ink-3') + '" stroke-width="2" stroke-dasharray="4 3"/>';
+    g += '<text class="axt" x="' + (x + w / 2) + '" y="' + (yb + 16) + '" text-anchor="middle">' +
+         k + '</text>';
+  });
+  host.innerHTML = g + '</svg>';
+
+  // The verdict is a fixed comparison over the contended samples, stated with its own
+  // preconditions. Below the sample floor it reports "not enough data" rather than a result —
+  // a conclusion drawn from three data points is not a weaker conclusion, it is a wrong one.
+  var MIN_PER_BAND = 3;
+  if (note) {
+    var counts = keys.map(function (k) {
+      return 'p' + k + ' n=' + stat[k].n + (bandsAll[k] ? '/' + bandsAll[k].length : '');
+    }).join(' · ');
+    var basis = '<span style="color:var(--ink-3)">Measured over dispatches that waited ≥' +
+      CONTENDED_MS + 'ms, i.e. those that actually queued (' + counts +
+      '; n = contended / all).</span>';
+
+    if (keys.length < 2) {
+      note.innerHTML = 'Only one priority band has contended samples, so there is nothing to ' +
+        'compare. Submit jobs at two different priorities into a saturated pool.<br>' + basis;
+    } else {
+      var lo = stat[keys[0]], hi = stat[keys[keys.length - 1]];
+      var thin = keys.filter(function (k) { return stat[k].n < MIN_PER_BAND; });
+      if (thin.length) {
+        note.innerHTML = '<b class="s-warn"><span class="g">!</span>Not enough contended samples ' +
+          'to judge</b> — ' + (thin.length === 1 ? 'band ' : 'bands ') +
+          thin.map(function (k) { return 'p' + k; }).join(', ') + ' ' +
+          (thin.length === 1 ? 'has' : 'have') + ' fewer than ' + MIN_PER_BAND +
+          ' queued dispatches. The chart is drawn, but no conclusion is stated from it.<br>' + basis;
+      } else {
+        // Two fixed comparisons, both over contended samples only: the median and the tail.
+        var medianBetter = hi.p50 < lo.p50;
+        var tailBetter = hi.p95 < lo.p95;
+        var verdict = (medianBetter && tailBetter) ? 'ok'
+                    : (medianBetter || tailBetter) ? 'warn' : 'bad';
+        var gly = verdict === 'ok' ? '✓' : verdict === 'warn' ? '!' : '✕';
+        var headline = verdict === 'ok' ? 'Priority is being honoured'
+                     : verdict === 'warn' ? 'Priority separates the tail but not the median'
+                     : 'Priority is not reordering these jobs';
+        note.innerHTML = '<b class="s-' + verdict + '"><span class="g">' + gly + '</span>' +
+          headline + '</b> — priority ' + keys[keys.length - 1] + ' waited a median ' +
+          fmtMs(hi.p50) + ' (p95 ' + fmtMs(hi.p95) + ') against ' + fmtMs(lo.p50) +
+          ' (p95 ' + fmtMs(lo.p95) + ') at priority ' + keys[0] + '. ' +
+          (verdict === 'ok' ? ''
+           : verdict === 'warn'
+             ? 'The tail is where queue-jumping shows: a matching median with a shorter p95 ' +
+               'means the high band never got stuck behind the backlog, which is the property ' +
+               'that matters. '
+             : 'If this persists under real saturation, the queue ordering is not being ' +
+               'applied. ') + '<br>' + basis;
+      }
+    }
+  }
+}
+
+function anaTrendTable(runs) {
+  var names = Object.keys(runs).sort(function (a, b) {
+    return runs[b].length - runs[a].length ||
+           runs[b][runs[b].length - 1].at - runs[a][runs[a].length - 1].at;
+  });
+  el('trendTable').innerHTML = '<table class="budget"><thead><tr><th>Pipeline</th><th>Runs</th>' +
+    '<th>Latest</th><th>Best</th><th>Worst</th><th>Jobs</th><th>Direction</th></tr></thead><tbody>' +
+    names.map(function (n) {
+      var w = runs[n].map(function (r) { return r.wall; });
+      var latest = w[w.length - 1];
+      var dir = w.length < 2 ? '—' : (latest > w[w.length - 2] * 1.15
+        ? '<span style="color:' + cv('--bad') + '">slower</span>'
+        : latest < w[w.length - 2] * 0.85 ? '<span style="color:' + cv('--good') + '">faster</span>' : 'stable');
+      return '<tr><td class="layer">' + esc(n) + '</td><td>' + w.length + '</td><td>' + fmtMs(latest) +
+             '</td><td>' + fmtMs(Math.min.apply(null, w)) + '</td><td>' + fmtMs(Math.max.apply(null, w)) +
+             '</td><td>' + runs[n][runs[n].length - 1].jobs + '</td><td>' + dir + '</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+
+function anaTiles(m, runs) {
+  var thr = m.throughput || [];
+  var done = thr.reduce(function (a, pt) { return a + pt[1]; }, 0);
+  var failed = thr.reduce(function (a, pt) { return a + pt[2]; }, 0);
+  var rate = (done + failed) ? 100 * done / (done + failed) : 100;
+  var hist = m.duration_histogram || [];
+  var totalSpans = hist.reduce(function (a, x) { return a + x.count; }, 0);
+  var slow = hist.filter(function (x) { return x.lt_ms < 0 || x.lt_ms > 5000; })
+                 .reduce(function (a, x) { return a + x.count; }, 0);
+  el('anaTiles').innerHTML =
+    t('Success rate', rate.toFixed(1) + '<small>%</small>') +
+    t('Completed', done) + t('Failed', failed) +
+    t('Jobs measured', totalSpans) +
+    t('Slower than 5s', slow + (totalSpans ? '<small>' + (100 * slow / totalSpans).toFixed(0) + '%</small>' : '')) +
+    t('Queue p99', fmtMs((m.queue_wait || {}).p99 || 0)) +
+    t('Pipelines', Object.keys(runs).length);
+}
+
+function loadAnalytics() {
+  var res = val('res', 'fine');
+  // Runs come from persisted history, not the in-memory ring: a trend needs runs from BEFORE
+  // the last Master restart, which is exactly what the ring throws away. Fall back to the ring
+  // if persistence is off or has nothing yet.
+  Promise.all([
+    fetch('/api/metrics?res=' + res).then(function (r) { return r.json(); }),
+    fetch('/api/history?hours=168&limit=20000').then(function (r) { return r.json(); })
+      .catch(function () { return { spans: [] }; }),
+    fetch('/api/job_dag_map').then(function (r) { return r.json(); }).catch(function () { return {}; })
+  ]).then(function (out) {
+    var m = out[0], hist = out[1], mp = out[2] || {}, map = mp.map || {}, stamps = mp.runs || {};
+    if (m.error) return;
+    if (!hist || hist.error || !(hist.spans || []).length) {
+      return fetch('/api/timeline?limit=2000').then(function (r) { return r.json(); })
+        .then(function (tl) { paintAnalytics(m, tl.spans || [], map, stamps, 'in memory'); })
+        .catch(function () { paintAnalytics(m, [], map, stamps, 'in memory'); });
+    }
+    paintAnalytics(m, hist.spans, map, stamps, 'disk · last 7 days');
+  }).catch(function () {});
+}
+
+function paintAnalytics(m, spans, map, stamps, source) {
+  (function () {
+    var runs = buildRuns(spans, map, stamps);
+    ANA.source = source; ANA.spanCount = spans.length;
+    ANA.metrics = m; ANA.runs = runs;
+    anaTiles(m, runs); anaSuccess(m); anaHistogram(m); anaPercentiles(m); anaUtilisation(m);
+    anaPriority(spans); anaTrend(runs);
+    makeZoomable('cSuccess', 'Success rate', 'X: time — seconds before now · Y: percent completed');
+    makeZoomable('cHist', 'Job duration distribution', 'X: duration bucket · Y: number of jobs');
+    makeZoomable('cPct', 'Queue wait percentiles', 'X: time — seconds before now · Y: milliseconds waiting');
+    makeZoomable('cUtil', 'Per-worker slot utilisation', 'X: time — seconds before now · Y: occupied slots');
+    makeZoomable('cPrio', 'Does priority actually work?', 'X: declared priority · Y: milliseconds waited (median bar, dashed p95)');
+    makeZoomable('cTrend', 'Pipeline duration trend', 'X: run (oldest → newest) · Y: seconds');
+  })();
+}
+
+// Highlight the nav entry for whatever is on screen.
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.secnav a[href^="#"]'));
+  function sync() {
+    var best = null, bestTop = -1e9;
+    links.forEach(function (a) {
+      var t = el(a.getAttribute('href').slice(1));
+      if (!t) return;
+      var top = t.getBoundingClientRect().top - 70;
+      if (top <= 0 && top > bestTop) { bestTop = top; best = a; }
+    });
+    links.forEach(function (a) { a.classList.toggle('on', a === best); });
+  }
+  window.addEventListener('scroll', sync, { passive: true });
+  sync();
+})();
+
+// Don't burn requests on a tab nobody is looking at.
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden) { if (timer) { clearInterval(timer); timer = null; } }
+  else if (polling) { tick(); restart(); }
+});
+loadDemoPresets();
+tick(); restart();
+</script>

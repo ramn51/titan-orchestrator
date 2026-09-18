@@ -48,7 +48,7 @@ The SDK and CLI run **locally** and submit jobs to the remote Master over TCP. T
 ### GCP firewall rule
 
 !!! danger "Never open Titan's ports to the public internet"
-    Titan's protocol has **no authentication and no encryption** (see [Architecture → Limitations](../architecture/design.md#7-limitations-design-constraints)). Ports **9090** (Master) and **8080** (Worker) accept job submissions that execute arbitrary code on your nodes — opening them to `0.0.0.0/0` exposes an **unauthenticated remote-code-execution endpoint to the entire internet.** Always scope `--source-ranges` to your private VPC CIDR, and lock the dashboard (5000) to your own IP.
+    Titan's protocol has **no authentication and no encryption** (see [Architecture → Limitations](../architecture/design.md#6-limitations-design-constraints)). Ports **9090** (Master) and **8080** (Worker) accept job submissions that execute arbitrary code on your nodes — opening them to `0.0.0.0/0` exposes an **unauthenticated remote-code-execution endpoint to the entire internet.** Always scope `--source-ranges` to your private VPC CIDR, and lock the dashboard (5000) to your own IP.
 
 Scope Master and Worker traffic to your VPC's internal range so only cluster nodes can reach them, and expose the dashboard only to your own address:
 

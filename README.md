@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>A distributed execution runtime built from first principles — custom TCP protocol, DAG scheduler, AOF-backed store, and agentic runtime in a single zero-dependency JAR.</b>
+  <b>A distributed execution runtime built from first principles — custom TCP protocol, DAG scheduler, AOF-backed store, and agentic runtime in a single zero-dependency JAR of <b>129 KB</b>.</b>
 </p>
 
 <p align="center">
@@ -38,9 +38,16 @@ It covers three capability tiers in one binary:
 
 ---
 
+## Slide deck
+
+**[Titan Runtime, in 31 slides](https://ramn51.github.io/titan-orchestrator/deck.html)** — the
+condensed version: the problem, the architecture, what is in the box, honest scoring against
+Airflow / Ray / Nomad / Temporal, and what v1 is not. Read it before the docs if you are deciding
+whether Titan is relevant to you.
+
 ## Dashboard
 
-Titan ships with a built-in Python Flask dashboard. Three views:
+Titan ships with a built-in Python Flask dashboard. Five views — four for your pipelines, two for the scheduler running them:
 
 ### Orchestrator — Cluster health and worker load
 
@@ -65,6 +72,24 @@ Browser-based drag-and-drop DAG editor. Add task and service nodes, draw depende
 ![Agent Runs](screenshots/visualizer_agent_runs.png)
 
 Groups all DAG stages that share an `agent_run_id` into a single timeline row. When an agent runs iteratively (PLAN → ITER → EVAL → SYNTH), each stage is a separate DAG submission — Agent Runs reconstructs the full lifecycle so you don't have to hunt through individual entries.
+
+### Execution Timeline — where the wall clock went
+
+![Execution Timeline](screenshots/timeline_overview.png)
+
+Every job dispatch on an absolute time axis. Each span records when a job became *eligible* and when it actually *started*, so time spent queued is shown separately from time spent running — the distinction a status view cannot make. Bars that overlap really ran at the same moment.
+
+Gives you the critical path and its share of wall clock (high share means adding workers will not help), real parallelism, retries as separate attempts, and a failure reason that distinguishes a script failure from a readiness failure from a worker that never replied. Spans are kept in memory and written to disk for 7 days, so a post-mortem survives a Master restart.
+
+### Cluster & Control Plane — the scheduler's own vitals
+
+![Cluster and Control Plane](screenshots/cluster_live_diagnostics.png)
+
+The other views describe your pipelines; this one describes the system running them. Pending reasons in the scheduler's own words, capability dead ends with the command that fixes them, and four pre-dispatch lanes (delayed, blocked, ready, parked) that a single "pending" count cannot separate.
+
+The dispatch loop is serialized, so its duration is the scheduler's throughput ceiling — it is broken down into routing, worker selection, bookkeeping, store writes and the network hand-off, with a share table. Plus saturation, failure rate, store read/write latency, per-node host CPU/memory/load, a live service roster with dialable addresses, and scaling history with the reason recorded for every scale-up and descale.
+
+No metrics stack, no exporter, no Grafana — everything is sampled inside the Master and served from the same process.
 
 ---
 
@@ -199,7 +224,7 @@ Titan executes the parallel jobs, fans results into a synthesis job, and returns
 **Routing & Scaling**
 - Capability-based routing — tag workers `GPU`, `HIGH_MEM`, or custom; jobs are held until a matching node is free
 - Affinity routing — pin jobs to specific workers by tag
-- Least-connection dispatch across available workers
+- Least-loaded dispatch across available workers, by concurrent job count
 - Reactive auto-scaling — when a worker's queue saturates, it spawns child worker processes on the same machine to absorb the spike; idle burst workers decommission automatically after 45 seconds
 
 **Worker Lifecycle**
@@ -211,11 +236,21 @@ Titan executes the parallel jobs, fans results into a synthesis job, and returns
 - AOF crash recovery — Master replays state on restart, resumes in-flight DAGs
 - Worker re-registration — cluster recovers through a Master restart without manual intervention
 - Callback retry with exponential backoff
+- **In-flight job recovery** — when a worker fails a heartbeat, the jobs it was holding are closed with a reason and re-queued through the normal retry path, so a dead node cannot strand work or block dependent jobs
+- Orphan reconciliation — a periodic check enforces the invariant that no job is counted running on a worker that has left the fleet, covering scaler reclaim and decommission as well as crashes
 
 **Observability**
-- Live DAG visualizer with per-node status
-- Real-time log streaming from any job
+- Live DAG visualizer with per-node status, and real-time log streaming from any job
 - Agent Runs timeline for multi-stage agent workflows
+- One span per dispatch attempt — eligible/start/end, worker, attempt, priority, parents — so **queue wait is attributed per job**
+- Critical path and parallelism computed from the graph
+- **Dispatch loop broken down by phase** (route / select / record / store / send) with a share table
+- Saturation, failure rate, throughput, store read and write latency, heartbeat round-trip per node
+- Host CPU / memory / load average per worker, reported on the heartbeat
+- Live service roster with dialable addresses and uptime
+- Queue wait by declared priority, and pipeline duration trend across runs
+- Span history persisted to day-partitioned JSONL (7 days), surviving Master restarts
+- Markdown / JSON metric export, and a built-in demo runner with seven preset workflows
 
 **Human-in-the-Loop**
 - Native HITL gates — pause a DAG at any checkpoint, Approve/Reject from the dashboard

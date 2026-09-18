@@ -2,6 +2,16 @@
 
 The DAG Visualizer is the live operational view for a submitted DAG. It shows the pipeline graph, real-time job status, logs, HITL approval controls, and output files — all in one place.
 
+!!! warning "Live status is being reworked"
+    The graph shape, the log stream and the workspace file panel are reliable. **Live
+    status updates are not yet**: they are resolved through the client-side DAG manifest,
+    which is being reworked, so a node can lag or briefly misreport its state.
+
+    The [Execution Timeline](execution-timeline.md) and
+    [Cluster & Control Plane](control-plane.md) pages read execution spans and the store
+    directly rather than the manifest, so treat them as the authority when the two
+    disagree.
+
 ![DAG Visualizer](../screenshots/visualizer_overview.png)
 
 ---

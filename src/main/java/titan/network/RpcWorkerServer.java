@@ -56,6 +56,15 @@ public class RpcWorkerServer {
     private volatile boolean isRunning = true;
 
     /**
+     * The 30s self-registration loop.
+     * <p>
+     * Held as a field so {@link #stop()} can cancel it. It used to be a local inside
+     * {@code start()}, so a killed worker kept announcing itself every 30 seconds with a closed
+     * server socket — the Master re-admitted it, dispatched to it, and got no reply.
+     */
+    private ScheduledExecutorService reRegisterExecutor;
+
+    /**
      * A string describing the capabilities of this worker, used by the scheduler to assign appropriate tasks. Examples include "GENERAL", "GPU", "PDF_CONVERT", etc.
      */
     private String capability;
@@ -174,8 +183,13 @@ public class RpcWorkerServer {
             registerWithScheduler();
 
             // Periodically re-register so the worker rejoins after a master restart
-            ScheduledExecutorService reRegister = Executors.newSingleThreadScheduledExecutor();
-            reRegister.scheduleAtFixedRate(() -> {
+            reRegisterExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "titan-reregister");
+                t.setDaemon(true);
+                return t;
+            });
+            reRegisterExecutor.scheduleAtFixedRate(() -> {
+                if (!isRunning) return;              // shutting down: stop announcing ourselves
                 try { registerWithScheduler(); }
                 catch (Exception e) { System.err.println("[WARN] Re-registration failed: " + e.getMessage()); }
             }, 30, 30, TimeUnit.SECONDS);
@@ -241,7 +255,12 @@ public class RpcWorkerServer {
                             }
                         }
 
-                        String stats = "PONG|" + activeThreads + "|" + maxThreads;
+                        // APPENDED, never inserted: positions 1 and 2 keep their meaning, so a
+                        // Master built before this change reads them exactly as it always did and
+                        // ignores the rest. Integers only — the Master parses with Integer.parseInt.
+                        int[] host = hostVitals();
+                        String stats = "PONG|" + activeThreads + "|" + maxThreads
+                                + "|" + host[0] + "|" + host[1] + "|" + host[2];
                         TitanProtocol.send(out, TitanProtocol.OP_ACK, stats);
 
                     } else if(packet.opCode == TitanProtocol.OP_RUN_ARCHIVE){
@@ -632,6 +651,8 @@ public class RpcWorkerServer {
      * Initiates a graceful shutdown of the worker server. It sets the {@code isRunning} flag to {@code false} to stop the main server loop and then shuts down the internal thread pool, preventing new tasks from being accepted.
      */
     public void stop(){
+        // Cancel self-registration first, otherwise this node re-announces itself after death.
+        if (reRegisterExecutor != null) reRegisterExecutor.shutdownNow();
         isRunning = false;
         threadPool.shutdown();
     }
@@ -645,6 +666,66 @@ public class RpcWorkerServer {
      * @param args Command-line arguments: [myPort] [schedulerHost] [schedulerPort] [capability] [isPermanent].
      * @throws Exception If an error occurs during server initialization or startup.
      */
+    /**
+     * What this machine is actually doing, for the heartbeat reply.
+     * <p>
+     * Slot occupancy says how many jobs a worker holds, not how hard the box is working. These
+     * three numbers close that gap. Everything is read reflectively from the JDK's own management
+     * bean: the richer readings live on {@code com.sun.management.OperatingSystemMXBean}, which
+     * ships with every mainstream JDK but is not guaranteed, so a JVM that withholds them yields
+     * {@code -1} rather than failing. No dependency is added either way.
+     *
+     * @return {@code [cpuPct, memPct, loadAvgX100]}, each 0&ndash;100 (load may exceed 100) or -1.
+     */
+    private static int[] hostVitals() {
+        int cpu = -1, mem = -1, load = -1;
+        try {
+            java.lang.management.OperatingSystemMXBean os =
+                    java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+
+            double la = os.getSystemLoadAverage();          // standard, -1 on some platforms
+            if (la >= 0) load = (int) Math.round(la * 100);
+
+            double c = reflectDouble(os, "getCpuLoad");
+            if (c < 0) c = reflectDouble(os, "getSystemCpuLoad");   // pre-14 name
+            if (c >= 0) cpu = (int) Math.round(c * 100);
+
+            long total = reflectLong(os, "getTotalMemorySize");
+            if (total <= 0) total = reflectLong(os, "getTotalPhysicalMemorySize");
+            long free = reflectLong(os, "getFreeMemorySize");
+            if (free < 0) free = reflectLong(os, "getFreePhysicalMemorySize");
+            if (total > 0 && free >= 0) {
+                mem = (int) Math.round(100.0 * (total - free) / total);
+            }
+        } catch (Throwable ignored) {
+            // A heartbeat that cannot measure the host is still a valid heartbeat.
+        }
+        return new int[]{clamp(cpu), clamp(mem), load};
+    }
+
+    private static int clamp(int v) {
+        if (v < 0) return -1;
+        return Math.min(v, 100);
+    }
+
+    private static double reflectDouble(Object target, String method) {
+        try {
+            Object v = target.getClass().getMethod(method).invoke(target);
+            return (v instanceof Number) ? ((Number) v).doubleValue() : -1;
+        } catch (Throwable t) {
+            return -1;
+        }
+    }
+
+    private static long reflectLong(Object target, String method) {
+        try {
+            Object v = target.getClass().getMethod(method).invoke(target);
+            return (v instanceof Number) ? ((Number) v).longValue() : -1;
+        } catch (Throwable t) {
+            return -1;
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         int myPort = 8080;
         String schedHost = "localhost";
