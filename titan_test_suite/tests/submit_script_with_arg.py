@@ -43,6 +43,6 @@ if __name__ == "__main__":
     target = os.path.join(current_dir, "args_tester.py")
     if not os.path.exists(target):
         print(f"❌ ERROR: args_tester.py does not exist at: {target}")
-        print("Please create it inside 'perm_files/pytests/standard_sdk_tests/'")
+        print("Please create it inside 'titan_test_suite/tests/'")
     else:
         run_test()

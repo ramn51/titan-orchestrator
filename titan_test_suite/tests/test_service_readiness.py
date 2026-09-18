@@ -26,7 +26,7 @@ The service used here deliberately sleeps BEFORE binding, which turns a
 timing-dependent flake into a deterministic failure.
 
 Run against a live cluster (./titan-dev.sh up), then:
-    python3 perm_files/pytests/standard_sdk_tests/test_service_readiness.py
+    python3 titan_test_suite/tests/test_service_readiness.py
 """
 
 import os
