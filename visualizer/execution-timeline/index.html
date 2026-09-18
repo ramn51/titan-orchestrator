@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../execution-flows/">
+        <link rel="prev" href="../monitoring/">
       
       
-        <link rel="next" href="../internals/">
+        <link rel="next" href="../control-plane/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>Fault Tolerance & Recovery - Titan</title>
+        <title>Execution Timeline - Titan</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#fault-tolerance-recovery" class="md-skip">
+        <a href="#execution-timeline" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Fault Tolerance & Recovery
+              Execution Timeline
             
           </span>
         </div>
@@ -307,11 +307,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../visualizer/overview/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../overview/" class="md-tabs__link">
           
   
   
@@ -387,13 +389,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../design/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../architecture/design/" class="md-tabs__link">
           
   
   
@@ -1261,28 +1261,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -1300,7 +1303,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1318,7 +1321,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/overview/" class="md-nav__link">
+      <a href="../overview/" class="md-nav__link">
         
   
   
@@ -1346,7 +1349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/monitoring/" class="md-nav__link">
+      <a href="../monitoring/" class="md-nav__link">
         
   
   
@@ -1371,10 +1374,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../visualizer/execution-timeline/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution Timeline
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1390,6 +1420,115 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#spans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spans
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Spans">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bar-anatomy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bar anatomy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#failures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failures
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Controls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#retention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Retention
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Retention">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pipelines-with-no-spans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipelines with no spans
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1402,7 +1541,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/control-plane/" class="md-nav__link">
+      <a href="../control-plane/" class="md-nav__link">
         
   
   
@@ -1430,7 +1569,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/hitl-approval/" class="md-nav__link">
+      <a href="../hitl-approval/" class="md-nav__link">
         
   
   
@@ -1458,7 +1597,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/workspace-files/" class="md-nav__link">
+      <a href="../workspace-files/" class="md-nav__link">
         
   
   
@@ -1486,7 +1625,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/agent-runs/" class="md-nav__link">
+      <a href="../agent-runs/" class="md-nav__link">
         
   
   
@@ -1520,10 +1659,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1532,7 +1674,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_8" >
         
           
-          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="">
             
   
   
@@ -2127,31 +2269,28 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2169,7 +2308,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2187,7 +2326,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../design/" class="md-nav__link">
+      <a href="../../architecture/design/" class="md-nav__link">
         
   
   
@@ -2215,7 +2354,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../execution-flows/" class="md-nav__link">
+      <a href="../../architecture/execution-flows/" class="md-nav__link">
         
   
   
@@ -2240,37 +2379,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Fault Tolerance & Recovery
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../architecture/fault-tolerance/" class="md-nav__link">
         
   
   
@@ -2286,81 +2398,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#the-job-lifecycle" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The Job Lifecycle
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#worker-failure-detection-self-healing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Worker Failure — Detection &amp; Self-Healing
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#job-failure-retry-fail-fast-dead-letter" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Job Failure — Retry, Fail-Fast &amp; Dead-Letter
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#timeouts-backpressure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Timeouts &amp; Backpressure
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#master-failure-durability-restart-recovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Master Failure — Durability &amp; Restart Recovery
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2373,7 +2410,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../internals/" class="md-nav__link">
+      <a href="../../architecture/internals/" class="md-nav__link">
         
   
   
@@ -2573,10 +2610,38 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-job-lifecycle" class="md-nav__link">
+  <a href="#spans" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Job Lifecycle
+        Spans
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Spans">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bar-anatomy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bar anatomy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics
       
     </span>
   </a>
@@ -2584,10 +2649,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#worker-failure-detection-self-healing" class="md-nav__link">
+  <a href="#failures" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Worker Failure — Detection &amp; Self-Healing
+        Failures
       
     </span>
   </a>
@@ -2595,10 +2660,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#job-failure-retry-fail-fast-dead-letter" class="md-nav__link">
+  <a href="#controls" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Job Failure — Retry, Fail-Fast &amp; Dead-Letter
+        Controls
       
     </span>
   </a>
@@ -2606,24 +2671,30 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#timeouts-backpressure" class="md-nav__link">
+  <a href="#retention" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Timeouts &amp; Backpressure
+        Retention
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Retention">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pipelines-with-no-spans" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipelines with no spans
       
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#master-failure-durability-restart-recovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Master Failure — Durability &amp; Restart Recovery
-      
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2647,58 +2718,267 @@
   
 
 
-<h1 id="fault-tolerance-recovery">🛡️ Fault Tolerance &amp; Recovery</h1>
-<p>Titan is built on the assumption that workers, jobs, and the Master itself <em>will</em> fail. Failure handling is not an add-on layer — it is wired directly through the scheduler core. Every mechanism below is implemented in the v1 engine.</p>
-<h2 id="the-job-lifecycle">The Job Lifecycle</h2>
-<p>Every job moves through a six-state machine. Failure is a first-class transition, not an exception path — a failed job either loops back for another attempt or lands in the dead-letter queue.</p>
-<pre class="mermaid"><code>stateDiagram-v2
-    [*] --&gt; PENDING
-    PENDING --&gt; RUNNING: dispatched to worker
-    PENDING --&gt; CANCELLED: cancel command
-    RUNNING --&gt; COMPLETED: success
-    RUNNING --&gt; FAILED: error / timeout
-    RUNNING --&gt; CANCELLED: kill signal to worker
-    FAILED --&gt; PENDING: retryCount ≤ 3 · re-queue
-    FAILED --&gt; DEAD: retryCount &gt; 3 · dead-letter
-    COMPLETED --&gt; [*]
-    DEAD --&gt; [*]
-    CANCELLED --&gt; [*]
-    note right of CANCELLED
-        cancel cascades to child jobs
-    end note</code></pre>
-<h2 id="worker-failure-detection-self-healing">Worker Failure — Detection &amp; Self-Healing</h2>
-<ul>
-<li><strong>Heartbeat failure detector.</strong> The Master runs a dedicated <code>HeartBeatExecutor</code> that dials every registered worker every <strong>10s</strong> (<code>titan.worker.heartbeat.interval</code>). A worker that fails to answer a single heartbeat is marked <code>DEAD</code> and removed from the registry — detection is on the next beat, not after a "last seen" timeout. <em>(The Master initiates the heartbeat — it dials the worker, not the reverse.)</em></li>
-<li><strong>In-flight job recovery.</strong> A job enters <code>runningJobs</code> at dispatch and leaves it when its completion callback arrives. If the worker dies first that callback never comes, so declaring the worker dead is not enough — the work it was holding has to be recovered explicitly. <code>recoverJobsFrom(deadWorker)</code> closes each stranded span as <code>FAILED</code> with the reason recorded, then hands the job to <code>handleJobFailure</code>, so bounded retries and the dead-letter queue apply exactly as for any other failure. A worker dying is not a special kind of failure; it is a failure whose evidence arrives late.</li>
-<li><strong>Orphan reconciliation (safety net).</strong> A worker can also leave the registry by other routes — reclaimed by the scaler, decommissioned on command. Rather than hooking every exit, the metrics sampler checks the invariant directly once a second: <em>no job may be counted running on a worker that is not in the fleet.</em> Anything violating it for longer than <code>titan.scheduler.orphan.grace.ms</code> (30s, so a worker mid-registration or a callback in flight is not mistaken for a corpse) is recovered the same way. Both paths run off the dispatch thread.</li>
-<li><strong>Observable invariant.</strong> The gap this protects against is visible in the metrics: <code>queue</code> carries both <code>running</code> (jobs the Master believes are in flight) and <code>occupied</code> (slots the live workers actually report). <code>running &gt; occupied</code> means work has been orphaned, and the Cluster page surfaces it as <em>"N job(s) counted running with no live slot"</em>.</li>
-<li><strong>Push-based re-registration.</strong> Workers re-register with the Master every 30s, so a worker that was marked dead — or that came up after a Master restart — rejoins the pool automatically, with no operator action or static configuration.</li>
-</ul>
-<h2 id="job-failure-retry-fail-fast-dead-letter">Job Failure — Retry, Fail-Fast &amp; Dead-Letter</h2>
-<ul>
-<li><strong>Bounded retry.</strong> On failure, <code>handleJobFailure</code> increments the job's retry count and re-queues it. A job is retried while <code>retryCount ≤ 3</code> and marked <code>DEAD</code> once it exceeds that — i.e. <strong>up to 3 retries (4 attempts total)</strong> before it is quarantined, rather than retrying forever.</li>
-<li><strong>Dead-Letter Queue (DLQ) &amp; poison pills.</strong> Jobs that exhaust their retries — "poison pills" that would otherwise crash-loop the cluster (syntax errors, missing libraries) — are quarantined in a dedicated DLQ. Their logs and state are preserved for inspection, and their dependent children are cancelled so the rest of the DAG is not stalled.</li>
-<li><strong>Fail-fast for deployment errors.</strong> Port-conflict (<code>"ALREADY in use"</code>), duplicate-service-ID, unreachable-after-start (<code>"never became reachable"</code>) and rejected-deployment failures skip the retry loop entirely — the job is marked <code>FAILED</code> immediately rather than burning 3 retries on a deterministic error. A service that never bound its port will not bind on a retry, so retrying would only multiply the readiness window. Auto-scaler worker-spawn jobs (<code>WRK-</code>) are similarly abandoned on failure so the scaler can retry on a fresh port.</li>
-<li><strong>Service readiness is a failure mode, not a race.</strong> A service deploy completes only once the Master can open a TCP connection to the service's port. If the port never answers within the readiness window (10 × 2s by default), the deploy fails rather than reporting a success that downstream nodes would act on. The probe runs on a dedicated pool, so a slow-booting service does not stall dispatch for the rest of the cluster.</li>
-<li><strong>Reliable completion callbacks.</strong> When a worker reports job completion back to the Master (the worker→Master callback path), it retries up to <strong>5 times with exponential backoff (1s → 2s → 4s → 8s)</strong>, so a transient network blip does not silently lose a finished result. <em>(This backoff applies to the completion callback, not to Master→worker dispatch, which re-queues immediately.)</em></li>
-</ul>
-<h2 id="timeouts-backpressure">Timeouts &amp; Backpressure</h2>
-<ul>
-<li><strong>Execution timeouts.</strong> Every running process is bounded by a timeout; on expiry the entire process tree is forcibly terminated (<code>destroyForcibly</code>) and the job is failed, rather than a hung script permanently occupying a worker slot.</li>
-<li><strong>RPC read timeouts.</strong> All Master↔worker socket reads use a 30s timeout, so a stuck peer surfaces as a detectable failure instead of a permanent block.</li>
-<li><strong>Saturation backpressure.</strong> If every capable worker is saturated when a job is popped from the queue, the job is re-queued rather than dropped or force-dispatched — natural backpressure that holds work until capacity frees up.</li>
-</ul>
-<h2 id="master-failure-durability-restart-recovery">Master Failure — Durability &amp; Restart Recovery</h2>
-<ul>
-<li><strong>AOF durability.</strong> Every critical state transition (job dispatched, node locked, worker registered) is appended to TitanStore's on-disk Append-Only File.</li>
-<li><strong>Orphaned-job recovery.</strong> On startup the Master calls <code>recoverState()</code>, which scans TitanStore for jobs that were active but never reached a terminal state and re-queues them into the correct queue (waiting room vs. active) based on their persisted status and scheduled time. This is distinct from raw AOF replay: it specifically rescues <em>in-flight</em> work so a DAG resumes across a Master restart instead of stranding.</li>
-</ul>
-<div class="admonition info">
-<p class="admonition-title">Honest scope: durability, not yet high availability</p>
-<p>These mechanisms give Titan <strong>durability</strong> — no committed state or in-flight job is lost across a crash — and <strong>self-healing</strong> for worker failure. What v1 does <strong>not</strong> yet provide is <strong>availability <em>during</em> a Master outage</strong>: while the Master is down, workers cannot receive new instructions until it reboots and replays state. Zero-downtime failover via Raft leader election is a v2.0 roadmap item (see <a href="../design/#6-limitations-design-constraints">Limitations</a>). In short: the gap is availability-during-failure, not data loss.</p>
-</div>
-<hr />
-<p>For step-by-step code traces of these paths — worker crash and recovery, failure with retry and dead-letter, cancel with cascade — see the <a href="../../contributing-dev-guide/#code-flow-by-scenario">Developer Guide → Code Flow by Scenario</a>.</p>
+<h1 id="execution-timeline">Execution Timeline</h1>
+<p>The <strong>Timeline</strong> tab of the dashboard.</p>
+<p>Every recorded job dispatch on an absolute time axis. A bar's horizontal position is its real start
+time and its length is its real duration, so two bars that overlap ran at the same moment.</p>
+<p>Use it to see where a run's wall clock went: how long jobs waited before starting, what ran in
+parallel, which chain of dependencies set the total, and why anything failed.</p>
+<p><img alt="Execution Timeline: spans with queue-wait prefixes, the metrics strip, and retry attempts after a worker was killed mid-run" src="../../screenshots/timeline_overview.png" /></p>
+<h2 id="spans">Spans</h2>
+<p>One row is one <strong>span</strong>: a single dispatch attempt of a single job. A job retried twice draws three
+rows, labelled <code>#2</code> and <code>#3</code>.</p>
+<p>Each span records:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enqueued_at</code></td>
+<td>When the job became eligible to run</td>
+</tr>
+<tr>
+<td><code>started_at</code> / <code>ended_at</code></td>
+<td>When the dispatch loop handed it to a worker, and when it finished</td>
+</tr>
+<tr>
+<td><code>queue_wait_ms</code></td>
+<td><code>started_at − enqueued_at</code></td>
+</tr>
+<tr>
+<td><code>duration_ms</code></td>
+<td>Execution time</td>
+</tr>
+<tr>
+<td><code>worker</code>, <code>host</code>, <code>worker_permanent</code></td>
+<td>Which node ran it, and whether that node was permanent</td>
+</tr>
+<tr>
+<td><code>attempt</code></td>
+<td>1-based attempt number</td>
+</tr>
+<tr>
+<td><code>priority</code></td>
+<td>The job's declared priority</td>
+</tr>
+<tr>
+<td><code>parents</code></td>
+<td>Declared parent job IDs</td>
+</tr>
+<tr>
+<td><code>status</code>, <code>reason</code></td>
+<td>Final state and a short failure reason</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bar-anatomy">Bar anatomy</h3>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Grey prefix</td>
+<td>Time spent queued after becoming eligible</td>
+</tr>
+<tr>
+<td>Amber prefix</td>
+<td>Queued more than 2s</td>
+</tr>
+<tr>
+<td>Coloured bar</td>
+<td>Execution, coloured by final status</td>
+</tr>
+<tr>
+<td>Amber outline</td>
+<td>On the critical path</td>
+</tr>
+<tr>
+<td><code>PERM</code> / <code>EPH</code></td>
+<td>Permanent worker, or an ephemeral one the scaler spawned</td>
+</tr>
+</tbody>
+</table>
+<p>Hovering a row shows queue wait, execution time, worker, failure reason and parents.</p>
+<h2 id="metrics">Metrics</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Definition</th>
+<th>Inference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wall clock</td>
+<td>First span start to last span end</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Critical path</td>
+<td>Longest chain of dependent jobs by wall time, plus its share of wall clock</td>
+<td>Share near 100% → the run is dependency-bound, more workers will not help. Well under 100% → capacity-bound, more workers will</td>
+</tr>
+<tr>
+<td>Parallelism</td>
+<td>Total execution time ÷ wall clock</td>
+<td><code>1.0</code> = nothing overlapped. <code>4.0</code> = four jobs at once on average. Compare against total slots</td>
+</tr>
+<tr>
+<td>Peak concurrent</td>
+<td>Most spans in flight at any instant</td>
+<td>Below the slot count means capacity sat idle</td>
+</tr>
+<tr>
+<td>Jobs / Workers</td>
+<td>Spans drawn, and distinct workers involved</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>Failed</td>
+<td>Spans ending <code>FAILED</code> or <code>DEAD</code></td>
+<td>Listed individually below the chart</td>
+</tr>
+<tr>
+<td>Queue time</td>
+<td>Share of total job lifetime spent waiting</td>
+<td>High share → the scheduler, not the scripts, accounts for most of the elapsed time</td>
+</tr>
+<tr>
+<td>Starved</td>
+<td>Spans that waited more than 2s</td>
+<td>Non-zero under light load is worth investigating</td>
+</tr>
+</tbody>
+</table>
+<p>The critical path is computed by walking back from the job that finished last, always to whichever
+parent finished latest. Jobs off that chain have slack, and shortening them does not change the wall
+clock.</p>
+<h2 id="failures">Failures</h2>
+<p>The failures block always renders, including when empty. Each entry gives the job ID, attempt
+number, worker, and a short reason: the exit code plus the last meaningful line of a traceback.</p>
+<p>Three reason formats appear, and they mean different things:</p>
+<table>
+<thead>
+<tr>
+<th>Reason</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>exit 5: ValueError: …</code></td>
+<td>The script failed</td>
+</tr>
+<tr>
+<td><code>Deployment Failed: … port 9972 never became reachable</code></td>
+<td>A service started but never bound its port</td>
+</tr>
+<tr>
+<td><code>Worker unreachable: … accepted no reply</code></td>
+<td>Transport failure: the job never ran</td>
+</tr>
+</tbody>
+</table>
+<h2 id="controls">Controls</h2>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pipeline picker</td>
+<td>Filters to one pipeline. The name is resolved to its job IDs through the manifest</td>
+</tr>
+<tr>
+<td>Job ID filter</td>
+<td>Free-text substring match on job ID</td>
+</tr>
+<tr>
+<td>Window</td>
+<td>Clips the time range. Bars scale to the window, so a narrow window makes short jobs visible</td>
+</tr>
+<tr>
+<td>Limit</td>
+<td>Maximum spans fetched, capped at 5000</td>
+</tr>
+<tr>
+<td>Group by worker</td>
+<td>Regroups rows by the node that ran them</td>
+</tr>
+<tr>
+<td>Auto-refresh</td>
+<td>Polls while the tab is visible, pauses when hidden</td>
+</tr>
+</tbody>
+</table>
+<h2 id="retention">Retention</h2>
+<p>Spans live in two places:</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Capacity</th>
+<th>Survives a Master restart</th>
+<th>Window options</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>In-memory ring</td>
+<td><code>titan.metrics.spans.max</code> (5000)</td>
+<td>No</td>
+<td><code>fit to all spans</code>, <code>last 1 min</code> … <code>last 1 hour</code></td>
+</tr>
+<tr>
+<td>JSONL on disk</td>
+<td><code>titan.spans.retain.days</code> (7), at <code>titan_spans/spans-YYYY-MM-DD.jsonl</code></td>
+<td>Yes</td>
+<td><code>last 24 h · from disk</code>, <code>last 7 days · from disk</code></td>
+</tr>
+</tbody>
+</table>
+<p>The status pill reads <code>· in memory</code> or <code>· from disk</code>. Disk history is sorted by start time before
+the limit is applied, because the file is append-ordered by completion. When the Master holds more
+spans than were fetched, a truncation notice appears.</p>
+<h3 id="pipelines-with-no-spans">Pipelines with no spans</h3>
+<p>The picker is built from <code>.titan_dag_manifest.json</code>, which records every submission indefinitely.
+Spans do not last that long, so each entry is labelled with what is available:</p>
+<table>
+<thead>
+<tr>
+<th>Label</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>· 33 spans</code></td>
+<td>Available in memory</td>
+</tr>
+<tr>
+<td><code>· 30 spans (disk only)</code></td>
+<td>Ran before the current Master started, so use a <strong>from disk</strong> window</td>
+</tr>
+<tr>
+<td><code>· no spans on record</code></td>
+<td>Never dispatched (a parked job has no span), or predates span persistence</td>
+</tr>
+</tbody>
+</table>
+<p>Selecting an entry with nothing to draw explains which case applies rather than rendering an empty
+chart. Job IDs are unique per run, so repeated runs never overwrite one another.</p>
 
 
 

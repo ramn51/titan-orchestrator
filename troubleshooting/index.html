@@ -11,28 +11,28 @@
       
       
       
-        <link rel="prev" href="../execution-flows/">
+        <link rel="prev" href="../getting-started/">
       
       
-        <link rel="next" href="../internals/">
+        <link rel="next" href="../examples/yaml/">
       
       
         
       
       
-      <link rel="icon" href="../../screenshots/Titan_logo.png">
+      <link rel="icon" href="../screenshots/Titan_logo.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>Fault Tolerance & Recovery - Titan</title>
+        <title>Troubleshooting - Titan</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -51,9 +51,9 @@
       
     
     
-      <link rel="stylesheet" href="../../stylesheets/titan.css">
+      <link rel="stylesheet" href="../stylesheets/titan.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#fault-tolerance-recovery" class="md-skip">
+        <a href="#troubleshooting" class="md-skip">
           Skip to content
         </a>
       
@@ -92,9 +92,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Titan" class="md-header__button md-logo" aria-label="Titan" data-md-component="logo">
+    <a href=".." title="Titan" class="md-header__button md-logo" aria-label="Titan" data-md-component="logo">
       
-  <img src="../../screenshots/Titan_logo.png" alt="logo">
+  <img src="../screenshots/Titan_logo.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Fault Tolerance & Recovery
+              Troubleshooting
             
           </span>
         </div>
@@ -222,7 +222,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../.." class="md-tabs__link">
+      <a href=".." class="md-tabs__link">
         
   
   
@@ -241,7 +241,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../getting-started/" class="md-tabs__link">
+      <a href="../getting-started/" class="md-tabs__link">
         
   
   
@@ -258,9 +258,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../../troubleshooting/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -288,7 +290,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../examples/yaml/" class="md-tabs__link">
+        <a href="../examples/yaml/" class="md-tabs__link">
           
   
   
@@ -311,7 +313,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../visualizer/overview/" class="md-tabs__link">
+        <a href="../visualizer/overview/" class="md-tabs__link">
           
   
   
@@ -331,7 +333,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../deployment/cloud/" class="md-tabs__link">
+        <a href="../deployment/cloud/" class="md-tabs__link">
           
   
   
@@ -351,7 +353,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../reference/sdk/" class="md-tabs__link">
+        <a href="../reference/sdk/" class="md-tabs__link">
           
   
   
@@ -371,7 +373,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../mcp/overview/" class="md-tabs__link">
+        <a href="../mcp/overview/" class="md-tabs__link">
           
   
   
@@ -387,13 +389,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../design/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../architecture/design/" class="md-tabs__link">
           
   
   
@@ -413,7 +413,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../contributing/" class="md-tabs__link">
+        <a href="../contributing/" class="md-tabs__link">
           
   
   
@@ -447,9 +447,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Titan" class="md-nav__button md-logo" aria-label="Titan" data-md-component="logo">
+    <a href=".." title="Titan" class="md-nav__button md-logo" aria-label="Titan" data-md-component="logo">
       
-  <img src="../../screenshots/Titan_logo.png" alt="logo">
+  <img src="../screenshots/Titan_logo.png" alt="logo">
 
     </a>
     Titan
@@ -476,7 +476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -503,7 +503,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/" class="md-nav__link">
+      <a href="../getting-started/" class="md-nav__link">
         
   
   
@@ -527,10 +527,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../troubleshooting/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -546,6 +573,230 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#my-script-failed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        My script failed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="My script failed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-find-out-that-it-failed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Find out that it failed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-get-the-reason" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Get the reason
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-understand-what-already-happened-automatically" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Understand what already happened automatically
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-re-run-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Re-run it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nothing-is-running" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nothing is running
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parked-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parked jobs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dead-letter-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dead-letter queue
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#worker-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worker problems
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-job-never-ran" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The job never ran
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#service-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service problems
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#no-spans-to-show" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No spans to show
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#status-looks-wrong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status looks wrong
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#store-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Store problems
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workers-will-not-descale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workers will not descale
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#orphaned-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Orphaned work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#useful-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Useful settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#which-page-answers-which-question" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which page answers which question
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -665,7 +916,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/yaml/" class="md-nav__link">
+      <a href="../examples/yaml/" class="md-nav__link">
         
   
   
@@ -693,7 +944,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/agentic/" class="md-nav__link">
+      <a href="../examples/agentic/" class="md-nav__link">
         
   
   
@@ -721,7 +972,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../constructor/overview/" class="md-nav__link">
+      <a href="../constructor/overview/" class="md-nav__link">
         
   
   
@@ -749,7 +1000,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mcp/overview/" class="md-nav__link">
+      <a href="../mcp/overview/" class="md-nav__link">
         
   
   
@@ -893,7 +1144,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/comp-intel-pipeline/" class="md-nav__link">
+      <a href="../examples/comp-intel-pipeline/" class="md-nav__link">
         
   
   
@@ -921,7 +1172,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/dagster/" class="md-nav__link">
+      <a href="../examples/dagster/" class="md-nav__link">
         
   
   
@@ -1011,7 +1262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/quickstart-agent/" class="md-nav__link">
+      <a href="../examples/quickstart-agent/" class="md-nav__link">
         
   
   
@@ -1039,7 +1290,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/research-agent/" class="md-nav__link">
+      <a href="../examples/research-agent/" class="md-nav__link">
         
   
   
@@ -1067,7 +1318,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/code-gen-agent/" class="md-nav__link">
+      <a href="../examples/code-gen-agent/" class="md-nav__link">
         
   
   
@@ -1095,7 +1346,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/hitl/" class="md-nav__link">
+      <a href="../examples/hitl/" class="md-nav__link">
         
   
   
@@ -1123,7 +1374,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/research-pipeline/" class="md-nav__link">
+      <a href="../examples/research-pipeline/" class="md-nav__link">
         
   
   
@@ -1213,7 +1464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/titan-ci/" class="md-nav__link">
+      <a href="../examples/titan-ci/" class="md-nav__link">
         
   
   
@@ -1318,7 +1569,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/overview/" class="md-nav__link">
+      <a href="../visualizer/overview/" class="md-nav__link">
         
   
   
@@ -1346,7 +1597,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/monitoring/" class="md-nav__link">
+      <a href="../visualizer/monitoring/" class="md-nav__link">
         
   
   
@@ -1374,7 +1625,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/execution-timeline/" class="md-nav__link">
+      <a href="../visualizer/execution-timeline/" class="md-nav__link">
         
   
   
@@ -1402,7 +1653,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/control-plane/" class="md-nav__link">
+      <a href="../visualizer/control-plane/" class="md-nav__link">
         
   
   
@@ -1430,7 +1681,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/hitl-approval/" class="md-nav__link">
+      <a href="../visualizer/hitl-approval/" class="md-nav__link">
         
   
   
@@ -1458,7 +1709,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/workspace-files/" class="md-nav__link">
+      <a href="../visualizer/workspace-files/" class="md-nav__link">
         
   
   
@@ -1486,7 +1737,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/agent-runs/" class="md-nav__link">
+      <a href="../visualizer/agent-runs/" class="md-nav__link">
         
   
   
@@ -1568,7 +1819,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../constructor/overview/" class="md-nav__link">
+      <a href="../constructor/overview/" class="md-nav__link">
         
   
   
@@ -1596,7 +1847,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../constructor/building-dags/" class="md-nav__link">
+      <a href="../constructor/building-dags/" class="md-nav__link">
         
   
   
@@ -1624,7 +1875,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../constructor/hitl/" class="md-nav__link">
+      <a href="../constructor/hitl/" class="md-nav__link">
         
   
   
@@ -1652,7 +1903,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../constructor/managing-dags/" class="md-nav__link">
+      <a href="../constructor/managing-dags/" class="md-nav__link">
         
   
   
@@ -1680,7 +1931,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../constructor/keyboard-shortcuts/" class="md-nav__link">
+      <a href="../constructor/keyboard-shortcuts/" class="md-nav__link">
         
   
   
@@ -1777,7 +2028,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/cloud/" class="md-nav__link">
+      <a href="../deployment/cloud/" class="md-nav__link">
         
   
   
@@ -1805,7 +2056,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../deployment/remote-gpu-worker/" class="md-nav__link">
+      <a href="../deployment/remote-gpu-worker/" class="md-nav__link">
         
   
   
@@ -1894,7 +2145,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/sdk/" class="md-nav__link">
+      <a href="../reference/sdk/" class="md-nav__link">
         
   
   
@@ -1922,7 +2173,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/cli/" class="md-nav__link">
+      <a href="../reference/cli/" class="md-nav__link">
         
   
   
@@ -1950,7 +2201,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/rpc-spec/" class="md-nav__link">
+      <a href="../reference/rpc-spec/" class="md-nav__link">
         
   
   
@@ -1978,7 +2229,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../javadocs/docs/" class="md-nav__link">
+      <a href="../javadocs/docs/" class="md-nav__link">
         
   
   
@@ -2067,7 +2318,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../mcp/overview/" class="md-nav__link">
+      <a href="../mcp/overview/" class="md-nav__link">
         
   
   
@@ -2095,7 +2346,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../integrations/langchain/" class="md-nav__link">
+      <a href="../integrations/langchain/" class="md-nav__link">
         
   
   
@@ -2127,31 +2378,28 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2169,7 +2417,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2187,7 +2435,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../design/" class="md-nav__link">
+      <a href="../architecture/design/" class="md-nav__link">
         
   
   
@@ -2215,7 +2463,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../execution-flows/" class="md-nav__link">
+      <a href="../architecture/execution-flows/" class="md-nav__link">
         
   
   
@@ -2240,37 +2488,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Fault Tolerance & Recovery
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../architecture/fault-tolerance/" class="md-nav__link">
         
   
   
@@ -2286,81 +2507,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#the-job-lifecycle" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The Job Lifecycle
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#worker-failure-detection-self-healing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Worker Failure — Detection &amp; Self-Healing
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#job-failure-retry-fail-fast-dead-letter" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Job Failure — Retry, Fail-Fast &amp; Dead-Letter
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#timeouts-backpressure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Timeouts &amp; Backpressure
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#master-failure-durability-restart-recovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Master Failure — Durability &amp; Restart Recovery
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2373,7 +2519,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../internals/" class="md-nav__link">
+      <a href="../architecture/internals/" class="md-nav__link">
         
   
   
@@ -2401,7 +2547,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../comparison/" class="md-nav__link">
+      <a href="../comparison/" class="md-nav__link">
         
   
   
@@ -2490,7 +2636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+      <a href="../contributing/" class="md-nav__link">
         
   
   
@@ -2518,7 +2664,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing-dev-guide/" class="md-nav__link">
+      <a href="../contributing-dev-guide/" class="md-nav__link">
         
   
   
@@ -2573,10 +2719,71 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-job-lifecycle" class="md-nav__link">
+  <a href="#my-script-failed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Job Lifecycle
+        My script failed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="My script failed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-find-out-that-it-failed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Find out that it failed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-get-the-reason" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Get the reason
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-understand-what-already-happened-automatically" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Understand what already happened automatically
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-re-run-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Re-run it
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nothing-is-running" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nothing is running
       
     </span>
   </a>
@@ -2584,10 +2791,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#worker-failure-detection-self-healing" class="md-nav__link">
+  <a href="#parked-jobs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Worker Failure — Detection &amp; Self-Healing
+        Parked jobs
       
     </span>
   </a>
@@ -2595,10 +2802,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#job-failure-retry-fail-fast-dead-letter" class="md-nav__link">
+  <a href="#dead-letter-queue" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Job Failure — Retry, Fail-Fast &amp; Dead-Letter
+        Dead-letter queue
       
     </span>
   </a>
@@ -2606,10 +2813,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#timeouts-backpressure" class="md-nav__link">
+  <a href="#worker-problems" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Timeouts &amp; Backpressure
+        Worker problems
       
     </span>
   </a>
@@ -2617,10 +2824,98 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#master-failure-durability-restart-recovery" class="md-nav__link">
+  <a href="#the-job-never-ran" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Master Failure — Durability &amp; Restart Recovery
+        The job never ran
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#service-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service problems
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#no-spans-to-show" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No spans to show
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#status-looks-wrong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status looks wrong
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#store-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Store problems
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workers-will-not-descale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workers will not descale
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#orphaned-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Orphaned work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#useful-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Useful settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#which-page-answers-which-question" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Which page answers which question
       
     </span>
   </a>
@@ -2647,58 +2942,374 @@
   
 
 
-<h1 id="fault-tolerance-recovery">🛡️ Fault Tolerance &amp; Recovery</h1>
-<p>Titan is built on the assumption that workers, jobs, and the Master itself <em>will</em> fail. Failure handling is not an add-on layer — it is wired directly through the scheduler core. Every mechanism below is implemented in the v1 engine.</p>
-<h2 id="the-job-lifecycle">The Job Lifecycle</h2>
-<p>Every job moves through a six-state machine. Failure is a first-class transition, not an exception path — a failed job either loops back for another attempt or lands in the dead-letter queue.</p>
-<pre class="mermaid"><code>stateDiagram-v2
-    [*] --&gt; PENDING
-    PENDING --&gt; RUNNING: dispatched to worker
-    PENDING --&gt; CANCELLED: cancel command
-    RUNNING --&gt; COMPLETED: success
-    RUNNING --&gt; FAILED: error / timeout
-    RUNNING --&gt; CANCELLED: kill signal to worker
-    FAILED --&gt; PENDING: retryCount ≤ 3 · re-queue
-    FAILED --&gt; DEAD: retryCount &gt; 3 · dead-letter
-    COMPLETED --&gt; [*]
-    DEAD --&gt; [*]
-    CANCELLED --&gt; [*]
-    note right of CANCELLED
-        cancel cascades to child jobs
-    end note</code></pre>
-<h2 id="worker-failure-detection-self-healing">Worker Failure — Detection &amp; Self-Healing</h2>
+<h1 id="troubleshooting">Troubleshooting</h1>
+<p>Start with the symptom. Each entry names where to look, the likely cause, and what to do.</p>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Go to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A job failed and I need the reason</td>
+<td><a href="#my-script-failed">My script failed</a></td>
+</tr>
+<tr>
+<td>Job sits in <code>PENDING</code>, nothing runs</td>
+<td><a href="#nothing-is-running">Nothing is running</a></td>
+</tr>
+<tr>
+<td>Job never runs, shows as parked</td>
+<td><a href="#parked-jobs">Parked jobs</a></td>
+</tr>
+<tr>
+<td>Job ended <code>DEAD</code></td>
+<td><a href="#dead-letter-queue">Dead-letter queue</a></td>
+</tr>
+<tr>
+<td>A worker will not register, or vanished</td>
+<td><a href="#worker-problems">Worker problems</a></td>
+</tr>
+<tr>
+<td><code>Worker unreachable: accepted no reply</code></td>
+<td><a href="#the-job-never-ran">The job never ran</a></td>
+</tr>
+<tr>
+<td>A service deployed but is not reachable</td>
+<td><a href="#service-problems">Service problems</a></td>
+</tr>
+<tr>
+<td>A service shows <code>LIVE</code> but is dead</td>
+<td><a href="#service-problems">Service problems</a></td>
+</tr>
+<tr>
+<td>The Timeline is empty for a pipeline</td>
+<td><a href="#no-spans-to-show">No spans to show</a></td>
+</tr>
+<tr>
+<td>The DAG list shows everything as <code>PENDING</code></td>
+<td><a href="#status-looks-wrong">Status looks wrong</a></td>
+</tr>
+<tr>
+<td>Store disconnected, or dropped writes</td>
+<td><a href="#store-problems">Store problems</a></td>
+</tr>
+<tr>
+<td>Ephemeral workers are not going away</td>
+<td><a href="#workers-will-not-descale">Workers will not descale</a></td>
+</tr>
+<tr>
+<td><code>running</code> is higher than occupied slots</td>
+<td><a href="#orphaned-work">Orphaned work</a></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="my-script-failed">My script failed</h2>
+<h3 id="1-find-out-that-it-failed">1. Find out that it failed</h3>
+<p>Any of these will tell you:</p>
 <ul>
-<li><strong>Heartbeat failure detector.</strong> The Master runs a dedicated <code>HeartBeatExecutor</code> that dials every registered worker every <strong>10s</strong> (<code>titan.worker.heartbeat.interval</code>). A worker that fails to answer a single heartbeat is marked <code>DEAD</code> and removed from the registry — detection is on the next beat, not after a "last seen" timeout. <em>(The Master initiates the heartbeat — it dials the worker, not the reverse.)</em></li>
-<li><strong>In-flight job recovery.</strong> A job enters <code>runningJobs</code> at dispatch and leaves it when its completion callback arrives. If the worker dies first that callback never comes, so declaring the worker dead is not enough — the work it was holding has to be recovered explicitly. <code>recoverJobsFrom(deadWorker)</code> closes each stranded span as <code>FAILED</code> with the reason recorded, then hands the job to <code>handleJobFailure</code>, so bounded retries and the dead-letter queue apply exactly as for any other failure. A worker dying is not a special kind of failure; it is a failure whose evidence arrives late.</li>
-<li><strong>Orphan reconciliation (safety net).</strong> A worker can also leave the registry by other routes — reclaimed by the scaler, decommissioned on command. Rather than hooking every exit, the metrics sampler checks the invariant directly once a second: <em>no job may be counted running on a worker that is not in the fleet.</em> Anything violating it for longer than <code>titan.scheduler.orphan.grace.ms</code> (30s, so a worker mid-registration or a callback in flight is not mistaken for a corpse) is recovered the same way. Both paths run off the dispatch thread.</li>
-<li><strong>Observable invariant.</strong> The gap this protects against is visible in the metrics: <code>queue</code> carries both <code>running</code> (jobs the Master believes are in flight) and <code>occupied</code> (slots the live workers actually report). <code>running &gt; occupied</code> means work has been orphaned, and the Cluster page surfaces it as <em>"N job(s) counted running with no live slot"</em>.</li>
-<li><strong>Push-based re-registration.</strong> Workers re-register with the Master every 30s, so a worker that was marked dead — or that came up after a Master restart — rejoins the pool automatically, with no operator action or static configuration.</li>
+<li><strong>Timeline tab</strong> — the failures block lists every failed span, and always renders even when empty.</li>
+<li><strong>Cluster tab</strong> — the <code>Dead letter</code> tile turns red when a job exhausted its retries.</li>
+<li><strong>SDK</strong> — <code>client.get_job_status("DAG-my-job")</code> returns <code>FAILED</code> or <code>DEAD</code>.</li>
+<li><strong>DAG Visualizer</strong> — the node turns red. Note the caveat on that page: live status resolves through
+  the client-side manifest and can lag, so confirm against the Timeline.</li>
 </ul>
-<h2 id="job-failure-retry-fail-fast-dead-letter">Job Failure — Retry, Fail-Fast &amp; Dead-Letter</h2>
+<h3 id="2-get-the-reason">2. Get the reason</h3>
+<p>The Timeline's failures block gives a <strong>short reason</strong> per attempt: the exit code plus the last
+meaningful line of the traceback. The <em>last</em> line is deliberate, because that is the line naming the
+error; the first only says <code>Traceback (most recent call last)</code>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>DAG-etl-transform #2 · FAILED on 127.0.0.1:8080
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>exit 1: ValueError: could not convert string to float: 'n/a'
+</span></code></pre></div>
+<p>Three reason shapes mean different things:</p>
+<table>
+<thead>
+<tr>
+<th>Reason</th>
+<th>Meaning</th>
+<th>Where the fault is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>exit 5: ValueError: …</code></td>
+<td>The script ran and failed</td>
+<td>Your code</td>
+</tr>
+<tr>
+<td><code>Deployment Failed: … port 9972 never became reachable after 20s</code></td>
+<td>Process started, never bound its port</td>
+<td>Your service's startup</td>
+</tr>
+<tr>
+<td><code>Worker unreachable: … accepted no reply</code></td>
+<td>Transport failure</td>
+<td>The cluster, <strong>not your script</strong></td>
+</tr>
+</tbody>
+</table>
+<p>For the full stdout and stderr rather than the one-line summary:</p>
 <ul>
-<li><strong>Bounded retry.</strong> On failure, <code>handleJobFailure</code> increments the job's retry count and re-queues it. A job is retried while <code>retryCount ≤ 3</code> and marked <code>DEAD</code> once it exceeds that — i.e. <strong>up to 3 retries (4 attempts total)</strong> before it is quarantined, rather than retrying forever.</li>
-<li><strong>Dead-Letter Queue (DLQ) &amp; poison pills.</strong> Jobs that exhaust their retries — "poison pills" that would otherwise crash-loop the cluster (syntax errors, missing libraries) — are quarantined in a dedicated DLQ. Their logs and state are preserved for inspection, and their dependent children are cancelled so the rest of the DAG is not stalled.</li>
-<li><strong>Fail-fast for deployment errors.</strong> Port-conflict (<code>"ALREADY in use"</code>), duplicate-service-ID, unreachable-after-start (<code>"never became reachable"</code>) and rejected-deployment failures skip the retry loop entirely — the job is marked <code>FAILED</code> immediately rather than burning 3 retries on a deterministic error. A service that never bound its port will not bind on a retry, so retrying would only multiply the readiness window. Auto-scaler worker-spawn jobs (<code>WRK-</code>) are similarly abandoned on failure so the scaler can retry on a fresh port.</li>
-<li><strong>Service readiness is a failure mode, not a race.</strong> A service deploy completes only once the Master can open a TCP connection to the service's port. If the port never answers within the readiness window (10 × 2s by default), the deploy fails rather than reporting a success that downstream nodes would act on. The probe runs on a dedicated pool, so a slow-booting service does not stall dispatch for the rest of the cluster.</li>
-<li><strong>Reliable completion callbacks.</strong> When a worker reports job completion back to the Master (the worker→Master callback path), it retries up to <strong>5 times with exponential backoff (1s → 2s → 4s → 8s)</strong>, so a transient network blip does not silently lose a finished result. <em>(This backoff applies to the completion callback, not to Master→worker dispatch, which re-queues immediately.)</em></li>
+<li><strong>Dashboard</strong> — click the node in the DAG Visualizer for its live log stream, or open
+  <code>/logs/&lt;job_id&gt;</code>.</li>
+<li><strong>SDK</strong> — <code>client.fetch_logs("DAG-my-job")</code>.</li>
+<li><strong>Workspace files</strong> — the file panel lists everything the job wrote, including any log or output
+  file it produced itself.</li>
 </ul>
-<h2 id="timeouts-backpressure">Timeouts &amp; Backpressure</h2>
+<h3 id="3-understand-what-already-happened-automatically">3. Understand what already happened automatically</h3>
+<p>Before you re-run anything, know that Titan already tried:</p>
 <ul>
-<li><strong>Execution timeouts.</strong> Every running process is bounded by a timeout; on expiry the entire process tree is forcibly terminated (<code>destroyForcibly</code>) and the job is failed, rather than a hung script permanently occupying a worker slot.</li>
-<li><strong>RPC read timeouts.</strong> All Master↔worker socket reads use a 30s timeout, so a stuck peer surfaces as a detectable failure instead of a permanent block.</li>
-<li><strong>Saturation backpressure.</strong> If every capable worker is saturated when a job is popped from the queue, the job is re-queued rather than dropped or force-dispatched — natural backpressure that holds work until capacity frees up.</li>
+<li><strong>Bounded retry.</strong> A failed job is retried while <code>retryCount &lt;= 3</code>, so <strong>up to 3 retries, 4 attempts
+  total</strong>. Each attempt is its own span, which is why one job can draw four bars on the Timeline.</li>
+<li><strong>Fail-fast.</strong> Deterministic failures are <em>not</em> retried — a service that never bound its port will
+  not bind on a retry, so those are failed immediately rather than burning the retry budget.</li>
+<li><strong>Dead-letter.</strong> Once retries are exhausted the job is marked <code>DEAD</code>, quarantined in the DLQ with
+  its reason preserved, and <strong>its dependent children are cancelled</strong> so the rest of the graph is not
+  left waiting on something that will never arrive.</li>
 </ul>
-<h2 id="master-failure-durability-restart-recovery">Master Failure — Durability &amp; Restart Recovery</h2>
-<ul>
-<li><strong>AOF durability.</strong> Every critical state transition (job dispatched, node locked, worker registered) is appended to TitanStore's on-disk Append-Only File.</li>
-<li><strong>Orphaned-job recovery.</strong> On startup the Master calls <code>recoverState()</code>, which scans TitanStore for jobs that were active but never reached a terminal state and re-queues them into the correct queue (waiting room vs. active) based on their persisted status and scheduled time. This is distinct from raw AOF replay: it specifically rescues <em>in-flight</em> work so a DAG resumes across a Master restart instead of stranding.</li>
-</ul>
-<div class="admonition info">
-<p class="admonition-title">Honest scope: durability, not yet high availability</p>
-<p>These mechanisms give Titan <strong>durability</strong> — no committed state or in-flight job is lost across a crash — and <strong>self-healing</strong> for worker failure. What v1 does <strong>not</strong> yet provide is <strong>availability <em>during</em> a Master outage</strong>: while the Master is down, workers cannot receive new instructions until it reboots and replays state. Zero-downtime failover via Raft leader election is a v2.0 roadmap item (see <a href="../design/#6-limitations-design-constraints">Limitations</a>). In short: the gap is availability-during-failure, not data loss.</p>
+<p>So <code>FAILED</code> means it may still retry. <code>DEAD</code> means it is finished and nothing downstream will run.</p>
+<h3 id="4-re-run-it">4. Re-run it</h3>
+<table>
+<thead>
+<tr>
+<th>What you want</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Re-run <strong>one job</strong>, immediately</td>
+<td>Dashboard: <strong>Replay</strong> on the node. Re-submits that job with its dependencies stripped, so it runs now rather than waiting on parents.</td>
+</tr>
+<tr>
+<td>Re-run <strong>the whole pipeline</strong></td>
+<td>Dashboard: <strong>Redeploy</strong> on the DAG. Replays the stored submission payload from the manifest.</td>
+</tr>
+<tr>
+<td>Re-run after <strong>fixing the script</strong></td>
+<td>Re-deploy the file first (<code>client.deploy_script("path/to/job.py")</code>), then Replay or Redeploy. Replay re-runs the <em>stored job definition</em>, so it picks up the new script but not a changed job definition.</td>
+</tr>
+<tr>
+<td>Re-run with a <strong>changed definition</strong></td>
+<td>Submit it again from the SDK or YAML. Job IDs are unique per run, so nothing is overwritten.</td>
+</tr>
+<tr>
+<td><strong>Stop</strong> the rest of the graph</td>
+<td>Dashboard cancel, or <code>client.cancel_job("DAG-my-job")</code> if available in your SDK build. Cancelling cascades to children.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">Replay and Redeploy read the manifest</p>
+<p>Both resolve the job or DAG payload from <code>.titan_dag_manifest.json</code> on the machine running the
+dashboard. If that file was lost or reset, they return <code>No manifest found</code> — re-submit from the
+SDK or YAML instead.</p>
 </div>
 <hr />
-<p>For step-by-step code traces of these paths — worker crash and recovery, failure with retry and dead-letter, cancel with cascade — see the <a href="../../contributing-dev-guide/#code-flow-by-scenario">Developer Guide → Code Flow by Scenario</a>.</p>
+<h2 id="nothing-is-running">Nothing is running</h2>
+<p>Cluster tab → <strong>Why work isn't moving</strong> → <em>Pending reasons</em>. The scheduler states why it could not
+place the job on its last attempt, and the wording tells you which fix applies:</p>
+<table>
+<thead>
+<tr>
+<th>Reason</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>no worker registered with capability X</code></td>
+<td>Start a worker offering <code>X</code>. See <a href="#parked-jobs">Parked jobs</a>.</td>
+</tr>
+<tr>
+<td><code>N worker(s) match X but all are at capacity</code></td>
+<td>Wait, or add capacity. Not an error.</td>
+</tr>
+</tbody>
+</table>
+<p>If the <code>Ready queue</code> tile is red, there is queued work and <strong>nothing running</strong> — a genuine stall
+rather than a busy cluster. Check the <code>Workers</code> tile is non-zero and the store is <code>UP</code>.</p>
+<hr />
+<h2 id="parked-jobs">Parked jobs</h2>
+<p>A job whose required capability no worker offers is moved out of the queue entirely and <strong>parked</strong>,
+rather than being re-queued forever. Cluster tab → <em>Before dispatch</em> → <strong>Parked</strong> lane.</p>
+<p>The capability panel prints the exact command. Start a matching worker and parked jobs are released
+<strong>automatically, event-driven</strong> — no resubmit needed:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>java<span class="w"> </span>-jar<span class="w"> </span>Worker.jar<span class="w"> </span>&lt;port&gt;<span class="w"> </span>&lt;master-host&gt;<span class="w"> </span><span class="m">9090</span><span class="w"> </span>GPU
+</span></code></pre></div>
+<p>Parked jobs do not expire by default (<code>titan.scheduler.unschedulable.deadline.ms</code> is <code>0</code>), so they
+accumulate until a worker appears or you cancel them.</p>
+<hr />
+<h2 id="dead-letter-queue">Dead-letter queue</h2>
+<p>Cluster tab → <em>Why work isn't moving</em> → <strong>Dead-letter queue</strong>. Each entry keeps the job ID, its
+attempt count, and the reason it died. Non-zero means something is failing <strong>repeatably</strong>, not just
+slowly. See <a href="#my-script-failed">My script failed</a> for how to read the reason and re-run.</p>
+<hr />
+<h2 id="worker-problems">Worker problems</h2>
+<p><strong>It never registered.</strong> Check the worker's own startup output:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Capability:  GENERAL
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Mode:        PERMANENT (Protected)
+</span></code></pre></div>
+<p>If that line is missing the process did not start. If it started but never appears in Topology,
+the Master is unreachable from it — check port 9090 and any firewall between them.</p>
+<p><strong>It was there and vanished.</strong> Cluster tab → <em>Scaling history</em>. A <code>WORKER_LOST</code> entry with
+<code>heartbeat failed</code> means the Master stopped getting answers on the 10-second heartbeat. Its
+in-flight jobs are recovered and re-queued automatically.</p>
+<p><strong>It registered as ephemeral when you wanted permanent.</strong> Permanence is a startup argument, not a
+property of the port. Pass it explicitly:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>java<span class="w"> </span>-jar<span class="w"> </span>Worker.jar<span class="w"> </span><span class="m">8080</span><span class="w"> </span>localhost<span class="w"> </span><span class="m">9090</span><span class="w"> </span>GENERAL<span class="w"> </span><span class="nb">true</span>
+</span></code></pre></div>
+<p>Without the trailing <code>true</code> the worker defaults to ephemeral and becomes eligible for reclaim.</p>
+<hr />
+<h2 id="the-job-never-ran">The job never ran</h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Worker unreachable: 127.0.0.1:8099 accepted no reply
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>(process gone, port closed, or network down). The job never ran —
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>this is not a script failure.
+</span></code></pre></div>
+<p>Transport failure, so do not debug your script. The worker died, its port closed, or the network
+dropped between dispatch and reply. The job is re-queued through the normal retry path. If it
+repeats, see <a href="#worker-problems">Worker problems</a>.</p>
+<hr />
+<h2 id="service-problems">Service problems</h2>
+<p><strong>Deployed but not reachable.</strong> The reason will read
+<code>port never became reachable after 20s</code>. The process started; the readiness probe failed. Either it
+binds a different port than declared, it binds <code>127.0.0.1</code> instead of <code>0.0.0.0</code>, or it takes longer
+than the readiness window to come up.</p>
+<p><strong>Port already in use.</strong> Titan pre-checks the port and refuses rather than deploying on top of a
+squatter. Pick another port or stop what is holding it.</p>
+<p><strong>Shows <code>LIVE</code> but is dead.</strong> A known limitation: readiness is probed <strong>once, at deploy, and never
+re-probed</strong>. <code>LIVE</code> means the Master still has it registered, not that it answered recently. Treat
+the Services panel as a roster and confirm by dialling the address it lists.</p>
+<p><strong>The deploy job says <code>COMPLETED</code> while the service runs.</strong> That is correct, not a bug. A <code>SERVICE</code>
+job finishes the moment readiness passes; the process it launched keeps serving.</p>
+<hr />
+<h2 id="no-spans-to-show">No spans to show</h2>
+<p>The Timeline's pipeline picker labels what is actually available:</p>
+<table>
+<thead>
+<tr>
+<th>Label</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>· 33 spans</code></td>
+<td>In memory, draws immediately</td>
+</tr>
+<tr>
+<td><code>· 30 spans (disk only)</code></td>
+<td>Ran before this Master started — switch <strong>window</strong> to a <strong>from disk</strong> option</td>
+</tr>
+<tr>
+<td><code>· no spans on record</code></td>
+<td>Never dispatched (a parked job has no span), or it predates span persistence</td>
+</tr>
+</tbody>
+</table>
+<p>Spans live in a 5000-entry in-memory ring that is <strong>cleared when the Master restarts</strong>, plus
+day-partitioned JSONL on disk retained for <code>titan.spans.retain.days</code> (7). If a whole window looks
+empty, check the <strong>window</strong> selector first — a narrow window hides older spans.</p>
+<hr />
+<h2 id="status-looks-wrong">Status looks wrong</h2>
+<p>If the DAG list or graph shows stale or uniformly <code>PENDING</code> states, the live view is resolving
+status through the client-side manifest, which is being reworked. The authoritative sources are:</p>
+<ul>
+<li><strong>Timeline</strong> — reads execution spans</li>
+<li><strong>Cluster</strong> — reads the store</li>
+<li><strong>SDK</strong> — <code>client.get_job_status(job_id)</code> resolves from live state, then the store</li>
+</ul>
+<p>Trust those when they disagree with the graph.</p>
+<hr />
+<h2 id="store-problems">Store problems</h2>
+<p>Cluster tab → the <strong>TitanStore strip</strong>.</p>
+<ul>
+<li><code>Disconnected</code> — the store is not reachable at the endpoint shown. Titan <strong>fails open</strong>, so jobs
+  keep running, but nothing is being persisted and a Master restart will lose in-flight state.</li>
+<li><strong>Dropped writes &gt; 0</strong> is the real outage signal. Because the store fails open, the error count
+  stays at zero while writes are being discarded.</li>
+<li><strong>State drift</strong> — the store lists workers the Master no longer has. Self-correcting; if it
+  persists, the store has entries no live node is refreshing.</li>
+</ul>
+<hr />
+<h2 id="workers-will-not-descale">Workers will not descale</h2>
+<p>Reclaim requires <strong>all</strong> of: the worker is ephemeral, not the root node, at zero load, hosting no
+service, and idle for more than 45 seconds. Highest port first, one per cycle.</p>
+<p>A node hosting a long-running service is never reclaimed, which is intended.</p>
+<hr />
+<h2 id="orphaned-work">Orphaned work</h2>
+<p>If the <code>Running</code> count exceeds occupied slots, the Master is counting jobs no live worker is
+executing. The Saturation legend says so directly:
+<code>N job(s) counted running with no live slot</code>.</p>
+<p>This is recovered automatically — within one heartbeat cycle when the worker's death is detected, or
+within 30 seconds by the reconciliation sweep for any other exit. If it <strong>persists</strong> beyond that,
+that is a bug worth reporting.</p>
+<hr />
+<h2 id="useful-settings">Useful settings</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TITAN_MASTER_HOST</code>, <code>TITAN_MASTER_PORT</code></td>
+<td>Point the dashboard at a Master on another machine</td>
+</tr>
+<tr>
+<td><code>TITAN_DASHBOARD_DEMO=0</code></td>
+<td>Disable the demo runner, the only endpoint that mutates the cluster</td>
+</tr>
+<tr>
+<td><code>titan.spans.retain.days</code></td>
+<td>How long span history is kept on disk (default 7)</td>
+</tr>
+<tr>
+<td><code>titan.metrics.spans.max</code></td>
+<td>In-memory span ring size (default 5000)</td>
+</tr>
+<tr>
+<td><code>titan.scheduler.unschedulable.deadline.ms</code></td>
+<td>Expire parked jobs after this long (default 0, never)</td>
+</tr>
+<tr>
+<td><code>titan.worker.heartbeat.interval</code></td>
+<td>Heartbeat period in seconds (default 10)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="which-page-answers-which-question">Which page answers which question</h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Page</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>What ran, and did it succeed?</td>
+<td>DAG Visualizer</td>
+</tr>
+<tr>
+<td>Why did the run take as long as it did?</td>
+<td>Execution Timeline</td>
+</tr>
+<tr>
+<td>Why isn't work moving right now?</td>
+<td>Cluster &amp; Control Plane</td>
+</tr>
+<tr>
+<td>Is the cluster getting slower over time?</td>
+<td>Cluster → Analytics</td>
+</tr>
+</tbody>
+</table>
 
 
 
@@ -2758,10 +3369,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

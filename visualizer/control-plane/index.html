@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../execution-flows/">
+        <link rel="prev" href="../execution-timeline/">
       
       
-        <link rel="next" href="../internals/">
+        <link rel="next" href="../hitl-approval/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>Fault Tolerance & Recovery - Titan</title>
+        <title>Cluster & Control Plane - Titan</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#fault-tolerance-recovery" class="md-skip">
+        <a href="#cluster-control-plane" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Fault Tolerance & Recovery
+              Cluster & Control Plane
             
           </span>
         </div>
@@ -307,11 +307,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../visualizer/overview/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../overview/" class="md-tabs__link">
           
   
   
@@ -387,13 +389,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../design/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../architecture/design/" class="md-tabs__link">
           
   
   
@@ -1261,28 +1261,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -1300,7 +1303,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1318,7 +1321,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/overview/" class="md-nav__link">
+      <a href="../overview/" class="md-nav__link">
         
   
   
@@ -1346,7 +1349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/monitoring/" class="md-nav__link">
+      <a href="../monitoring/" class="md-nav__link">
         
   
   
@@ -1374,7 +1377,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/execution-timeline/" class="md-nav__link">
+      <a href="../execution-timeline/" class="md-nav__link">
         
   
   
@@ -1399,10 +1402,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../visualizer/control-plane/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cluster & Control Plane
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1418,6 +1448,181 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#status-colours" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Status colours
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Live
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Live">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagnostics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-dispatch-board" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-dispatch board
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#topology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topology
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#charts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Charts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#services" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Services
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#store-strip-and-scaling-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Store strip and scaling history
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analytics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analytics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Analytics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priority-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Priority panel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipeline-duration-trend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline duration trend
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#demo-runner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Demo runner
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#signal-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signal reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1430,7 +1635,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/hitl-approval/" class="md-nav__link">
+      <a href="../hitl-approval/" class="md-nav__link">
         
   
   
@@ -1458,7 +1663,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/workspace-files/" class="md-nav__link">
+      <a href="../workspace-files/" class="md-nav__link">
         
   
   
@@ -1486,7 +1691,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../visualizer/agent-runs/" class="md-nav__link">
+      <a href="../agent-runs/" class="md-nav__link">
         
   
   
@@ -1520,10 +1725,13 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
@@ -1532,7 +1740,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_8" >
         
           
-          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="">
             
   
   
@@ -2127,31 +2335,28 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -2169,7 +2374,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2187,7 +2392,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../design/" class="md-nav__link">
+      <a href="../../architecture/design/" class="md-nav__link">
         
   
   
@@ -2215,7 +2420,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../execution-flows/" class="md-nav__link">
+      <a href="../../architecture/execution-flows/" class="md-nav__link">
         
   
   
@@ -2240,37 +2445,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Fault Tolerance & Recovery
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../architecture/fault-tolerance/" class="md-nav__link">
         
   
   
@@ -2286,81 +2464,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#the-job-lifecycle" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The Job Lifecycle
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#worker-failure-detection-self-healing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Worker Failure — Detection &amp; Self-Healing
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#job-failure-retry-fail-fast-dead-letter" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Job Failure — Retry, Fail-Fast &amp; Dead-Letter
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#timeouts-backpressure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Timeouts &amp; Backpressure
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#master-failure-durability-restart-recovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Master Failure — Durability &amp; Restart Recovery
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2373,7 +2476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../internals/" class="md-nav__link">
+      <a href="../../architecture/internals/" class="md-nav__link">
         
   
   
@@ -2573,10 +2676,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-job-lifecycle" class="md-nav__link">
+  <a href="#status-colours" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Job Lifecycle
+        Status colours
       
     </span>
   </a>
@@ -2584,10 +2687,132 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#worker-failure-detection-self-healing" class="md-nav__link">
+  <a href="#live" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Worker Failure — Detection &amp; Self-Healing
+        Live
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Live">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#diagnostics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Diagnostics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-dispatch-board" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-dispatch board
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#topology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Topology
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#charts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Charts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#services" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Services
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#store-strip-and-scaling-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Store strip and scaling history
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analytics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analytics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Analytics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#priority-panel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Priority panel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipeline-duration-trend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline duration trend
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#demo-runner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Demo runner
       
     </span>
   </a>
@@ -2595,32 +2820,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#job-failure-retry-fail-fast-dead-letter" class="md-nav__link">
+  <a href="#signal-reference" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Job Failure — Retry, Fail-Fast &amp; Dead-Letter
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#timeouts-backpressure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Timeouts &amp; Backpressure
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#master-failure-durability-restart-recovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Master Failure — Durability &amp; Restart Recovery
+        Signal reference
       
     </span>
   </a>
@@ -2647,58 +2850,444 @@
   
 
 
-<h1 id="fault-tolerance-recovery">🛡️ Fault Tolerance &amp; Recovery</h1>
-<p>Titan is built on the assumption that workers, jobs, and the Master itself <em>will</em> fail. Failure handling is not an add-on layer — it is wired directly through the scheduler core. Every mechanism below is implemented in the v1 engine.</p>
-<h2 id="the-job-lifecycle">The Job Lifecycle</h2>
-<p>Every job moves through a six-state machine. Failure is a first-class transition, not an exception path — a failed job either loops back for another attempt or lands in the dead-letter queue.</p>
-<pre class="mermaid"><code>stateDiagram-v2
-    [*] --&gt; PENDING
-    PENDING --&gt; RUNNING: dispatched to worker
-    PENDING --&gt; CANCELLED: cancel command
-    RUNNING --&gt; COMPLETED: success
-    RUNNING --&gt; FAILED: error / timeout
-    RUNNING --&gt; CANCELLED: kill signal to worker
-    FAILED --&gt; PENDING: retryCount ≤ 3 · re-queue
-    FAILED --&gt; DEAD: retryCount &gt; 3 · dead-letter
-    COMPLETED --&gt; [*]
-    DEAD --&gt; [*]
-    CANCELLED --&gt; [*]
-    note right of CANCELLED
-        cancel cascades to child jobs
-    end note</code></pre>
-<h2 id="worker-failure-detection-self-healing">Worker Failure — Detection &amp; Self-Healing</h2>
-<ul>
-<li><strong>Heartbeat failure detector.</strong> The Master runs a dedicated <code>HeartBeatExecutor</code> that dials every registered worker every <strong>10s</strong> (<code>titan.worker.heartbeat.interval</code>). A worker that fails to answer a single heartbeat is marked <code>DEAD</code> and removed from the registry — detection is on the next beat, not after a "last seen" timeout. <em>(The Master initiates the heartbeat — it dials the worker, not the reverse.)</em></li>
-<li><strong>In-flight job recovery.</strong> A job enters <code>runningJobs</code> at dispatch and leaves it when its completion callback arrives. If the worker dies first that callback never comes, so declaring the worker dead is not enough — the work it was holding has to be recovered explicitly. <code>recoverJobsFrom(deadWorker)</code> closes each stranded span as <code>FAILED</code> with the reason recorded, then hands the job to <code>handleJobFailure</code>, so bounded retries and the dead-letter queue apply exactly as for any other failure. A worker dying is not a special kind of failure; it is a failure whose evidence arrives late.</li>
-<li><strong>Orphan reconciliation (safety net).</strong> A worker can also leave the registry by other routes — reclaimed by the scaler, decommissioned on command. Rather than hooking every exit, the metrics sampler checks the invariant directly once a second: <em>no job may be counted running on a worker that is not in the fleet.</em> Anything violating it for longer than <code>titan.scheduler.orphan.grace.ms</code> (30s, so a worker mid-registration or a callback in flight is not mistaken for a corpse) is recovered the same way. Both paths run off the dispatch thread.</li>
-<li><strong>Observable invariant.</strong> The gap this protects against is visible in the metrics: <code>queue</code> carries both <code>running</code> (jobs the Master believes are in flight) and <code>occupied</code> (slots the live workers actually report). <code>running &gt; occupied</code> means work has been orphaned, and the Cluster page surfaces it as <em>"N job(s) counted running with no live slot"</em>.</li>
-<li><strong>Push-based re-registration.</strong> Workers re-register with the Master every 30s, so a worker that was marked dead — or that came up after a Master restart — rejoins the pool automatically, with no operator action or static configuration.</li>
-</ul>
-<h2 id="job-failure-retry-fail-fast-dead-letter">Job Failure — Retry, Fail-Fast &amp; Dead-Letter</h2>
-<ul>
-<li><strong>Bounded retry.</strong> On failure, <code>handleJobFailure</code> increments the job's retry count and re-queues it. A job is retried while <code>retryCount ≤ 3</code> and marked <code>DEAD</code> once it exceeds that — i.e. <strong>up to 3 retries (4 attempts total)</strong> before it is quarantined, rather than retrying forever.</li>
-<li><strong>Dead-Letter Queue (DLQ) &amp; poison pills.</strong> Jobs that exhaust their retries — "poison pills" that would otherwise crash-loop the cluster (syntax errors, missing libraries) — are quarantined in a dedicated DLQ. Their logs and state are preserved for inspection, and their dependent children are cancelled so the rest of the DAG is not stalled.</li>
-<li><strong>Fail-fast for deployment errors.</strong> Port-conflict (<code>"ALREADY in use"</code>), duplicate-service-ID, unreachable-after-start (<code>"never became reachable"</code>) and rejected-deployment failures skip the retry loop entirely — the job is marked <code>FAILED</code> immediately rather than burning 3 retries on a deterministic error. A service that never bound its port will not bind on a retry, so retrying would only multiply the readiness window. Auto-scaler worker-spawn jobs (<code>WRK-</code>) are similarly abandoned on failure so the scaler can retry on a fresh port.</li>
-<li><strong>Service readiness is a failure mode, not a race.</strong> A service deploy completes only once the Master can open a TCP connection to the service's port. If the port never answers within the readiness window (10 × 2s by default), the deploy fails rather than reporting a success that downstream nodes would act on. The probe runs on a dedicated pool, so a slow-booting service does not stall dispatch for the rest of the cluster.</li>
-<li><strong>Reliable completion callbacks.</strong> When a worker reports job completion back to the Master (the worker→Master callback path), it retries up to <strong>5 times with exponential backoff (1s → 2s → 4s → 8s)</strong>, so a transient network blip does not silently lose a finished result. <em>(This backoff applies to the completion callback, not to Master→worker dispatch, which re-queues immediately.)</em></li>
-</ul>
-<h2 id="timeouts-backpressure">Timeouts &amp; Backpressure</h2>
-<ul>
-<li><strong>Execution timeouts.</strong> Every running process is bounded by a timeout; on expiry the entire process tree is forcibly terminated (<code>destroyForcibly</code>) and the job is failed, rather than a hung script permanently occupying a worker slot.</li>
-<li><strong>RPC read timeouts.</strong> All Master↔worker socket reads use a 30s timeout, so a stuck peer surfaces as a detectable failure instead of a permanent block.</li>
-<li><strong>Saturation backpressure.</strong> If every capable worker is saturated when a job is popped from the queue, the job is re-queued rather than dropped or force-dispatched — natural backpressure that holds work until capacity frees up.</li>
-</ul>
-<h2 id="master-failure-durability-restart-recovery">Master Failure — Durability &amp; Restart Recovery</h2>
-<ul>
-<li><strong>AOF durability.</strong> Every critical state transition (job dispatched, node locked, worker registered) is appended to TitanStore's on-disk Append-Only File.</li>
-<li><strong>Orphaned-job recovery.</strong> On startup the Master calls <code>recoverState()</code>, which scans TitanStore for jobs that were active but never reached a terminal state and re-queues them into the correct queue (waiting room vs. active) based on their persisted status and scheduled time. This is distinct from raw AOF replay: it specifically rescues <em>in-flight</em> work so a DAG resumes across a Master restart instead of stranding.</li>
-</ul>
-<div class="admonition info">
-<p class="admonition-title">Honest scope: durability, not yet high availability</p>
-<p>These mechanisms give Titan <strong>durability</strong> — no committed state or in-flight job is lost across a crash — and <strong>self-healing</strong> for worker failure. What v1 does <strong>not</strong> yet provide is <strong>availability <em>during</em> a Master outage</strong>: while the Master is down, workers cannot receive new instructions until it reboots and replays state. Zero-downtime failover via Raft leader election is a v2.0 roadmap item (see <a href="../design/#6-limitations-design-constraints">Limitations</a>). In short: the gap is availability-during-failure, not data loss.</p>
+<h1 id="cluster-control-plane">Cluster &amp; Control Plane</h1>
+<p>The <strong>Cluster</strong> tab of the dashboard.</p>
+<p>The scheduler's own state and vitals: which workers exist, what is queued and why, how long
+dispatch is taking, and how the store and services are behaving. The DAG pages describe your
+pipelines; this page describes the system running them.</p>
+<p>Two sub-tabs: <strong>Live</strong> for current state, <strong>Analytics</strong> for trends. Each refresh makes two
+requests, and polling pauses while the browser tab is hidden.</p>
+<p><img alt="Cluster Live tab: status tiles, the TitanStore strip, and the five diagnostic panels" src="../../screenshots/cluster_live_diagnostics.png" /></p>
+<h2 id="status-colours">Status colours</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Applied when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Green <strong>✓</strong></td>
+<td>Workers present, jobs running, throughput moving, dead-letter queue empty, nothing parked, no capability gaps, store connected</td>
+</tr>
+<tr>
+<td>Amber <strong>!</strong></td>
+<td>Jobs parked, store dropping writes, dispatch or heartbeat in the middle band, a pending reason recorded</td>
+</tr>
+<tr>
+<td>Red <strong>✕</strong></td>
+<td>Zero workers, ready queue with nothing running, dead-letter queue non-empty, capability dead end, store down</td>
+</tr>
+</tbody>
+</table>
+<p>Values with no particular meaning stay white. Every coloured value also carries a <code>✓ ! ✕</code> glyph, so
+the state is readable without relying on colour.</p>
+<p><code>Ready queue</code> is deliberately uncoloured, because a deep queue is normal under load. It turns red only
+when there is queued work and nothing running.</p>
+<h2 id="live">Live</h2>
+<h3 id="diagnostics">Diagnostics</h3>
+<table>
+<thead>
+<tr>
+<th>Panel</th>
+<th>Shows</th>
+<th>Inference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pending reasons</td>
+<td>Why the scheduler could not place a queued job on its last attempt</td>
+<td><code>no worker registered with capability X</code> needs a new worker; <code>all are at capacity</code> needs more slots</td>
+</tr>
+<tr>
+<td>Capability supply / demand</td>
+<td>Jobs waiting per requirement against workers offering it</td>
+<td><code>waiting &gt; 0, workers = 0</code> is a dead end, and the job cannot run until a matching worker registers. The panel prints the command</td>
+</tr>
+<tr>
+<td>Dead-letter queue</td>
+<td>Jobs that exhausted their retries, with each reason</td>
+<td>Non-zero means something is failing repeatably, not just slowly</td>
+</tr>
+<tr>
+<td>Queue wait</td>
+<td>p50 / p95 / p99 / max, submit to dispatch</td>
+<td>A high p99 against a low p50 means a few jobs are being starved</td>
+</tr>
+<tr>
+<td>Retries</td>
+<td>Distribution by attempt number, and the retry rate</td>
+<td>A rising rate with flat failures means jobs are succeeding on retry</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pre-dispatch-board">Pre-dispatch board</h3>
+<p><img alt="The four pre-dispatch lanes: delayed and blocked empty, five jobs ready in true dispatch order with their wait and priority, and 33 parked for a capability no worker offers. Below, the latency budget showing queue wait at 100% of measured p99" src="../../screenshots/cluster_queues.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Lane</th>
+<th>Meaning</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Delayed</td>
+<td>Submitted with a delay; the timer has not fired</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Blocked</td>
+<td>Waiting on parent jobs</td>
+<td>None, normal in a DAG</td>
+</tr>
+<tr>
+<td>Ready</td>
+<td>In the priority queue, waiting for a slot</td>
+<td>Add capacity, or wait</td>
+</tr>
+<tr>
+<td>Parked</td>
+<td>No worker offers the required capability</td>
+<td>Start a matching worker; parked jobs are released automatically when one registers</td>
+</tr>
+</tbody>
+</table>
+<h3 id="topology">Topology</h3>
+<p><img alt="Topology under load: the Master, a saturated permanent worker with a full slot-occupancy ring, and two dashed ephemeral nodes the scaler spawned. Edge labels are heartbeat round-trip; the detail panel shows host CPU, memory and load average with an interpretation" src="../../screenshots/cluster_topology_load.png" /></p>
+<p>A graph of the Master and every registered worker. Solid outline = permanent, dashed = ephemeral,
+and the ring shows slot occupancy. Clicking a node opens a detail panel with its capability, slots,
+running jobs, hosted services, heartbeat history and host vitals.</p>
+<p><strong>Host vitals</strong> (<code>host cpu</code>, <code>host mem</code>, <code>load avg</code>) come from the worker's heartbeat. They are
+independent of slot occupancy, which makes three readings distinguishable:</p>
+<table>
+<thead>
+<tr>
+<th>Slots</th>
+<th>Host CPU</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full</td>
+<td>Low</td>
+<td>Jobs are holding slots without using the machine, so capacity could be raised</td>
+</tr>
+<tr>
+<td>Full</td>
+<td>High</td>
+<td>The node is genuinely at its limit</td>
+</tr>
+<tr>
+<td>Free</td>
+<td>High</td>
+<td>Admitting more work here will slow what is already running</td>
+</tr>
+</tbody>
+</table>
+<p>A worker that cannot report them, or one built before the heartbeat carried them, shows <code>n/a</code>
+rather than zero.</p>
+<h3 id="charts">Charts</h3>
+<p><img alt="Live charts: queue composition, dispatch loop duration, throughput, failure rate, saturation and services" src="../../screenshots/cluster_live_charts.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Chart</th>
+<th>X</th>
+<th>Y</th>
+<th>Inference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Queue composition</td>
+<td>time</td>
+<td>jobs</td>
+<td>Stacked running / ready / blocked / delayed, the board over time</td>
+</tr>
+<tr>
+<td>Dispatch loop duration</td>
+<td>time</td>
+<td>ms</td>
+<td>The serialized section's total. Rising means the scheduler itself is slowing</td>
+</tr>
+<tr>
+<td>Where dispatch time goes</td>
+<td>time</td>
+<td>ms, stacked</td>
+<td>Splits each iteration into route, select, record, store, send. A share table below gives percentage, mean and peak per phase</td>
+</tr>
+<tr>
+<td>Throughput</td>
+<td>time</td>
+<td>jobs per sample</td>
+<td>Completed and failed per sample</td>
+</tr>
+<tr>
+<td>Failure rate</td>
+<td>time</td>
+<td>% of settled jobs</td>
+<td>Throughput can stay flat while the failure share climbs</td>
+</tr>
+<tr>
+<td>Saturation</td>
+<td>time</td>
+<td>% of slots occupied</td>
+<td>Whether the pool is approaching its ceiling or already at it</td>
+</tr>
+<tr>
+<td>Store latency</td>
+<td>time</td>
+<td>ms</td>
+<td>Read and write plotted separately; writes sit on the dispatch path, reads on status polling</td>
+</tr>
+<tr>
+<td>Heartbeat round-trip</td>
+<td>time</td>
+<td>ms per node</td>
+<td>A degrading link shows here before a node is declared dead</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Dispatch phase breakdown with its share table: route 1.1%, select 0.0%, record 0.6%, store 9.2%, the remainder being the network hand-off" src="../../screenshots/cluster_live_charts_2.png" /></p>
+<div class="admonition note">
+<p class="admonition-title">Saturation uses occupied slots, not <code>running</code></p>
+<p><code>runningJobs</code> holds a job until its completion callback arrives, so a job whose worker was
+reclaimed mid-flight can still be counted there. Saturation is computed from the live workers'
+own counters instead. When the two diverge the legend says
+<code>N job(s) counted running with no live slot</code>.</p>
 </div>
-<hr />
-<p>For step-by-step code traces of these paths — worker crash and recovery, failure with retry and dead-letter, cancel with cascade — see the <a href="../../contributing-dev-guide/#code-flow-by-scenario">Developer Guide → Code Flow by Scenario</a>.</p>
+<h3 id="services">Services</h3>
+<p>One row per live service: dialable address, uptime, host node, deploy attempts, and state. Services
+appear nowhere else on the dashboard, because a service has no duration and so never lands in a
+throughput or duration chart.</p>
+<ul>
+<li>A deploy job reading <code>COMPLETED</code> is normal. A <code>SERVICE</code> job finishes once readiness passes; the
+  process it started keeps running. The <em>Service</em> and <em>Deploy job</em> columns are separate facts.</li>
+<li><code>Deploys</code> counts deploy attempts, not process restarts. A crash-looping service is restarted by
+  its worker, which does not report that to the Master.</li>
+<li>Autoscaler-spawned workers use the same deploy path and are excluded here; they appear in
+  Topology.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Liveness is checked once, at deploy</p>
+<p>Readiness is probed when the service is deployed and never re-probed. "Live" means the Master
+still has it registered. Treat this as a roster rather than a health check.</p>
+</div>
+<h3 id="store-strip-and-scaling-history">Store strip and scaling history</h3>
+<p><img alt="Scaling history: demand against capacity with scale-up and descale markers, lifetime counts, and the event log with the reason recorded for each. Above it, the tail of the dispatch phase share table showing the network hand-off at 89.1%" src="../../screenshots/cluster_scale_descale.png" /></p>
+<p>The store strip shows endpoint, operation and read counts, p50/p99 latencies, <strong>dropped writes</strong>,
+reconnects, and whether the store's view of the fleet matches the Master's. Dropped writes are the
+meaningful outage signal, because the store fails open, so the error count stays at zero.</p>
+<p>Scaling history lists every scale-up, descale, worker join and worker loss with the reason recorded
+at the time. Scale-up requires queued work <em>and</em> a saturated general pool.</p>
+<h2 id="analytics">Analytics</h2>
+<p><img alt="Analytics tab: success rate, job duration distribution, queue-wait percentiles and per-worker utilisation" src="../../screenshots/cluster_analytics.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Chart</th>
+<th>X</th>
+<th>Y</th>
+<th>Inference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Success rate</td>
+<td>time</td>
+<td>% completed</td>
+<td>Reliability trend</td>
+</tr>
+<tr>
+<td>Job duration distribution</td>
+<td>duration bucket</td>
+<td>jobs</td>
+<td>Whether the workload is one cluster or several</td>
+</tr>
+<tr>
+<td>Queue wait percentiles</td>
+<td>time</td>
+<td>ms</td>
+<td>Whether starvation is appearing in the tail</td>
+</tr>
+<tr>
+<td>Per-worker slot utilisation</td>
+<td>time</td>
+<td>occupied slots per node</td>
+<td>One pinned node while others idle points at capability routing or affinity</td>
+</tr>
+<tr>
+<td>Does priority actually work?</td>
+<td>declared priority</td>
+<td>ms waited</td>
+<td>Whether the priority queue is reordering</td>
+</tr>
+<tr>
+<td>Pipeline duration trend</td>
+<td>run</td>
+<td>seconds</td>
+<td>Whether the same DAG is getting slower</td>
+</tr>
+</tbody>
+</table>
+<h3 id="priority-panel">Priority panel</h3>
+<p>Bars are median queue wait per priority band; the dashed line is p95. The verdict beneath is
+computed from those numbers in the page.</p>
+<p>Two constraints on the measurement:</p>
+<ul>
+<li>Only dispatches that waited ≥250ms are counted. A job placed into a free slot waits near zero
+  regardless of priority, and including those flattens every band.</li>
+<li>Fewer than three contended samples in a band reports "not enough data" instead of a verdict.</li>
+</ul>
+<p>A matching median with a shorter p95 in the high band still indicates priority is working, because it
+means those jobs were not caught behind the backlog.</p>
+<h3 id="pipeline-duration-trend">Pipeline duration trend</h3>
+<p>Wall clock per completed run, grouped by pipeline. Runs are separated by the manifest's <code>run_ts</code>,
+one stamp per submission, not by a time gap, since back-to-back runs would otherwise merge. It reads
+persisted span history, so runs from before the last Master restart still count. The five
+most-run pipelines are plotted; the table lists all of them and scrolls.</p>
+<h2 id="demo-runner">Demo runner</h2>
+<p>Submits a preset workflow and shows its progress, with a link to that run's timeline.</p>
+<table>
+<thead>
+<tr>
+<th>Preset</th>
+<th>~Time</th>
+<th>Exercises</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fan-out / fan-in</td>
+<td>25s</td>
+<td>Parallelism, blocked lane, critical path</td>
+</tr>
+<tr>
+<td>Saturation burst</td>
+<td>45s</td>
+<td>Queue wait, starvation, scaling pressure</td>
+</tr>
+<tr>
+<td>Failures and retries</td>
+<td>60s</td>
+<td>Retry spans, dead-letter queue, failure reasons</td>
+</tr>
+<tr>
+<td>Capability dead end</td>
+<td>10s</td>
+<td>Parked lane, pending reasons, capability gap</td>
+</tr>
+<tr>
+<td>Priority test</td>
+<td>30s</td>
+<td>Priority ordering under saturation</td>
+</tr>
+<tr>
+<td>Deep chain</td>
+<td>30s</td>
+<td>Graph depth, dependency-release latency</td>
+</tr>
+<tr>
+<td>Deploy a service</td>
+<td>30s</td>
+<td>Services panel, readiness gating, address discovery</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition danger">
+<p class="admonition-title">The only endpoint that changes cluster state</p>
+<p>The dashboard has no authentication. The request carries a preset name and nothing else: no
+script, no job spec. The preset scripts are written by the dashboard itself, and only one run
+is allowed at a time. Set <code>TITAN_DASHBOARD_DEMO=0</code> to disable it. Every other route is
+read-only.</p>
+</div>
+<h2 id="signal-reference">Signal reference</h2>
+<p>All fields come from <code>OP_STATS_JSON</code> with a <code>metrics</code> discriminator, sampled once a second into
+bounded ring buffers at three resolutions (1s / 10s / 100s, selected by the <strong>history</strong> control).</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Shape</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>queue</code></td>
+<td><code>[ts, ready, blocked, running, delayed, workers, slots, occupied]</code></td>
+</tr>
+<tr>
+<td><code>dispatch</code></td>
+<td><code>[ts, ms]</code></td>
+</tr>
+<tr>
+<td><code>dispatch_phases</code></td>
+<td><code>[ts, route, select, record, store, send]</code></td>
+</tr>
+<tr>
+<td><code>throughput</code></td>
+<td><code>[ts, completed, failed]</code></td>
+</tr>
+<tr>
+<td><code>wait_percentiles</code></td>
+<td><code>[ts, p50, p95, p99]</code></td>
+</tr>
+<tr>
+<td><code>store_latency</code>, <code>store_read_latency</code></td>
+<td><code>[ts, ms]</code></td>
+</tr>
+<tr>
+<td><code>worker_load</code></td>
+<td><code>{host:port → [ts, load, maxCap]}</code></td>
+</tr>
+<tr>
+<td><code>worker_load_live</code></td>
+<td>Keys of <code>worker_load</code> still registered</td>
+</tr>
+<tr>
+<td><code>services</code></td>
+<td><code>id, host, port, worker, worker_permanent, since, uptime_ms, deploy_attempts, status</code></td>
+</tr>
+<tr>
+<td><code>capability</code></td>
+<td><code>cap, waiting, parked, workers</code></td>
+</tr>
+<tr>
+<td><code>parked</code></td>
+<td><code>total, by_capability, deadline_ms</code></td>
+</tr>
+<tr>
+<td><code>dlq</code></td>
+<td><code>depth, jobs[]</code></td>
+</tr>
+<tr>
+<td><code>retries</code></td>
+<td><code>dispatches, rate, histogram[]</code></td>
+</tr>
+<tr>
+<td><code>scaling</code></td>
+<td><code>scale_ups, descales, ephemeral_now, peak_workers, max_workers</code></td>
+</tr>
+<tr>
+<td><code>store</code></td>
+<td>Connection, endpoint, op and read counts, latencies, dropped writes, reconnects, drift</td>
+</tr>
+</tbody>
+</table>
+<p>Per-worker host vitals are on the worker objects in the plain stats payload:
+<code>host_cpu_pct</code>, <code>host_mem_pct</code>, <code>host_load_x100</code>, each <code>-1</code> when the worker did not report them.</p>
+<div class="admonition warning">
+<p class="admonition-title">Capacity comes from <code>queue</code>, not from summing <code>worker_load</code></p>
+<p>A departed worker's <code>worker_load</code> and <code>heartbeat</code> series are retained for
+<code>titan.metrics.worker.grace.ms</code> (120s) before being dropped, so during that window the map
+still contains nodes that have left the fleet. The <code>slots</code> field in <code>queue</code> is sampled from the
+registry each tick and is the authoritative total.</p>
+</div>
 
 
 
