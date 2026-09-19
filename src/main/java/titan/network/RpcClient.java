@@ -88,28 +88,119 @@ import java.net.Socket;
  *         IO error occurs indicating a potential network issue or dead worker.
  */
     public String sendRequest(String host, int port, byte opCode, String payload){
-        try(Socket socket = new Socket(host, port)){
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-            int timeout = 30000;
-            socket.setSoTimeout(timeout); // If i dont get response within 30 seconds I timeout (detecting failed jobs)
-            TitanProtocol.send(out, opCode, payload);
+        String key = host + ":" + port;
 
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            TitanProtocol.TitanPacket response = TitanProtocol.read(in);
-
-            if (response.opCode == TitanProtocol.OP_ERROR) {
-                System.err.println("[RpcClient] Server returned error: " + response.payload);
-                return "ERROR: " + response.payload;
+        // First attempt reuses a pooled connection when one is available. A pooled socket can be
+        // half-open without the client knowing: the worker may have closed it while idle, and that
+        // only surfaces on the next write or read. So a failure on a POOLED connection is not
+        // evidence of a dead worker, and the call is retried exactly once on a brand new socket.
+        // Only a failure on that fresh socket returns null.
+        //
+        // This distinction is load-bearing. null is what the Scheduler reads as "worker
+        // unreachable", which marks the node dead and re-queues its in-flight jobs. Treating a
+        // stale pooled socket as a death would re-run healthy work.
+        Conn pooled = borrow(key);
+        if (pooled != null) {
+            try {
+                return exchange(pooled, opCode, payload, key);
+            } catch (IOException stale) {
+                closeQuietly(pooled);
+                // fall through to a fresh connection
+            } catch (Exception e) {
+                closeQuietly(pooled);
+                e.printStackTrace();
+                return "ERROR_CLIENT: " + e.getMessage();
             }
-            return response.payload;
-        }catch (IOException e) {
+        }
+
+        Conn fresh = null;
+        try {
+            fresh = new Conn(new Socket(host, port));
+            return exchange(fresh, opCode, payload, key);
+        } catch (IOException e) {
+            closeQuietly(fresh);
             System.err.println("[RpcClient] IO Error to " + host + ":" + port + " -> " + e.getMessage());
             return null; // Signals a dead worker/main.java.titan.network issue
         }
         catch (Exception e){
+            closeQuietly(fresh);
             e.printStackTrace();
             return "ERROR_CLIENT: " + e.getMessage();
         }
+    }
+
+    /**
+     * Sends one request and reads one reply on the given connection, returning it to the pool when
+     * the exchange completes cleanly. The timeout is set per request rather than per socket,
+     * because a reused connection would otherwise inherit the previous caller's timeout.
+     */
+    private String exchange(Conn c, byte opCode, String payload, String key) throws Exception {
+        c.socket.setSoTimeout(30000); // no reply within 30s counts as a failure, as before
+        TitanProtocol.send(c.out, opCode, payload);
+        TitanProtocol.TitanPacket response = TitanProtocol.read(c.in);
+
+        if (response.opCode == TitanProtocol.OP_ERROR) {
+            release(key, c);
+            System.err.println("[RpcClient] Server returned error: " + response.payload);
+            return "ERROR: " + response.payload;
+        }
+        release(key, c);
+        return response.payload;
+    }
+
+    /** A live socket with its streams, kept open between requests to the same destination. */
+    private static final class Conn {
+        final Socket socket; final DataOutputStream out; final DataInputStream in;
+        Conn(Socket s) throws IOException {
+            this.socket = s;
+            this.out = new DataOutputStream(s.getOutputStream());
+            this.in  = new DataInputStream(s.getInputStream());
+        }
+        boolean usable() { return socket != null && socket.isConnected() && !socket.isClosed(); }
+    }
+
+    /**
+     * Idle connections per destination. The worker's client handler already loops on one socket
+     * until it closes, so reuse needs no protocol change and no worker change: only the client
+     * stopped closing after a single exchange.
+     */
+    private static final java.util.Map<String, java.util.concurrent.ConcurrentLinkedDeque<Conn>> POOL
+            = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Idle sockets kept per destination. Beyond this they are closed rather than pooled. */
+    private static final int MAX_IDLE_PER_HOST =
+            titan.TitanConfig.getInt("titan.rpc.pool.max.idle", 8);
+
+    private static Conn borrow(String key) {
+        java.util.concurrent.ConcurrentLinkedDeque<Conn> q = POOL.get(key);
+        if (q == null) return null;
+        Conn c;
+        while ((c = q.pollFirst()) != null) {
+            if (c.usable()) return c;
+            closeQuietly(c);
+        }
+        return null;
+    }
+
+    private static void release(String key, Conn c) {
+        if (c == null || !c.usable()) { closeQuietly(c); return; }
+        java.util.concurrent.ConcurrentLinkedDeque<Conn> q =
+                POOL.computeIfAbsent(key, k -> new java.util.concurrent.ConcurrentLinkedDeque<>());
+        if (q.size() >= MAX_IDLE_PER_HOST) { closeQuietly(c); return; }
+        q.addFirst(c); // most-recently-used first: the likeliest to still be open
+    }
+
+    private static void closeQuietly(Conn c) {
+        if (c == null) return;
+        try { c.socket.close(); } catch (Exception ignored) { }
+    }
+
+    /** Drops every pooled connection to a destination. Called when a worker leaves the fleet. */
+    public static void evict(String host, int port) {
+        java.util.concurrent.ConcurrentLinkedDeque<Conn> q = POOL.remove(host + ":" + port);
+        if (q == null) return;
+        Conn c;
+        while ((c = q.pollFirst()) != null) closeQuietly(c);
     }
 
 }

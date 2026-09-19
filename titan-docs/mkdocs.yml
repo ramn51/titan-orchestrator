@@ -122,6 +122,7 @@ nav:
       - System Design: architecture/design.md
       - Execution Flows: architecture/execution-flows.md
       - Fault Tolerance & Recovery: architecture/fault-tolerance.md
+      - Validation & Benchmarks: architecture/validation.md
       - TitanStore & IPC: architecture/internals.md
       - How Titan Compares: comparison.md
 

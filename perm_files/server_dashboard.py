@@ -16,7 +16,7 @@ import os
 import glob as _glob
 import subprocess
 import re
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, Response
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__, template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
@@ -218,8 +218,7 @@ def discover_dags_from_stats(stats):
                 "job_meta":  {}
             }
 
-        if job_id not in dag_registry[dag_key]["jobs"]:
-            dag_registry[dag_key]["jobs"].append(job_id)
+        _register_job(dag_registry[dag_key], job_id)
 
         incoming_status = meta["status"]
         if incoming_status == "DEAD":
@@ -392,30 +391,47 @@ def scan_yaml_dags():
                         "name": dag_name, "jobs": [],
                         "submitted": info.get("run_ts", 0), "job_meta": {}
                     }
-                if full_id not in dag_registry[dag_key]["jobs"]:
-                    dag_registry[dag_key]["jobs"].append(full_id)
+                _register_job(dag_registry[dag_key], full_id)
                 if full_id not in dag_registry[dag_key]["job_meta"]:
                     dag_registry[dag_key]["job_meta"][full_id] = {
                         "worker": None, "status": "WAITING", "time": "",
                         "requirement": info.get("requirement", "GENERAL"),
+                        # Which run this job belongs to. A pipeline name is reused across runs and
+                        # each run has its own job IDs, so without this the registry accumulates
+                        # every run ever submitted and the graph draws them superimposed.
+                        "run_ts": info.get("run_ts", 0),
                     }
+                else:
+                    dag_registry[dag_key]["job_meta"][full_id].setdefault(
+                        "run_ts", info.get("run_ts", 0))
 
             # Clean up stale fallback DAG entries.
             # When the dashboard starts without a manifest, discover_dags_from_stats
             # creates individual entries (e.g. DAG-INGEST, DAG-TRANSFORM) via the
             # fallback naming heuristic. Once the manifest is available and maps those
             # jobs to their real DAG (e.g. ETL_PIPELINE), remove the stale entries.
-            for full_id, correct_dag_name in list(_yaml_job_to_dag.items()):
+            # Was: for every known job, walk every registered pipeline and linear-scan its job
+            # list. At ~37,000 jobs and ~1,100 pipelines that is ~41 million iterations per call,
+            # and this runs on every page load. It was the whole 13 seconds of /dags.
+            #
+            # Inverted: index once which pipelines actually contain each job, then visit only
+            # those. Same outcome, proportional to the data instead of its square.
+            owners = {}
+            for dag_key, entry in dag_registry.items():
+                for jid in entry.get("jobs", ()):
+                    owners.setdefault(jid, set()).add(dag_key)
+
+            for full_id, correct_dag_name in _yaml_job_to_dag.items():
                 correct_dag_key = f"DAG-{correct_dag_name}"
-                for dag_key in list(dag_registry.keys()):
+                for dag_key in list(owners.get(full_id, ())):
                     if dag_key == correct_dag_key:
                         continue
-                    entry = dag_registry[dag_key]
-                    if full_id in entry.get("jobs", []):
-                        entry["jobs"].remove(full_id)
-                        entry.get("job_meta", {}).pop(full_id, None)
-                        if not entry["jobs"]:
-                            del dag_registry[dag_key]
+                    entry = dag_registry.get(dag_key)
+                    if entry is None:
+                        continue
+                    _unregister_job(entry, full_id)
+                    if not entry.get("jobs"):
+                        dag_registry.pop(dag_key, None)
 
         except Exception:
             pass
@@ -436,13 +452,120 @@ STATUS_DOT = {
     "PENDING":   "#9090b0",
 }
 
-def build_dag_svg(jobs_data):
+# The Master keeps this many spans in memory (titan.metrics.spans.max). Asking for more than
+# this cannot return more, and asking for less silently drops older pipelines from a filtered view.
+MASTER_SPAN_WINDOW = int(os.environ.get("TITAN_MASTER_SPAN_WINDOW", "5000"))
+
+# Sidebar page size. Status resolution is the expensive part of this page and it scales with the
+# number of pipelines shown, so this is the knob that bounds it.
+DAGS_PER_PAGE = int(os.environ.get("TITAN_DAGS_PER_PAGE", "25"))
+
+# Above this, a graph stops being readable and starts being a rendering cost: every node is laid
+# out and serialised into one SVG string server-side.
+MAX_RENDER_NODES = int(os.environ.get("TITAN_DAG_MAX_NODES", "300"))
+
+
+def _register_job(meta, job_id):
+    """Add a job to a registry entry once, in O(1).
+
+    `meta["jobs"]` is a list because the views depend on insertion order, but membership was being
+    tested against that list once per manifest entry. With pipelines up to 1,000 jobs and 75,000
+    manifest entries that is quadratic, and it was costing about 13 seconds on every page load of
+    /dags. The set is an index over the same data, not a second source of truth.
+    """
+    seen = meta.get("_job_set")
+    if seen is None:
+        seen = meta["_job_set"] = set(meta.get("jobs", ()))
+    if job_id in seen:
+        return False
+    meta.setdefault("jobs", []).append(job_id)
+    seen.add(job_id)
+    return True
+
+
+def _run_stamps(meta):
+    """Distinct run timestamps recorded for a pipeline, newest first."""
+    jm = meta.get("job_meta", {})
+    return sorted({(jm.get(j, {}) or {}).get("run_ts", 0) for j in meta.get("jobs", ())} - {0},
+                  reverse=True)
+
+
+def _jobs_of_run(meta, run_ts):
+    """The jobs belonging to one run of a pipeline.
+
+    A pipeline name is reused across runs and each run brings its own job IDs, so the registry
+    holds every run ever submitted under that name. The sidebar count and the graph must agree on
+    which run they are describing, so both go through here.
+    """
+    jobs = meta.get("jobs", [])
+    stamps = _run_stamps(meta)
+    if not stamps or run_ts is None:
+        return list(jobs)
+    jm = meta.get("job_meta", {})
+    newest = (run_ts == stamps[0])
+    return [j for j in jobs
+            if (jm.get(j, {}) or {}).get("run_ts", 0) == run_ts
+            or (newest and not (jm.get(j, {}) or {}).get("run_ts", 0))]
+
+
+def _unregister_job(meta, job_id):
+    """Remove a job from a registry entry, keeping the membership index in step."""
+    seen = meta.get("_job_set")
+    if seen is None:
+        seen = meta["_job_set"] = set(meta.get("jobs", ()))
+    if job_id not in seen:
+        return False
+    try:
+        meta["jobs"].remove(job_id)
+    except ValueError:
+        pass
+    seen.discard(job_id)
+    meta.get("job_meta", {}).pop(job_id, None)
+    return True
+
+
+def build_dag_svg(jobs_data, max_nodes=None, info=None):
     """
     Build an SVG string for the DAG graph.
     jobs_data: list of dicts { id, status, requirement, depends_on, worker, is_service }
+
+    max_nodes: cap on nodes drawn. Defaults to MAX_RENDER_NODES; pass 0 to draw everything,
+               which is what the downloadable full-graph route does.
+    info:      optional dict, filled in with {total, rendered, truncated} so the caller can tell
+               the user what was left out. The in-canvas note alone is not enough: it scrolls out
+               of view on a wide graph, and a truncated graph that looks complete is a lie.
+
+    Very large graphs are capped rather than drawn in full. A thousand 170px nodes is neither
+    readable nor cheap: every node is laid out and serialised into a single string here, and the
+    browser then has to parse all of it. The cap keeps whole dependency levels so the shape of
+    what is shown stays honest.
     """
     NODE_W, NODE_H = 170, 66
     COL_GAP, ROW_GAP = 88, 18
+
+    cap = MAX_RENDER_NODES if max_nodes is None else max_nodes
+    total_nodes = len(jobs_data)
+    truncated_from = 0
+    if cap and len(jobs_data) > cap:
+        truncated_from = len(jobs_data)
+        keep, kept_ids = [], set()
+        # Walk levels from the roots so the kept subgraph stays connected and readable.
+        remaining = list(jobs_data)
+        while remaining and len(keep) < cap:
+            layer = [j for j in remaining
+                     if all(p in kept_ids for p in (j.get("depends_on") or []))]
+            if not layer:                      # dependencies point outside this set; take the rest
+                layer = remaining
+            for j in layer:
+                if len(keep) >= cap:
+                    break
+                keep.append(j)
+                kept_ids.add(j["id"])
+            remaining = [j for j in remaining if j["id"] not in kept_ids]
+        for j in keep:                          # drop edges to nodes that did not survive
+            j = j
+        jobs_data = [dict(j, depends_on=[p for p in (j.get("depends_on") or []) if p in kept_ids])
+                     for j in keep]
 
     by_id = {j["id"]: j for j in jobs_data}
 
@@ -543,6 +666,15 @@ def build_dag_svg(jobs_data):
             f'</g></a>'
         )
 
+    if info is not None:
+        info.update({"total": total_nodes, "rendered": len(jobs_data),
+                     "truncated": bool(truncated_from)})
+    if truncated_from:
+        # Say what was dropped on the canvas too, for anyone who saves or shares the SVG alone.
+        lines.append(
+            f'<text x="12" y="20" fill="#ffb74d" font-size="13" font-family="monospace">'
+            f'Showing {len(jobs_data)} of {truncated_from} nodes (dependency order). '
+            f'Download the full graph for all {truncated_from}.</text>')
     lines.append("</svg>")
     return "\n".join(lines)
 
@@ -1127,16 +1259,32 @@ def api_timeline():
             # Unknown DAG name: fall back to treating it as a plain substring.
             f = f or dag
 
-    raw = titan_communicate(OP_STATS_JSON, "timeline:{}:{}".format(f, limit))
+    # The Master applies the limit BEFORE we can filter by pipeline: it returns the most recent N
+    # spans across every pipeline, and only then do we keep the ones belonging to this DAG. So a
+    # pipeline whose spans are older than that window silently comes back short, or empty, with
+    # nothing saying why. When a pipeline is selected, ask for the largest window instead, since
+    # the filter is what actually bounds the result.
+    fetch = MASTER_SPAN_WINDOW if wanted is not None else limit
+    raw = titan_communicate(OP_STATS_JSON, "timeline:{}:{}".format(f, fetch))
     if not raw:
         return jsonify({"error": "Master unreachable on :9090", "spans": [], "count": 0})
     try:
         start = raw.find('{')
         data = json.loads(raw[start:]) if start != -1 else {"spans": [], "count": 0}
         if wanted is not None:
+            scanned = len(data.get('spans', []))
             data['spans'] = [sp for sp in data.get('spans', []) if sp.get('id') in wanted]
             data['count'] = len(data['spans'])
             data['dag'] = dag
+            data['scanned'] = scanned
+            data['known_jobs'] = len(wanted)
+            # The Master's in-memory ring is capped. If it handed back a full window, spans older
+            # than it exist but were never offered to the filter, so this view may be partial.
+            data['window_saturated'] = scanned >= MASTER_SPAN_WINDOW
+            # Short of the job count means either the pipeline has not finished running, or its
+            # older spans have already aged out of the live ring. From here those look identical,
+            # so report the shortfall and point at the disk view rather than guessing.
+            data['partial'] = data['count'] < len(wanted)
         return jsonify(data)
     except json.JSONDecodeError as e:
         return jsonify({"error": "Malformed timeline payload: {}".format(e), "spans": [], "count": 0})
@@ -1175,16 +1323,48 @@ def dag_dashboard(dag_id=None):
         except Exception:
             pass
 
-    # Build sidebar list. One bulk status call covers every job in every DAG, so the list and the
-    # detail view agree instead of the list guessing from a rolling window.
-    all_jobs = [jid for meta in dag_registry.values() for jid in meta.get("jobs", [])]
-    authoritative = fetch_bulk_status(all_jobs)
+    # Sidebar list, newest first, searchable, one page at a time.
+    #
+    # This used to resolve status for EVERY job in EVERY pipeline on every page load. At 1,105
+    # pipelines and 37,171 jobs that is 310 sequential round trips to the Master, about 13 seconds,
+    # to render a sidebar that only shows a badge and an x/y count. Status is now fetched for the
+    # pipelines actually on screen, which is a fixed cost regardless of how much history exists.
+    q = (request.args.get("q") or "").strip().lower()
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+
+    entries = list(dag_registry.items())
+    if q:
+        entries = [(d, m) for d, m in entries
+                   if q in (m.get("name") or "").lower() or q in d.lower()]
+    # `submitted` is the latest run timestamp, kept current by scan_yaml_dags from the manifest.
+    entries.sort(key=lambda dm: dm[1].get("submitted", 0), reverse=True)
+
+    matched = len(entries)
+    pages = max(1, (matched + DAGS_PER_PAGE - 1) // DAGS_PER_PAGE)
+    page = min(page, pages)
+    start = (page - 1) * DAGS_PER_PAGE
+    window = entries[start:start + DAGS_PER_PAGE]
+
+    # A pipeline opened directly may sit on another page or be filtered out; keep it resolvable
+    # so the detail view and its sidebar badge never disagree.
+    if dag_id and dag_id in dag_registry and all(d != dag_id for d, _ in window):
+        window = window + [(dag_id, dag_registry[dag_id])]
+
+    # Count the LATEST run, not every run ever submitted under this name, so the sidebar agrees
+    # with the graph the detail view draws.
+    latest_jobs = {did: _jobs_of_run(m, (_run_stamps(m) or [None])[0]) for did, m in window}
+    visible_jobs = [jid for jl in latest_jobs.values() for jid in jl]
+    authoritative = fetch_bulk_status(visible_jobs)
 
     dag_list = []
-    for did, meta in dag_registry.items():
+    for did, meta in window:
         jobs_meta = meta.get("job_meta", {})
-        total = len(meta["jobs"])
-        done = sum(1 for jid in meta["jobs"]
+        run_jobs_side = latest_jobs.get(did, meta["jobs"])
+        total = len(run_jobs_side)
+        done = sum(1 for jid in run_jobs_side
                    if (authoritative.get(jid) or jobs_meta.get(jid, {}).get("status")) == "COMPLETED")
         dag_status = _resolve_dag_status_from_meta(meta, authoritative)
         dag_list.append({
@@ -1208,9 +1388,47 @@ def dag_dashboard(dag_id=None):
         # Build jobs_data. Status comes from the Master's store, which keeps every job; the
         # worker-history window (job_meta) is only a fallback because it holds 10 entries per
         # worker and silently drops the rest of a larger graph.
+        # Show ONE run, latest first.
+        #
+        # A pipeline name is reused across runs and each run carries its own job IDs, so the
+        # registry accumulates every run ever submitted under that name. Rendering all of them
+        # drew N disconnected copies of the same graph and called it one pipeline: 'nightly-etl'
+        # came out as 34 nodes across 8 runs rather than the 5 nodes it actually has.
+        run_of = {jid: (jobs_meta.get(jid, {}) or {}).get("run_ts", 0) for jid in meta["jobs"]}
+        run_stamps = sorted({t for t in run_of.values() if t}, reverse=True)
+
+        selected_run = None
+        req_run = request.args.get("run")
+        if req_run:
+            try:
+                rr = int(req_run)
+                if rr in run_stamps:
+                    selected_run = rr
+            except (TypeError, ValueError):
+                selected_run = None
+        if selected_run is None and run_stamps:
+            selected_run = run_stamps[0]
+
+        # Jobs with no recorded run (discovered from live stats rather than the manifest) cannot
+        # be attributed, so _jobs_of_run lets them ride along with the newest run rather than vanish.
+        run_jobs = _jobs_of_run(meta, selected_run)
+
+        run_options = []
+        for idx, ts in enumerate(run_stamps):
+            run_options.append({
+                "ts": ts,
+                "label": time.strftime("%d %b %H:%M:%S", time.localtime(ts / 1000)) if ts else "unknown",
+                "jobs": sum(1 for v in run_of.values() if v == ts),
+                "is_latest": idx == 0,
+            })
+
         jobs_data = []
-        authoritative = fetch_bulk_status(list(meta["jobs"]))
-        for jid in meta["jobs"]:
+        # The sidebar pass already resolved this pipeline's jobs (it is force-included in the
+        # window), so only ask the Master for anything it missed.
+        unresolved = [j for j in run_jobs if j not in authoritative]
+        if unresolved:
+            authoritative.update(fetch_bulk_status(unresolved))
+        for jid in run_jobs:
             stored = jobs_meta.get(jid, {})
             status = authoritative.get(jid) or stored.get("status", "WAITING")
             if status == "UNKNOWN":
@@ -1241,7 +1459,8 @@ def dag_dashboard(dag_id=None):
 
         dag_status    = _resolve_dag_status_from_jobs(jobs_data)
         requirements  = list({j["requirement"] for j in jobs_data})
-        graph_svg     = build_dag_svg(jobs_data)
+        graph_info    = {}
+        graph_svg     = build_dag_svg(jobs_data, info=graph_info)
 
         # Check if this DAG has a stored payload (i.e. was submitted via Constructor)
         manifest_path = ".titan_dag_manifest.json"
@@ -1266,6 +1485,13 @@ def dag_dashboard(dag_id=None):
             "fail_pct":     fail_pct,
             "requirements": requirements,
             "graph_svg":    graph_svg,
+            "runs":            run_options,
+            "selected_run":    selected_run,
+            "run_count":       len(run_options),
+            "showing_latest":  bool(run_options) and selected_run == run_stamps[0],
+            "graph_total":     graph_info.get("total", 0),
+            "graph_rendered":  graph_info.get("rendered", 0),
+            "graph_truncated": graph_info.get("truncated", False),
             "can_redeploy": can_redeploy,
             "stat_pills": [
                 ("Completed", done,    "#4caf6e"),
@@ -1289,10 +1515,177 @@ def dag_dashboard(dag_id=None):
         selected_dag = selected_dag,
         selected_job = selected_job,
         dag_count   = len(dag_registry),
+        page        = page,
+        pages       = pages,
+        matched     = matched,
+        per_page    = DAGS_PER_PAGE,
+        showing_from = (start + 1) if matched else 0,
+        showing_to  = min(start + DAGS_PER_PAGE, matched),
+        query       = request.args.get("q") or "",
         status_color = status_color,
         status_text  = status_text,
         dot_colors  = STATUS_DOT,
     )
+
+
+def _graph_jobs(dag_id, run_ts=None):
+    """Jobs of one run of a pipeline, with statuses resolved. Shared by every export format."""
+    meta = dag_registry[dag_id]
+    jobs_meta = meta.get("job_meta", {})
+    stamps = _run_stamps(meta)
+    if run_ts is None and stamps:
+        run_ts = stamps[0]
+    jobs = _jobs_of_run(meta, run_ts)
+    authoritative = fetch_bulk_status(jobs)
+    out = []
+    for jid in jobs:
+        stored = jobs_meta.get(jid, {})
+        status = authoritative.get(jid) or stored.get("status", "WAITING")
+        if status in ("DEAD", "UNKNOWN", ""):
+            status = "FAILED"
+        out.append({
+            "id": jid, "status": status,
+            "requirement": stored.get("requirement", "GENERAL"),
+            "depends_on": _yaml_job_deps.get(jid, []),
+            "worker": stored.get("worker"), "time": stored.get("time", ""),
+            "is_service": "svc" in jid.lower() or "service" in jid.lower(),
+        })
+    return out
+
+
+_MERMAID_CLASS = {
+    "COMPLETED": "done", "RUNNING": "run", "FAILED": "fail",
+    "CANCELLED": "cancel", "WAITING": "wait", "PENDING": "wait",
+}
+
+
+def _mermaid_id(jid, idx):
+    """Mermaid node ids must be alphanumeric-ish, so map to a short stable handle."""
+    return "n%d" % idx
+
+
+def build_dag_mermaid(jobs_data):
+    """Mermaid flowchart source.
+
+    Best format below a few hundred nodes: it is small, pasteable into mermaid.live, GitHub or
+    Notion, and the renderer does its own layout, which beats a fixed server-side one for wide
+    graphs. Above roughly 300 nodes Mermaid's layout gets slow and often gives up, which is what
+    the DOT export is for.
+    """
+    ids = {j["id"]: _mermaid_id(j["id"], i) for i, j in enumerate(jobs_data)}
+    known = set(ids)
+    lines = ["flowchart LR"]
+    for j in jobs_data:
+        label = j["id"][4:] if j["id"].startswith("DAG-") else j["id"]
+        label = label.replace('"', "'")
+        lines.append(f'  {ids[j["id"]]}["{label}"]:::{_MERMAID_CLASS.get(j["status"], "wait")}')
+    for j in jobs_data:
+        for p in j.get("depends_on", []):
+            if p in known:
+                lines.append(f'  {ids[p]} --> {ids[j["id"]]}')
+    lines += [
+        "  classDef done fill:#1b3d2a,stroke:#4caf6e,color:#d7f0e0;",
+        "  classDef run fill:#3d3218,stroke:#ffb74d,color:#f7e7cd;",
+        "  classDef fail fill:#3d1b1b,stroke:#ff5252,color:#f7d7d7;",
+        "  classDef wait fill:#22262e,stroke:#9090b0,color:#cfd6e0;",
+        "  classDef cancel fill:#2b3238,stroke:#78909c,color:#cfd6e0;",
+    ]
+    return "\n".join(lines)
+
+
+_DOT_COLOR = {
+    "COMPLETED": ("#1b3d2a", "#4caf6e"), "RUNNING": ("#3d3218", "#ffb74d"),
+    "FAILED": ("#3d1b1b", "#ff5252"), "CANCELLED": ("#2b3238", "#78909c"),
+}
+
+
+def build_dag_dot(jobs_data, name="pipeline"):
+    """Graphviz DOT source.
+
+    The right format for genuinely large graphs. Graphviz lays out thousands of nodes where both
+    Mermaid and a fixed server-side layout stop being useful:
+        dot  -Tsvg graph.dot -o graph.svg     hierarchical, good up to a few thousand
+        sfdp -Tsvg graph.dot -o graph.svg     force-directed, for the very large
+    """
+    safe_name = re.sub(r'[^A-Za-z0-9_]', '_', name)
+    lines = [f'digraph {safe_name} {{',
+             '  rankdir=LR;',
+             '  bgcolor="#121212";',
+             '  node [shape=box style="rounded,filled" fontname="Helvetica" fontsize=10];',
+             '  edge [color="#55606e" arrowsize=0.7];']
+    known = {j["id"] for j in jobs_data}
+    for j in jobs_data:
+        fill, border = _DOT_COLOR.get(j["status"], ("#22262e", "#9090b0"))
+        label = (j["id"][4:] if j["id"].startswith("DAG-") else j["id"]).replace('"', "'")
+        lines.append(f'  "{j["id"]}" [label="{label}" fillcolor="{fill}" '
+                     f'color="{border}" fontcolor="#e0e0e0"];')
+    for j in jobs_data:
+        for p in j.get("depends_on", []):
+            if p in known:
+                lines.append(f'  "{p}" -> "{j["id"]}";')
+    lines.append("}")
+    return "\n".join(lines)
+
+
+@app.route('/dags/<dag_id>/graph.mmd')
+def api_dag_graph_mermaid(dag_id):
+    """Mermaid source for the selected run. Paste into mermaid.live or a Markdown fence."""
+    if dag_id not in dag_registry:
+        return jsonify({"error": "Unknown pipeline"}), 404
+    run = request.args.get("run", type=int)
+    jobs = _graph_jobs(dag_id, run)
+    safe = re.sub(r"[^A-Za-z0-9_.-]", "_", dag_id)
+    return Response(build_dag_mermaid(jobs), mimetype="text/plain; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{safe}.mmd"'})
+
+
+@app.route('/dags/<dag_id>/graph.dot')
+def api_dag_graph_dot(dag_id):
+    """Graphviz DOT source for the selected run. The format that scales to thousands of nodes."""
+    if dag_id not in dag_registry:
+        return jsonify({"error": "Unknown pipeline"}), 404
+    run = request.args.get("run", type=int)
+    jobs = _graph_jobs(dag_id, run)
+    safe = re.sub(r"[^A-Za-z0-9_.-]", "_", dag_id)
+    return Response(build_dag_dot(jobs, dag_id), mimetype="text/vnd.graphviz; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{safe}.dot"'})
+
+
+@app.route('/dags/<dag_id>/graph.svg')
+def api_dag_graph_svg(dag_id):
+    """The complete graph as a standalone SVG, with no node cap.
+
+    The on-page view is capped because a thousand nodes is slow to lay out and impossible to read
+    in a panel. That is a rendering decision, not a limit on what you are allowed to see, so the
+    whole graph stays available as a file you can open, zoom and share.
+    """
+    if dag_id not in dag_registry:
+        return jsonify({"error": "Unknown pipeline"}), 404
+
+    meta = dag_registry[dag_id]
+    jobs_meta = meta.get("job_meta", {})
+    authoritative = fetch_bulk_status(list(meta["jobs"]))
+    jobs_data = []
+    for jid in meta["jobs"]:
+        stored = jobs_meta.get(jid, {})
+        status = authoritative.get(jid) or stored.get("status", "WAITING")
+        if status in ("DEAD", "UNKNOWN", ""):
+            status = "FAILED"
+        jobs_data.append({
+            "id":          jid,
+            "status":      status,
+            "requirement": stored.get("requirement", "GENERAL"),
+            "depends_on":  _yaml_job_deps.get(jid, []),
+            "worker":      stored.get("worker"),
+            "time":        stored.get("time", ""),
+            "is_service":  "svc" in jid.lower() or "service" in jid.lower(),
+        })
+
+    svg = build_dag_svg(jobs_data, max_nodes=0)      # 0 = draw everything
+    safe = re.sub(r"[^A-Za-z0-9_.-]", "_", dag_id)
+    return Response(svg, mimetype="image/svg+xml", headers={
+        "Content-Disposition": f'attachment; filename="{safe}-graph.svg"'
+    })
 
 
 @app.route('/dags/new')
@@ -1545,7 +1938,28 @@ def api_workspace_files():
         })
 
     files.sort(key=lambda x: x["modified"], reverse=True)
-    return jsonify({"files": files})
+
+    # Paginated, newest first. A long-lived workspace accumulates thousands of artifacts, and
+    # returning all of them made the response large and the grid expensive to lay out for files
+    # nobody was going to scroll to.
+    total = len(files)
+    try:
+        per = max(1, min(int(request.args.get("per", 60)), 500))
+    except (TypeError, ValueError):
+        per = 60
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+    pages = max(1, (total + per - 1) // per)
+    page = min(page, pages)
+    start = (page - 1) * per
+    return jsonify({
+        "files": files[start:start + per],
+        "total": total, "page": page, "pages": pages, "per": per,
+        "showing_from": (start + 1) if total else 0,
+        "showing_to": min(start + per, total),
+    })
 
 
 @app.route('/api/workspace/file/<path:filename>')
@@ -1592,13 +2006,41 @@ def api_manifest_sync():
         incoming = request.get_json(force=True)
         if not incoming:
             return jsonify({"error": "Empty payload"}), 400
-        existing = {}
-        if os.path.exists(manifest_path):
-            with open(manifest_path) as f:
-                existing = json.load(f)
-        existing.update(incoming)
-        with open(manifest_path, 'w') as f:
-            json.dump(existing, f, indent=2)
+        # Take the SAME advisory lock the SDK uses. This handler read-modify-writes the whole
+        # manifest, and without the lock it can interleave with an SDK submission and silently
+        # drop one side's entries. The SDK now pushes from a background thread, so this overlap is
+        # more likely than when the push blocked the submitting process.
+        lock_file = None
+        try:
+            import fcntl as _fcntl
+            lock_file = open(manifest_path + ".lock", "w")
+            _fcntl.flock(lock_file.fileno(), _fcntl.LOCK_EX)
+        except (ImportError, OSError):
+            lock_file = None
+        try:
+            existing = {}
+            if os.path.exists(manifest_path):
+                with open(manifest_path) as f:
+                    existing = json.loads(f.read())
+            existing.update(incoming)
+            # Write to a temp file and rename, so a reader never sees a half-written manifest.
+            # No indent: the SDK posts only one submission's entries now, but this handler still
+            # rewrites the whole merged map, and pretty-printing several MB is pure cost.
+            tmp = "{}.sync.{}.tmp".format(manifest_path, os.getpid())
+            with open(tmp, 'w') as f:
+                f.write(json.dumps(existing))
+            os.replace(tmp, manifest_path)
+        finally:
+            if lock_file is not None:
+                try:
+                    import fcntl as _fcntl
+                    _fcntl.flock(lock_file.fileno(), _fcntl.LOCK_UN)
+                except (ImportError, OSError):
+                    pass
+                try:
+                    lock_file.close()
+                except OSError:
+                    pass
         return jsonify({"status": "ok"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

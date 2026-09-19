@@ -1007,6 +1007,8 @@ import titan.storage.TitanJRedisAdapter;
  */
     private void recoverJobsFrom(Worker deadWorker) {
         if (deadWorker == null) return;
+        // Drop any pooled sockets aimed at this node so its file descriptors do not linger.
+        titan.network.RpcClient.evict(deadWorker.host(), deadWorker.port());
         java.util.List<Job> stranded = new java.util.ArrayList<>();
         for (Map.Entry<String, Job> e : runningJobs.entrySet()) {
             TaskExecution rec = executionHistory.get(e.getKey());
@@ -1251,9 +1253,28 @@ import titan.storage.TitanJRedisAdapter;
 
         System.out.println("[INFO] [DAG] Job " + job.getId() + " is waiting.");
         if (!job.isReady()) {
-            System.out.println("[INFO] Job " + job.getId() + " blocked by dependencies. Entering DAG Waiting Room.");
-            dagWaitingRoom.put(job.getId(), job);
-            return;
+            // Reconcile against parents that have ALREADY finished.
+            //
+            // unlockChildren only notifies children present in the waiting room at the instant a
+            // parent completes. A child is admitted after its parents in the same submit_dag, so
+            // any parent that finishes during admission notifies nobody and its completion is lost
+            // for good: the child then waits forever on work that is done. A 700-way fan-in from a
+            // published seismology workflow lost 46 of 700 that way, with every parent COMPLETED.
+            reconcileFinishedParents(job);
+
+            if (!job.isReady()) {
+                System.out.println("[INFO] Job " + job.getId() + " blocked by dependencies. Entering DAG Waiting Room.");
+                dagWaitingRoom.put(job.getId(), job);
+                // A parent can complete between the scan above and this put. Re-check, and let
+                // whoever wins the remove be the one that queues it, so the child is neither
+                // stranded by that window nor submitted twice.
+                reconcileFinishedParents(job);
+                if (job.isReady() && dagWaitingRoom.remove(job.getId()) != null) {
+                    System.out.println(" ** Queueing Job (parents already done): " + job.getId());
+                    taskQueue.add(job);
+                }
+                return;
+            }
         }
 
         long delay = job.getScheduledTime() - System.currentTimeMillis();
@@ -2724,14 +2745,34 @@ import titan.storage.TitanJRedisAdapter;
  *
  * @param parentId The ID of the parent job that has just completed.
  */
+    /**
+     * Marks every dependency of {@code job} that has already reached COMPLETED as satisfied.
+     *
+     * Completion notification is edge-triggered: {@link #unlockChildren} walks the waiting room
+     * when a parent finishes. That misses any child not yet admitted, so admission has to look
+     * backwards at the parents' recorded state as well.
+     */
+    private void reconcileFinishedParents(Job job){
+        java.util.List<String> deps = job.getDependenciesIds();
+        if (deps == null) return;
+        for (String depId : deps) {
+            TaskExecution rec = executionHistory.get(depId);
+            if (rec != null && rec.status == Job.Status.COMPLETED) {
+                job.resolveDependencies(depId);
+            }
+        }
+    }
+
     private void unlockChildren(String parentId){
         for(Job waitingJob: dagWaitingRoom.values()){
             if(waitingJob.getDependenciesIds()!=null && waitingJob.getDependenciesIds().contains(parentId)){
                 waitingJob.resolveDependencies(parentId);
 
-                if(waitingJob.isReady()){
+                // Release exactly once. Several parents can complete at the same instant on
+                // different callback threads, and each would see isReady() true; without making
+                // the removal the winner-decides step, the same child is submitted more than once.
+                if(waitingJob.isReady() && dagWaitingRoom.remove(waitingJob.getId()) != null){
                     System.out.println("[INFO] DAG: All dependencies met for " + waitingJob.getId() + ". Moving to Active Queue.");
-                    dagWaitingRoom.remove(waitingJob.getId());
                     submitJob(waitingJob);
                 }
             }

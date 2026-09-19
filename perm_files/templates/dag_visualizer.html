@@ -48,7 +48,13 @@
   .dag-name { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }
   .dag-meta { font-size:11px; color:#666; display:flex; align-items:center; gap:8px; }
 
-  .graph-wrap { background:#0d0d14; border:1px solid #2a2a2a; border-radius:10px; padding:14px; overflow-x:auto; margin-bottom:16px; }
+  /* Scroll in BOTH axes and cap the height. A wide fan-out is long horizontally and a deep or
+     unconnected graph is long vertically (1000 independent nodes lay out as an 84,000px column),
+     and without a cap the graph pushes everything below it off the page. Drag the bottom edge to
+     make it taller. */
+  .graph-wrap { background:#0d0d14; border:1px solid #2a2a2a; border-radius:10px; padding:14px;
+                overflow:auto; max-height:70vh; resize:vertical; margin-bottom:6px; }
+  .graph-hint { font-size:11px; color:#4a5260; margin:0 0 14px 2px; }
 
   .log-panel { background:#1a1a24; border:1px solid #2a2a2a; border-radius:10px; padding:16px; }
   .log-meta-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
@@ -102,7 +108,28 @@
 
   <!-- Sidebar -->
   <div class="dag-sidebar">
-    <div class="sec-title" style="padding:4px 8px 8px;">Pipelines</div>
+    <div class="sec-title" style="padding:4px 8px 4px;">Pipelines</div>
+
+    <form method="get" action="/dags" style="padding:0 8px 8px;">
+      <input type="text" name="q" value="{{ query }}" placeholder="Search pipelines…"
+             autocomplete="off"
+             style="width:100%; box-sizing:border-box; background:#11151c; border:1px solid #2a323d;
+                    color:#cfd6e0; border-radius:6px; padding:6px 8px; font-size:12px;
+                    font-family:inherit;">
+      {% if query %}
+      <a href="/dags" style="font-size:11px; color:#64b5f6; text-decoration:none;">clear “{{ query }}”</a>
+      {% endif %}
+    </form>
+
+    <div style="padding:0 8px 8px; font-size:11px; color:#5b6472;">
+      {% if matched %}
+        Showing {{ showing_from }}–{{ showing_to }} of {{ matched }}{% if query %} matching{% endif %}
+        &middot; newest first
+      {% else %}
+        No pipelines match “{{ query }}”.
+      {% endif %}
+    </div>
+
     {% if dags %}
       {% for d in dags %}
       <div class="dag-item {% if selected_dag and selected_dag.id == d.id %}sel{% endif %}"
@@ -115,6 +142,29 @@
         </div>
       </div>
       {% endfor %}
+
+      {% if pages > 1 %}
+      <div style="display:flex; align-items:center; gap:6px; padding:10px 8px; font-size:12px;">
+        {% if page > 1 %}
+          <a href="/dags?page={{ page - 1 }}{% if query %}&q={{ query }}{% endif %}"
+             style="color:#64b5f6; text-decoration:none; padding:3px 8px; border:1px solid #2a323d;
+                    border-radius:5px;">← prev</a>
+        {% else %}
+          <span style="color:#3a424e; padding:3px 8px; border:1px solid #1d232c;
+                       border-radius:5px;">← prev</span>
+        {% endif %}
+        <span style="color:#5b6472;">{{ page }} / {{ pages }}</span>
+        {% if page < pages %}
+          <a href="/dags?page={{ page + 1 }}{% if query %}&q={{ query }}{% endif %}"
+             style="color:#64b5f6; text-decoration:none; padding:3px 8px; border:1px solid #2a323d;
+                    border-radius:5px;">next →</a>
+        {% else %}
+          <span style="color:#3a424e; padding:3px 8px; border:1px solid #1d232c;
+                       border-radius:5px;">next →</span>
+        {% endif %}
+      </div>
+      {% endif %}
+
     {% else %}
       <div style="color:#444; font-size:12px; padding:12px 8px;">No DAGs discovered yet.<br><br>
       Jobs prefixed with <span style="color:#64b5f6; font-family:monospace;">DAG-</span> are auto-tracked here.</div>
@@ -177,9 +227,78 @@
         <div data-progress-seg="FAILED"    class="progress-seg" style="width:{{ selected_dag.fail_pct }}%; background:#ff5252;"></div>
       </div>
 
+      {% if selected_dag.run_count > 1 %}
+      <!-- This pipeline name has been run more than once, and each run has its own job IDs.
+           Only one run is drawn at a time; superimposing them made one pipeline look like N
+           disconnected copies of itself. -->
+      <div style="margin-bottom:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+                  font-size:12.5px; color:#9aa4b2;">
+        <span style="color:#5b6472;">Run</span>
+        <select onchange="if(this.value) window.location='/dags/{{ selected_dag.id }}?run='+this.value;"
+                style="background:#11151c; border:1px solid #2a323d; color:#cfd6e0;
+                       border-radius:6px; padding:4px 8px; font-size:12px; font-family:inherit;">
+          {% for r in selected_dag.runs %}
+          <option value="{{ r.ts }}" {% if r.ts == selected_dag.selected_run %}selected{% endif %}>
+            {{ r.label }} · {{ r.jobs }} job{{ '' if r.jobs == 1 else 's' }}{% if r.is_latest %} (latest){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+        <span style="color:#5b6472;">of {{ selected_dag.run_count }} recorded runs</span>
+        {% if not selected_dag.showing_latest %}
+        <a href="/dags/{{ selected_dag.id }}"
+           style="color:#ffb74d; text-decoration:none; border:1px solid #ffb74d66;
+                  border-radius:5px; padding:2px 9px;">viewing an older run · jump to latest</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
       <!-- Graph -->
-      <div class="sec-title">DAG Graph — click a node to view logs</div>
+      <div class="sec-title" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span>DAG Graph — click a node to view logs</span>
+        <span style="color:#5b6472; font-weight:400; font-size:11px;">
+          {{ selected_dag.graph_total }} node{{ '' if selected_dag.graph_total == 1 else 's' }}
+        </span>
+        <span style="margin-left:auto; display:flex; gap:6px; font-size:11px; font-weight:400;">
+          {% set runq = '?run=' ~ selected_dag.selected_run if selected_dag.selected_run else '' %}
+          <a href="/dags/{{ selected_dag.id }}/graph.svg" download
+             style="color:#64b5f6; text-decoration:none; border:1px solid #2a323d;
+                    border-radius:5px; padding:3px 9px;"
+             title="Exact rendering, every node, opens anywhere. Best for small and medium graphs.">↓ SVG</a>
+          <a href="/dags/{{ selected_dag.id }}/graph.mmd{{ runq }}" download
+             style="color:#64b5f6; text-decoration:none; border:1px solid #2a323d;
+                    border-radius:5px; padding:3px 9px;"
+             title="Mermaid source. Paste into mermaid.live, GitHub or Notion. Best under ~300 nodes.">↓ Mermaid</a>
+          <a href="/dags/{{ selected_dag.id }}/graph.dot{{ runq }}" download
+             style="color:#64b5f6; text-decoration:none; border:1px solid #2a323d;
+                    border-radius:5px; padding:3px 9px;"
+             title="Graphviz DOT. Run: dot -Tsvg g.dot -o g.svg (or sfdp for very large graphs).">↓ DOT</a>
+        </span>
+      </div>
+
+      {% if selected_dag.graph_truncated %}
+      <!-- A capped graph that looks complete would misrepresent the pipeline, so say it plainly
+           here rather than only inside the SVG, where it scrolls out of view on a wide graph. -->
+      <div style="margin-bottom:10px; border:1px solid #ffb74d66; background:#1a160a;
+                  border-radius:8px; padding:10px 13px; font-size:12.5px; color:#d9c9a3;
+                  display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span style="font-size:14px;">⚠</span>
+        <span>
+          Showing <b style="color:#ffb74d;">{{ selected_dag.graph_rendered }}</b> of
+          <b style="color:#ffb74d;">{{ selected_dag.graph_total }}</b> nodes.
+          The view is capped for readability and render time; nodes are kept in dependency order
+          from the roots, so this is a connected prefix of the pipeline, not a random sample.
+        </span>
+        <a href="/dags/{{ selected_dag.id }}/graph.svg" download
+           style="margin-left:auto; color:#64b5f6; text-decoration:none; white-space:nowrap;
+                  border:1px solid #ffb74d66; border-radius:5px; padding:3px 9px;">
+          ↓ Download all {{ selected_dag.graph_total }}
+        </a>
+      </div>
+      {% endif %}
+
       <div class="graph-wrap">{{ selected_dag.graph_svg | safe }}</div>
+      <div class="graph-hint">Scroll inside the panel to pan · drag its bottom edge to resize ·
+        use the SVG, Mermaid or DOT export above for the whole graph at once</div>
 
       <!-- HITL approval banner (shown when any job in this DAG is waiting for approval) -->
       <div id="hitl-banner" style="display:none; margin-bottom:16px; border:1px solid #ffb74d66;
@@ -276,22 +395,49 @@
           if(b<1048576) return (b/1024).toFixed(1)+' KB';
           return (b/1048576).toFixed(1)+' MB';
         }
+        // Render a page at a time. Laying out several hundred file rows costs real time in the
+        // browser for rows nobody scrolls to, and the server already returns newest first.
+        const WS_PAGE = 24;
+        let wsShown = [], wsPage = 1;
+
         function renderWs(files){
+          wsShown = files; wsPage = 1; renderWsPage();
+        }
+        function renderWsPage(){
           const grid  = document.getElementById('ws-files-grid');
           const count = document.getElementById('ws-file-count');
-          count.textContent = files.length ? files.length+' file'+(files.length!==1?'s':'') : '';
-          if(!files.length){
+          const total = wsShown.length;
+          const pages = Math.max(1, Math.ceil(total / WS_PAGE));
+          if(wsPage > pages) wsPage = pages;
+          const from = (wsPage - 1) * WS_PAGE;
+          const slice = wsShown.slice(from, from + WS_PAGE);
+          count.textContent = total
+            ? (total > WS_PAGE ? `${from+1}\u2013${Math.min(from+WS_PAGE,total)} of ${total} files`
+                               : total+' file'+(total!==1?'s':''))
+            : '';
+          if(!total){
             grid.innerHTML='<div style="color:#555;font-size:12px;padding:4px;">No matching files</div>';
             return;
           }
-          grid.innerHTML = files.map(f=>`
+          grid.innerHTML = slice.map(f=>`
             <div class="file-row">
               <span class="file-icon">${fileIcon(f.ext)}</span>
               <span class="file-name" title="${f.name}">${f.name}</span>
               <span class="file-size">${fmtSize(f.size)}</span>
               <a class="file-dl" href="/api/workspace/file/${encodeURIComponent(f.name)}" download="${f.name}">↓ Download</a>
-            </div>`).join('');
+            </div>`).join('')
+            + (pages > 1 ? `
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 4px;font-size:12px;">
+              <button onclick="wsGo(-1)" ${wsPage<=1?'disabled':''}
+                style="background:#11151c;border:1px solid #2a323d;color:${wsPage<=1?'#3a424e':'#64b5f6'};
+                       border-radius:5px;padding:3px 9px;cursor:${wsPage<=1?'default':'pointer'};">← prev</button>
+              <span style="color:#5b6472;">${wsPage} / ${pages}</span>
+              <button onclick="wsGo(1)" ${wsPage>=pages?'disabled':''}
+                style="background:#11151c;border:1px solid #2a323d;color:${wsPage>=pages?'#3a424e':'#64b5f6'};
+                       border-radius:5px;padding:3px 9px;cursor:${wsPage>=pages?'default':'pointer'};">next →</button>
+            </div>` : '');
         }
+        window.wsGo = function(d){ wsPage += d; renderWsPage(); };
         window.wsFilter = function(q){
           const lq = q.toLowerCase();
           renderWs(lq ? wsAllFiles.filter(f=>f.name.toLowerCase().includes(lq)) : wsAllFiles);

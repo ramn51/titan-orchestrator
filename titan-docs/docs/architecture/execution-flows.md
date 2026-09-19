@@ -10,8 +10,23 @@ Every flow below is built from four moving parts in the Master:
 - **`dagWaitingRoom`** — jobs *blocked* on unfinished parents. They never enter the active loop until unblocked.
 - **`runDispatchLoop()`** — a thread blocked on `taskQueue.take()`; when a job appears it selects a worker and dispatches.
 - **`unlockChildren()`** — called when a job completes; it scans the waiting room and promotes any job whose parents are now all satisfied into `taskQueue`.
+- **`reconcileFinishedParents()`** — called when a job is *admitted*; it marks any dependency that has already reached `COMPLETED`.
 
 This separation is the heart of Titan's scheduler: **readiness is event-driven, not polled.** A blocked job costs nothing until a parent-completion event unlocks it.
+
+### Why readiness is event-driven *and* reconciled
+
+A purely event-driven design is not sufficient on its own, and assuming it was caused a real bug.
+
+`unlockChildren()` only sees children that are in the waiting room **at the instant a parent finishes**. But a DAG's jobs are admitted one at a time, so a child near the end of a large payload is registered *after* its parents have already started running. Any parent that completes during that admission window notifies nobody: the scan finds no child, and the event is gone.
+
+With a wide fan-in this is not a rare edge case. A 700-parent sink lost 46 completions this way and waited forever on work that had already finished.
+
+So admission looks **backwards** as well: when a job enters the waiting room, `reconcileFinishedParents()` checks each dependency's recorded state and marks the ones already `COMPLETED`. The check runs again immediately after insertion, to close the gap between the scan and the `put`, and whichever caller wins the `remove()` is the one that queues the job — so it is queued exactly once.
+
+The rule to carry into any similar code: **an edge-triggered notification needs a reconciliation step for listeners that were not yet registered when the edge fired.**
+
+See `docs/BUGFIX_DAG_DEPENDENCY_LOSS.md` in the repository for the full postmortem.
 
 ---
 

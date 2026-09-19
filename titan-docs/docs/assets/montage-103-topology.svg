@@ -1,0 +1,355 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 554 690" role="img" aria-label="Montage workflow: 103 tasks, 231 dependency edges, 8 levels deep">
+<title>Montage (2mass-01d): 103 tasks, 231 edges, depth 8, widest level 45</title>
+<style>
+  /* This file is loaded as an image, so it inherits no styling from the host page: currentColor
+     would resolve to black and vanish on a dark theme. One palette, chosen so every element
+     clears the 3:1 graphical-object contrast threshold on BOTH white and dark backgrounds. A
+     prefers-color-scheme swap was tried and rejected: the OS preference and the docs theme
+     toggle can disagree, and that mismatch washed the nodes out to 2.67:1. */
+  .node { fill: #5f82ad; }
+  .edge { stroke: #7f93a8; stroke-opacity: .6; }
+  .lbl  { fill: #7c8a99; }
+</style>
+<path class="edge" d="M66.0 206.5 C85.0 206.5 85.0 38.5 104.0 38.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 220.5 C85.0 220.5 85.0 38.5 104.0 38.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 206.5 C85.0 206.5 85.0 52.5 104.0 52.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 234.5 C85.0 234.5 85.0 52.5 104.0 52.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 206.5 C85.0 206.5 85.0 66.5 104.0 66.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 276.5 C85.0 276.5 85.0 66.5 104.0 66.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 206.5 C85.0 206.5 85.0 80.5 104.0 80.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 290.5 C85.0 290.5 85.0 80.5 104.0 80.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 220.5 C85.0 220.5 85.0 94.5 104.0 94.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 234.5 C85.0 234.5 85.0 94.5 104.0 94.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 220.5 C85.0 220.5 85.0 108.5 104.0 108.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 248.5 C85.0 248.5 85.0 108.5 104.0 108.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 220.5 C85.0 220.5 85.0 122.5 104.0 122.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 262.5 C85.0 262.5 85.0 122.5 104.0 122.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 220.5 C85.0 220.5 85.0 136.5 104.0 136.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 276.5 C85.0 276.5 85.0 136.5 104.0 136.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 220.5 C85.0 220.5 85.0 150.5 104.0 150.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 290.5 C85.0 290.5 85.0 150.5 104.0 150.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 234.5 C85.0 234.5 85.0 164.5 104.0 164.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 248.5 C85.0 248.5 85.0 164.5 104.0 164.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 234.5 C85.0 234.5 85.0 178.5 104.0 178.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 262.5 C85.0 262.5 85.0 178.5 104.0 178.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 234.5 C85.0 234.5 85.0 192.5 104.0 192.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 276.5 C85.0 276.5 85.0 192.5 104.0 192.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 234.5 C85.0 234.5 85.0 206.5 104.0 206.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 290.5 C85.0 290.5 85.0 206.5 104.0 206.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 248.5 C85.0 248.5 85.0 220.5 104.0 220.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 262.5 C85.0 262.5 85.0 220.5 104.0 220.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 276.5 C85.0 276.5 85.0 234.5 104.0 234.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 290.5 C85.0 290.5 85.0 234.5 104.0 234.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 38.5 C149.0 38.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 52.5 C149.0 52.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 66.5 C149.0 66.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 80.5 C149.0 80.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 94.5 C149.0 94.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 108.5 C149.0 108.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 122.5 C149.0 122.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 136.5 C149.0 136.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 150.5 C149.0 150.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 164.5 C149.0 164.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 178.5 C149.0 178.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 192.5 C149.0 192.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 206.5 C149.0 206.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 220.5 C149.0 220.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 234.5 C149.0 234.5 149.0 332.5 168.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M194.0 332.5 C213.0 332.5 213.0 332.5 232.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 206.5 C181.0 206.5 181.0 206.5 296.0 206.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 332.5 C277.0 332.5 277.0 206.5 296.0 206.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 220.5 C181.0 220.5 181.0 220.5 296.0 220.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 332.5 C277.0 332.5 277.0 220.5 296.0 220.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 234.5 C181.0 234.5 181.0 234.5 296.0 234.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 332.5 C277.0 332.5 277.0 234.5 296.0 234.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 248.5 C181.0 248.5 181.0 248.5 296.0 248.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 332.5 C277.0 332.5 277.0 248.5 296.0 248.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 262.5 C181.0 262.5 181.0 262.5 296.0 262.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 332.5 C277.0 332.5 277.0 262.5 296.0 262.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 276.5 C181.0 276.5 181.0 276.5 296.0 276.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 332.5 C277.0 332.5 277.0 276.5 296.0 276.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 290.5 C181.0 290.5 181.0 290.5 296.0 290.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 332.5 C277.0 332.5 277.0 290.5 296.0 290.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 206.5 C341.0 206.5 341.0 332.5 360.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 220.5 C341.0 220.5 341.0 332.5 360.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 234.5 C341.0 234.5 341.0 332.5 360.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 248.5 C341.0 248.5 341.0 332.5 360.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 262.5 C341.0 262.5 341.0 332.5 360.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 276.5 C341.0 276.5 341.0 332.5 360.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 290.5 C341.0 290.5 341.0 332.5 360.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 206.5 C373.0 206.5 373.0 332.5 424.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 220.5 C373.0 220.5 373.0 332.5 424.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 234.5 C373.0 234.5 373.0 332.5 424.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 248.5 C373.0 248.5 373.0 332.5 424.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 262.5 C373.0 262.5 373.0 332.5 424.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 276.5 C373.0 276.5 373.0 332.5 424.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 290.5 C373.0 290.5 373.0 332.5 424.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M386.0 332.5 C405.0 332.5 405.0 332.5 424.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M450.0 332.5 C469.0 332.5 469.0 325.5 488.0 325.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 304.5 C85.0 304.5 85.0 248.5 104.0 248.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 332.5 C85.0 332.5 85.0 248.5 104.0 248.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 304.5 C85.0 304.5 85.0 262.5 104.0 262.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 360.5 C85.0 360.5 85.0 262.5 104.0 262.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 304.5 C85.0 304.5 85.0 276.5 104.0 276.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 374.5 C85.0 374.5 85.0 276.5 104.0 276.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 304.5 C85.0 304.5 85.0 290.5 104.0 290.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 388.5 C85.0 388.5 85.0 290.5 104.0 290.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 318.5 C85.0 318.5 85.0 304.5 104.0 304.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 332.5 C85.0 332.5 85.0 304.5 104.0 304.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 318.5 C85.0 318.5 85.0 318.5 104.0 318.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 346.5 C85.0 346.5 85.0 318.5 104.0 318.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 318.5 C85.0 318.5 85.0 332.5 104.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 388.5 C85.0 388.5 85.0 332.5 104.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 332.5 C85.0 332.5 85.0 346.5 104.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 346.5 C85.0 346.5 85.0 346.5 104.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 332.5 C85.0 332.5 85.0 360.5 104.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 360.5 C85.0 360.5 85.0 360.5 104.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 332.5 C85.0 332.5 85.0 374.5 104.0 374.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 374.5 C85.0 374.5 85.0 374.5 104.0 374.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 332.5 C85.0 332.5 85.0 388.5 104.0 388.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 388.5 C85.0 388.5 85.0 388.5 104.0 388.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 346.5 C85.0 346.5 85.0 402.5 104.0 402.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 388.5 C85.0 388.5 85.0 402.5 104.0 402.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 360.5 C85.0 360.5 85.0 416.5 104.0 416.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 374.5 C85.0 374.5 85.0 416.5 104.0 416.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 360.5 C85.0 360.5 85.0 430.5 104.0 430.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 388.5 C85.0 388.5 85.0 430.5 104.0 430.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 374.5 C85.0 374.5 85.0 444.5 104.0 444.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 388.5 C85.0 388.5 85.0 444.5 104.0 444.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 248.5 C149.0 248.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 262.5 C149.0 262.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 276.5 C149.0 276.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 290.5 C149.0 290.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 304.5 C149.0 304.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 318.5 C149.0 318.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 332.5 C149.0 332.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 346.5 C149.0 346.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 360.5 C149.0 360.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 374.5 C149.0 374.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 388.5 C149.0 388.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 402.5 C149.0 402.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 416.5 C149.0 416.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 430.5 C149.0 430.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 444.5 C149.0 444.5 149.0 346.5 168.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M194.0 346.5 C213.0 346.5 213.0 346.5 232.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 304.5 C181.0 304.5 181.0 304.5 296.0 304.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 346.5 C277.0 346.5 277.0 304.5 296.0 304.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 318.5 C181.0 318.5 181.0 318.5 296.0 318.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 346.5 C277.0 346.5 277.0 318.5 296.0 318.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 332.5 C181.0 332.5 181.0 332.5 296.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 346.5 C277.0 346.5 277.0 332.5 296.0 332.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 346.5 C181.0 346.5 181.0 346.5 296.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 346.5 C277.0 346.5 277.0 346.5 296.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 360.5 C181.0 360.5 181.0 360.5 296.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 346.5 C277.0 346.5 277.0 360.5 296.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 374.5 C181.0 374.5 181.0 374.5 296.0 374.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 346.5 C277.0 346.5 277.0 374.5 296.0 374.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 388.5 C181.0 388.5 181.0 388.5 296.0 388.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 346.5 C277.0 346.5 277.0 388.5 296.0 388.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 304.5 C341.0 304.5 341.0 346.5 360.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 318.5 C341.0 318.5 341.0 346.5 360.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 332.5 C341.0 332.5 341.0 346.5 360.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 346.5 C341.0 346.5 341.0 346.5 360.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 360.5 C341.0 360.5 341.0 346.5 360.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 374.5 C341.0 374.5 341.0 346.5 360.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 388.5 C341.0 388.5 341.0 346.5 360.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 304.5 C373.0 304.5 373.0 346.5 424.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 318.5 C373.0 318.5 373.0 346.5 424.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 332.5 C373.0 332.5 373.0 346.5 424.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 346.5 C373.0 346.5 373.0 346.5 424.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 360.5 C373.0 360.5 373.0 346.5 424.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 374.5 C373.0 374.5 373.0 346.5 424.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 388.5 C373.0 388.5 373.0 346.5 424.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M386.0 346.5 C405.0 346.5 405.0 346.5 424.0 346.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M450.0 346.5 C469.0 346.5 469.0 339.5 488.0 339.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 402.5 C85.0 402.5 85.0 458.5 104.0 458.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 416.5 C85.0 416.5 85.0 458.5 104.0 458.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 402.5 C85.0 402.5 85.0 472.5 104.0 472.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 458.5 C85.0 458.5 85.0 472.5 104.0 472.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 402.5 C85.0 402.5 85.0 486.5 104.0 486.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 486.5 C85.0 486.5 85.0 486.5 104.0 486.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 416.5 C85.0 416.5 85.0 500.5 104.0 500.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 458.5 C85.0 458.5 85.0 500.5 104.0 500.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 416.5 C85.0 416.5 85.0 514.5 104.0 514.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 486.5 C85.0 486.5 85.0 514.5 104.0 514.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 430.5 C85.0 430.5 85.0 528.5 104.0 528.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 444.5 C85.0 444.5 85.0 528.5 104.0 528.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 430.5 C85.0 430.5 85.0 542.5 104.0 542.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 458.5 C85.0 458.5 85.0 542.5 104.0 542.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 430.5 C85.0 430.5 85.0 556.5 104.0 556.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 472.5 C85.0 472.5 85.0 556.5 104.0 556.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 430.5 C85.0 430.5 85.0 570.5 104.0 570.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 486.5 C85.0 486.5 85.0 570.5 104.0 570.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 444.5 C85.0 444.5 85.0 584.5 104.0 584.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 458.5 C85.0 458.5 85.0 584.5 104.0 584.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 444.5 C85.0 444.5 85.0 598.5 104.0 598.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 472.5 C85.0 472.5 85.0 598.5 104.0 598.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 444.5 C85.0 444.5 85.0 612.5 104.0 612.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 486.5 C85.0 486.5 85.0 612.5 104.0 612.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 458.5 C85.0 458.5 85.0 626.5 104.0 626.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 472.5 C85.0 472.5 85.0 626.5 104.0 626.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 458.5 C85.0 458.5 85.0 640.5 104.0 640.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 486.5 C85.0 486.5 85.0 640.5 104.0 640.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 472.5 C85.0 472.5 85.0 654.5 104.0 654.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 486.5 C85.0 486.5 85.0 654.5 104.0 654.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 458.5 C149.0 458.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 472.5 C149.0 472.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 486.5 C149.0 486.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 500.5 C149.0 500.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 514.5 C149.0 514.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 528.5 C149.0 528.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 542.5 C149.0 542.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 556.5 C149.0 556.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 570.5 C149.0 570.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 584.5 C149.0 584.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 598.5 C149.0 598.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 612.5 C149.0 612.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 626.5 C149.0 626.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 640.5 C149.0 640.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M130.0 654.5 C149.0 654.5 149.0 360.5 168.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M194.0 360.5 C213.0 360.5 213.0 360.5 232.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 402.5 C181.0 402.5 181.0 402.5 296.0 402.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 360.5 C277.0 360.5 277.0 402.5 296.0 402.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 416.5 C181.0 416.5 181.0 416.5 296.0 416.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 360.5 C277.0 360.5 277.0 416.5 296.0 416.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 430.5 C181.0 430.5 181.0 430.5 296.0 430.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 360.5 C277.0 360.5 277.0 430.5 296.0 430.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 444.5 C181.0 444.5 181.0 444.5 296.0 444.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 360.5 C277.0 360.5 277.0 444.5 296.0 444.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 458.5 C181.0 458.5 181.0 458.5 296.0 458.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 360.5 C277.0 360.5 277.0 458.5 296.0 458.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 472.5 C181.0 472.5 181.0 472.5 296.0 472.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 360.5 C277.0 360.5 277.0 472.5 296.0 472.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M66.0 486.5 C181.0 486.5 181.0 486.5 296.0 486.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M258.0 360.5 C277.0 360.5 277.0 486.5 296.0 486.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 402.5 C341.0 402.5 341.0 360.5 360.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 416.5 C341.0 416.5 341.0 360.5 360.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 430.5 C341.0 430.5 341.0 360.5 360.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 444.5 C341.0 444.5 341.0 360.5 360.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 458.5 C341.0 458.5 341.0 360.5 360.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 472.5 C341.0 472.5 341.0 360.5 360.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 486.5 C341.0 486.5 341.0 360.5 360.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 402.5 C373.0 402.5 373.0 360.5 424.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 416.5 C373.0 416.5 373.0 360.5 424.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 430.5 C373.0 430.5 373.0 360.5 424.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 444.5 C373.0 444.5 373.0 360.5 424.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 458.5 C373.0 458.5 373.0 360.5 424.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 472.5 C373.0 472.5 373.0 360.5 424.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M322.0 486.5 C373.0 486.5 373.0 360.5 424.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M386.0 360.5 C405.0 360.5 405.0 360.5 424.0 360.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M450.0 360.5 C469.0 360.5 469.0 353.5 488.0 353.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M450.0 332.5 C469.0 332.5 469.0 367.5 488.0 367.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M450.0 346.5 C469.0 346.5 469.0 367.5 488.0 367.5" fill="none" stroke-width="1"/>
+<path class="edge" d="M450.0 360.5 C469.0 360.5 469.0 367.5 488.0 367.5" fill="none" stroke-width="1"/>
+<rect class="node" x="40.0" y="202.0" width="26" height="9" rx="2.5"><title>mProject_ID0000001</title></rect>
+<rect class="node" x="40.0" y="216.0" width="26" height="9" rx="2.5"><title>mProject_ID0000002</title></rect>
+<rect class="node" x="40.0" y="230.0" width="26" height="9" rx="2.5"><title>mProject_ID0000003</title></rect>
+<rect class="node" x="40.0" y="244.0" width="26" height="9" rx="2.5"><title>mProject_ID0000004</title></rect>
+<rect class="node" x="40.0" y="258.0" width="26" height="9" rx="2.5"><title>mProject_ID0000005</title></rect>
+<rect class="node" x="40.0" y="272.0" width="26" height="9" rx="2.5"><title>mProject_ID0000006</title></rect>
+<rect class="node" x="40.0" y="286.0" width="26" height="9" rx="2.5"><title>mProject_ID0000007</title></rect>
+<rect class="node" x="104.0" y="34.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000008</title></rect>
+<rect class="node" x="104.0" y="48.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000009</title></rect>
+<rect class="node" x="104.0" y="62.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000010</title></rect>
+<rect class="node" x="104.0" y="76.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000011</title></rect>
+<rect class="node" x="104.0" y="90.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000012</title></rect>
+<rect class="node" x="104.0" y="104.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000013</title></rect>
+<rect class="node" x="104.0" y="118.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000014</title></rect>
+<rect class="node" x="104.0" y="132.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000015</title></rect>
+<rect class="node" x="104.0" y="146.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000016</title></rect>
+<rect class="node" x="104.0" y="160.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000017</title></rect>
+<rect class="node" x="104.0" y="174.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000018</title></rect>
+<rect class="node" x="104.0" y="188.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000019</title></rect>
+<rect class="node" x="104.0" y="202.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000020</title></rect>
+<rect class="node" x="104.0" y="216.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000021</title></rect>
+<rect class="node" x="104.0" y="230.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000022</title></rect>
+<rect class="node" x="168.0" y="328.0" width="26" height="9" rx="2.5"><title>mConcatFit_ID0000023</title></rect>
+<rect class="node" x="232.0" y="328.0" width="26" height="9" rx="2.5"><title>mBgModel_ID0000024</title></rect>
+<rect class="node" x="296.0" y="202.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000025</title></rect>
+<rect class="node" x="296.0" y="216.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000026</title></rect>
+<rect class="node" x="296.0" y="230.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000027</title></rect>
+<rect class="node" x="296.0" y="244.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000028</title></rect>
+<rect class="node" x="296.0" y="258.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000029</title></rect>
+<rect class="node" x="296.0" y="272.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000030</title></rect>
+<rect class="node" x="296.0" y="286.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000031</title></rect>
+<rect class="node" x="360.0" y="328.0" width="26" height="9" rx="2.5"><title>mImgtbl_ID0000032</title></rect>
+<rect class="node" x="424.0" y="328.0" width="26" height="9" rx="2.5"><title>mAdd_ID0000033</title></rect>
+<rect class="node" x="488.0" y="321.0" width="26" height="9" rx="2.5"><title>mViewer_ID0000034</title></rect>
+<rect class="node" x="40.0" y="300.0" width="26" height="9" rx="2.5"><title>mProject_ID0000035</title></rect>
+<rect class="node" x="40.0" y="314.0" width="26" height="9" rx="2.5"><title>mProject_ID0000036</title></rect>
+<rect class="node" x="40.0" y="328.0" width="26" height="9" rx="2.5"><title>mProject_ID0000037</title></rect>
+<rect class="node" x="40.0" y="342.0" width="26" height="9" rx="2.5"><title>mProject_ID0000038</title></rect>
+<rect class="node" x="40.0" y="356.0" width="26" height="9" rx="2.5"><title>mProject_ID0000039</title></rect>
+<rect class="node" x="40.0" y="370.0" width="26" height="9" rx="2.5"><title>mProject_ID0000040</title></rect>
+<rect class="node" x="40.0" y="384.0" width="26" height="9" rx="2.5"><title>mProject_ID0000041</title></rect>
+<rect class="node" x="104.0" y="244.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000042</title></rect>
+<rect class="node" x="104.0" y="258.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000043</title></rect>
+<rect class="node" x="104.0" y="272.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000044</title></rect>
+<rect class="node" x="104.0" y="286.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000045</title></rect>
+<rect class="node" x="104.0" y="300.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000046</title></rect>
+<rect class="node" x="104.0" y="314.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000047</title></rect>
+<rect class="node" x="104.0" y="328.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000048</title></rect>
+<rect class="node" x="104.0" y="342.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000049</title></rect>
+<rect class="node" x="104.0" y="356.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000050</title></rect>
+<rect class="node" x="104.0" y="370.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000051</title></rect>
+<rect class="node" x="104.0" y="384.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000052</title></rect>
+<rect class="node" x="104.0" y="398.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000053</title></rect>
+<rect class="node" x="104.0" y="412.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000054</title></rect>
+<rect class="node" x="104.0" y="426.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000055</title></rect>
+<rect class="node" x="104.0" y="440.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000056</title></rect>
+<rect class="node" x="168.0" y="342.0" width="26" height="9" rx="2.5"><title>mConcatFit_ID0000057</title></rect>
+<rect class="node" x="232.0" y="342.0" width="26" height="9" rx="2.5"><title>mBgModel_ID0000058</title></rect>
+<rect class="node" x="296.0" y="300.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000059</title></rect>
+<rect class="node" x="296.0" y="314.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000060</title></rect>
+<rect class="node" x="296.0" y="328.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000061</title></rect>
+<rect class="node" x="296.0" y="342.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000062</title></rect>
+<rect class="node" x="296.0" y="356.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000063</title></rect>
+<rect class="node" x="296.0" y="370.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000064</title></rect>
+<rect class="node" x="296.0" y="384.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000065</title></rect>
+<rect class="node" x="360.0" y="342.0" width="26" height="9" rx="2.5"><title>mImgtbl_ID0000066</title></rect>
+<rect class="node" x="424.0" y="342.0" width="26" height="9" rx="2.5"><title>mAdd_ID0000067</title></rect>
+<rect class="node" x="488.0" y="335.0" width="26" height="9" rx="2.5"><title>mViewer_ID0000068</title></rect>
+<rect class="node" x="40.0" y="398.0" width="26" height="9" rx="2.5"><title>mProject_ID0000069</title></rect>
+<rect class="node" x="40.0" y="412.0" width="26" height="9" rx="2.5"><title>mProject_ID0000070</title></rect>
+<rect class="node" x="40.0" y="426.0" width="26" height="9" rx="2.5"><title>mProject_ID0000071</title></rect>
+<rect class="node" x="40.0" y="440.0" width="26" height="9" rx="2.5"><title>mProject_ID0000072</title></rect>
+<rect class="node" x="40.0" y="454.0" width="26" height="9" rx="2.5"><title>mProject_ID0000073</title></rect>
+<rect class="node" x="40.0" y="468.0" width="26" height="9" rx="2.5"><title>mProject_ID0000074</title></rect>
+<rect class="node" x="40.0" y="482.0" width="26" height="9" rx="2.5"><title>mProject_ID0000075</title></rect>
+<rect class="node" x="104.0" y="454.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000076</title></rect>
+<rect class="node" x="104.0" y="468.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000077</title></rect>
+<rect class="node" x="104.0" y="482.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000078</title></rect>
+<rect class="node" x="104.0" y="496.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000079</title></rect>
+<rect class="node" x="104.0" y="510.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000080</title></rect>
+<rect class="node" x="104.0" y="524.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000081</title></rect>
+<rect class="node" x="104.0" y="538.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000082</title></rect>
+<rect class="node" x="104.0" y="552.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000083</title></rect>
+<rect class="node" x="104.0" y="566.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000084</title></rect>
+<rect class="node" x="104.0" y="580.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000085</title></rect>
+<rect class="node" x="104.0" y="594.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000086</title></rect>
+<rect class="node" x="104.0" y="608.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000087</title></rect>
+<rect class="node" x="104.0" y="622.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000088</title></rect>
+<rect class="node" x="104.0" y="636.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000089</title></rect>
+<rect class="node" x="104.0" y="650.0" width="26" height="9" rx="2.5"><title>mDiffFit_ID0000090</title></rect>
+<rect class="node" x="168.0" y="356.0" width="26" height="9" rx="2.5"><title>mConcatFit_ID0000091</title></rect>
+<rect class="node" x="232.0" y="356.0" width="26" height="9" rx="2.5"><title>mBgModel_ID0000092</title></rect>
+<rect class="node" x="296.0" y="398.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000093</title></rect>
+<rect class="node" x="296.0" y="412.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000094</title></rect>
+<rect class="node" x="296.0" y="426.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000095</title></rect>
+<rect class="node" x="296.0" y="440.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000096</title></rect>
+<rect class="node" x="296.0" y="454.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000097</title></rect>
+<rect class="node" x="296.0" y="468.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000098</title></rect>
+<rect class="node" x="296.0" y="482.0" width="26" height="9" rx="2.5"><title>mBackground_ID0000099</title></rect>
+<rect class="node" x="360.0" y="356.0" width="26" height="9" rx="2.5"><title>mImgtbl_ID0000100</title></rect>
+<rect class="node" x="424.0" y="356.0" width="26" height="9" rx="2.5"><title>mAdd_ID0000101</title></rect>
+<rect class="node" x="488.0" y="349.0" width="26" height="9" rx="2.5"><title>mViewer_ID0000102</title></rect>
+<rect class="node" x="488.0" y="363.0" width="26" height="9" rx="2.5"><title>mViewer_ID0000103</title></rect>
+<text class="lbl" x="53.0" y="18" text-anchor="middle" font-size="9" font-family="ui-monospace,Menlo,monospace">L0 &#183; 21</text>
+<text class="lbl" x="117.0" y="18" text-anchor="middle" font-size="9" font-family="ui-monospace,Menlo,monospace">L1 &#183; 45</text>
+<text class="lbl" x="181.0" y="18" text-anchor="middle" font-size="9" font-family="ui-monospace,Menlo,monospace">L2 &#183; 3</text>
+<text class="lbl" x="245.0" y="18" text-anchor="middle" font-size="9" font-family="ui-monospace,Menlo,monospace">L3 &#183; 3</text>
+<text class="lbl" x="309.0" y="18" text-anchor="middle" font-size="9" font-family="ui-monospace,Menlo,monospace">L4 &#183; 21</text>
+<text class="lbl" x="373.0" y="18" text-anchor="middle" font-size="9" font-family="ui-monospace,Menlo,monospace">L5 &#183; 3</text>
+<text class="lbl" x="437.0" y="18" text-anchor="middle" font-size="9" font-family="ui-monospace,Menlo,monospace">L6 &#183; 3</text>
+<text class="lbl" x="501.0" y="18" text-anchor="middle" font-size="9" font-family="ui-monospace,Menlo,monospace">L7 &#183; 4</text>
+</svg>

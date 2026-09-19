@@ -62,7 +62,14 @@ public class Job implements Comparable<Job> {
 
         if(dependenciesIds != null && !dependenciesIds.isEmpty()){
             this.dependenciesIds = dependenciesIds;
-            this.satisfiedDeps = new HashSet<>();
+            // Concurrent, because parents complete on independent callback threads. A plain
+            // HashSet silently loses adds under concurrent mutation, and a lost add here is
+            // unrecoverable: satisfiedDeps.size() never reaches the dependency count, isReady()
+            // stays false, and the child waits forever on parents that already finished.
+            //
+            // Found by a 700-way fan-in from a published seismology workflow: the sink node sat
+            // at "696/700 parents done" while all 700 parents were COMPLETED in the store.
+            this.satisfiedDeps = java.util.concurrent.ConcurrentHashMap.newKeySet();
         }
     }
 

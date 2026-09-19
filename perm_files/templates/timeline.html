@@ -134,7 +134,7 @@
     <input id="filter" placeholder="…or filter by job id substring" value="{{ dag_filter or '' }}" size="24">
     <label>window
       <select id="win" onchange="load()" title="Bars are drawn to scale across the whole window — a narrow window makes short jobs visible">
-        <option value="0" selected>fit to all spans</option>
+        <option value="0" selected>fit to all spans &middot; in memory</option>
         <option value="60">last 1 min</option>
         <option value="300">last 5 min</option>
         <option value="900">last 15 min</option>
@@ -472,23 +472,48 @@ function load() {
       '&dag=' + encodeURIComponent(dag) + '&limit=' + encodeURIComponent(l)
     : '/api/timeline?filter=' + encodeURIComponent(f) + '&dag=' + encodeURIComponent(dag) +
       '&limit=' + encodeURIComponent(l);
+  // The in-memory ring only holds what the CURRENT Master has seen, so it is empty after a
+  // restart even though the persisted spans are intact on disk. An empty Timeline that offers no
+  // explanation reads as "nothing ever ran", so fall back to disk automatically and say so.
+  var memoryPath = (String(w).charAt(0) !== 'd');
   fetch(url)
     .then(function (r) { return r.json(); })
     .then(function (d) {
-      var lbl = d.error ? 'OFFLINE'
-        : d.count + ' spans' + (d.source === 'disk' ? ' · from disk' : ' · in memory');
-      document.getElementById('conn').textContent = lbl;
-      if (d.error) {
-        document.getElementById('chart').innerHTML = '<div class="empty">' + d.error + '</div>';
-        return;
+      if (memoryPath && !d.error && d.count === 0) {
+        var alt = '/api/history?hours=24&filter=' + encodeURIComponent(f) +
+                  '&dag=' + encodeURIComponent(dag) + '&limit=' + encodeURIComponent(l);
+        return fetch(alt).then(function (r2) { return r2.json(); }).then(function (d2) {
+          if (d2.error || !d2.count) { show(d, ''); return; }
+          show(d2, ' · nothing in memory yet, showing the last 24 h from disk');
+        });
       }
-      render(d);
+      show(d, '');
     })
     .catch(function (e) {
       var c2 = el('conn'); if (c2) c2.textContent = 'ERROR';
       var ch = el('chart');
       if (ch) ch.innerHTML = '<div class="empty">Could not load spans — ' + (e && e.message ? e.message : e) + '</div>';
     });
+}
+
+function show(d, note) {
+  // A pipeline filter is applied after the Master's span window, so a pipeline older than that
+  // window comes back short. Say so, with the count it should have had: a partial timeline that
+  // looks complete is worse than an empty one.
+  if (d.partial) {
+    note += ' · ' + d.count + ' of ' + d.known_jobs + ' known jobs' +
+            (d.source === 'disk' ? ' (the rest have not run)'
+                                 : ' — the rest have not run, or aged out of the live ring; ' +
+                                   'try a "from disk" range');
+  }
+  var lbl = d.error ? 'OFFLINE'
+    : d.count + ' spans' + (d.source === 'disk' ? ' · from disk' : ' · in memory') + note;
+  document.getElementById('conn').textContent = lbl;
+  if (d.error) {
+    document.getElementById('chart').innerHTML = '<div class="empty">' + d.error + '</div>';
+    return;
+  }
+  render(d);
 }
 
 function toggleGroup() {

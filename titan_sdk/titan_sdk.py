@@ -16,6 +16,8 @@ import base64
 import os
 import zipfile
 import json as _json
+import threading as _threading
+import atexit as _atexit
 
 # --- CONFIGURATION ---
 TITAN_HOST = os.environ.get("TITAN_HOST", "127.0.0.1")
@@ -33,6 +35,70 @@ OP_KV_SADD = 0x62
 OP_KV_SMEMBERS = 0x63
 OP_GET_JOB_STATUS = 0x55
 OP_STOP = 0x07
+
+class _ManifestPusher:
+    """Single daemon thread that POSTs manifest deltas to the dashboard off the submit path.
+
+    One thread, not one per push: a script submitting hundreds of DAGs must not spawn hundreds of
+    sockets. Deltas queued while a POST is in flight are merged into the next one.
+    """
+
+    def __init__(self):
+        self._lock = _threading.Lock()
+        self._pending = {}
+        self._wake = _threading.Event()
+        self._thread = None
+        self._idle = _threading.Event()
+        self._idle.set()
+
+    def submit(self, delta):
+        if not delta:
+            return
+        with self._lock:
+            self._pending.update(delta)
+            self._idle.clear()
+            if self._thread is None or not self._thread.is_alive():
+                self._thread = _threading.Thread(target=self._run, name="titan-manifest-push",
+                                                 daemon=True)
+                self._thread.start()
+                _atexit.register(self.flush)
+        self._wake.set()
+
+    def _run(self):
+        import urllib.request as _urllib
+        while True:
+            self._wake.wait(timeout=2.0)
+            self._wake.clear()
+            with self._lock:
+                batch, self._pending = self._pending, {}
+            if not batch:
+                with self._lock:
+                    if not self._pending:
+                        self._idle.set()
+                        return          # nothing left; a later submit restarts the thread
+                continue
+            try:
+                port = int(os.environ.get("TITAN_DASHBOARD_PORT", 5000))
+                url = f"http://{TITAN_HOST}:{port}/api/manifest/sync"
+                body = _json.dumps(batch).encode("utf-8")
+                req = _urllib.Request(url, data=body,
+                                      headers={"Content-Type": "application/json"}, method="POST")
+                _urllib.urlopen(req, timeout=5)
+            except Exception:
+                pass                    # dashboard may not be running; the local file still has it
+            finally:
+                with self._lock:
+                    if not self._pending:
+                        self._idle.set()
+
+    def flush(self, timeout=5.0):
+        """Drain before the interpreter exits, so a short script's last DAG still reaches the UI."""
+        self._wake.set()
+        self._idle.wait(timeout)
+
+
+_MANIFEST_PUSHER = _ManifestPusher()
+
 
 class TitanJob:
     def __init__(self, job_id, filename, job_type="RUN_PAYLOAD", args=None,
@@ -214,7 +280,7 @@ class TitanClient:
             if os.path.exists(manifest_path):
                 try:
                     with open(manifest_path) as f:
-                        existing = _json.load(f)
+                        existing = _json.loads(f.read())
                 except ValueError:
                     # A truncated or interleaved write leaves invalid JSON. Losing the mapping makes
                     # the dashboard fall back to a job-ID naming heuristic that fragments DAGs, so
@@ -239,12 +305,17 @@ class TitanClient:
                         print("[SDK][WARN] No usable backup; pipeline history starts fresh.")
             import time as _time
             run_ts = int(_time.time() * 1000)
+            # Entries added by THIS submission, kept separately from the merged map. The whole map
+            # used to be shipped to the dashboard on every submit; at 46k entries that was 6 MB of
+            # JSON over HTTP to record one job, and it was the single largest cost in submit_dag.
+            # The sync endpoint merges with dict.update, so the delta alone is sufficient.
+            delta = {}
             for job in jobs:
                 full_id = f"DAG-{job.id}"
                 full_deps = [f"DAG-{p}" for p in job.parents]
-                existing[full_id] = {"dag": dag_name, "deps": full_deps, "run_ts": run_ts}
+                delta[full_id] = {"dag": dag_name, "deps": full_deps, "run_ts": run_ts}
                 if agent_run_id:
-                    existing[full_id]["agent_run_id"] = agent_run_id
+                    delta[full_id]["agent_run_id"] = agent_run_id
 
             # Track agent run summary — ordered list of stage DAG names
             if agent_run_id:
@@ -253,10 +324,10 @@ class TitanClient:
                 if dag_name not in run_entry["stages"]:
                     run_entry["stages"].append(dag_name)
                 run_entry["run_ts"] = run_ts
-                existing[key] = run_entry
+                delta[key] = run_entry
             # Store the full payload string so the dashboard can redeploy this DAG
             if dag_payload is not None:
-                existing[f"__payload__{dag_name}"] = {"dag_payload": dag_payload, "run_ts": run_ts}
+                delta[f"__payload__{dag_name}"] = {"dag_payload": dag_payload, "run_ts": run_ts}
                 # Store individual job payloads (parents stripped to []) for single-job replay
                 for job_str in dag_payload.split(" ; "):
                     job_str = job_str.strip()
@@ -264,27 +335,45 @@ class TitanClient:
                         continue
                     job_key = job_str.split("|")[0]
                     replay_str = _re.sub(r'\[[^\]]*\]', '[]', job_str)
-                    existing[f"__job_payload__DAG-{job_key}"] = replay_str
-            # Write to a unique temp file and rename. os.replace is atomic on POSIX and Windows,
-            # so a reader never observes a half-written file and two concurrent submissions cannot
-            # interleave their output into one another's bytes.
+                    delta[f"__job_payload__DAG-{job_key}"] = replay_str
+            existing.update(delta)
+
             # A rolling copy of the last good manifest. This file is the only place a pipeline
             # NAME exists — the Master is told job IDs and nothing else — so one bad write must
             # not be able to erase every run ever recorded.
-            if existing:
+            #
+            # The backup is now a hard link to the CURRENT file, taken before it is replaced, which
+            # is both free and more correct. Re-serialising the new map cost ~64 ms at 46k entries
+            # and produced a backup byte-identical to the file it was supposedly protecting: if the
+            # merged map was bad, the "backup" captured the same bad map. Linking the previous
+            # version means the backup is genuinely one generation behind.
+            if os.path.exists(manifest_path):
                 try:
-                    bak_tmp = "{}.bak.{}.tmp".format(manifest_path, os.getpid())
-                    with open(bak_tmp, 'w') as bf:
-                        _json.dump(existing, bf, indent=2)
-                    os.replace(bak_tmp, manifest_path + ".bak")
+                    link_tmp = "{}.bak.{}.tmp".format(manifest_path, os.getpid())
+                    try:
+                        os.unlink(link_tmp)
+                    except OSError:
+                        pass
+                    os.link(manifest_path, link_tmp)      # no bytes copied
+                    os.replace(link_tmp, manifest_path + ".bak")
                 except OSError:
                     pass
 
+            # Write to a unique temp file and rename. os.replace is atomic on POSIX and Windows,
+            # so a reader never observes a half-written file and two concurrent submissions cannot
+            # interleave their output into one another's bytes.
+            # No indent: nothing reads 6 MB of JSON by eye, and pretty-printing it cost ~35 ms and
+            # ~0.5 MB on every submission.
+            # Serialise once into a buffer, then write it in one call. _json.dump() streams into the
+            # file object in many small writes and cost ~86 ms here against ~30 ms for identical
+            # bytes written this way.
             tmp_path = "{}.{}.tmp".format(manifest_path, os.getpid())
+            blob = _json.dumps(existing)
             with open(tmp_path, 'w') as f:
-                _json.dump(existing, f, indent=2)
+                f.write(blob)
             os.replace(tmp_path, manifest_path)
-            self._push_manifest(existing)
+            if delta:
+                self._push_manifest(delta)
         except Exception:
             pass
         finally:
@@ -302,16 +391,18 @@ class TitanClient:
                     pass
 
     def _push_manifest(self, manifest_data):
-        """Pushes the manifest to the remote dashboard so it can group pipelines correctly."""
-        import urllib.request as _urllib
-        dashboard_port = int(os.environ.get("TITAN_DASHBOARD_PORT", 5000))
-        url = f"http://{TITAN_HOST}:{dashboard_port}/api/manifest/sync"
-        try:
-            body = _json.dumps(manifest_data).encode("utf-8")
-            req = _urllib.Request(url, data=body, headers={"Content-Type": "application/json"}, method="POST")
-            _urllib.urlopen(req, timeout=5)
-        except Exception:
-            pass  # Dashboard may not be running — non-fatal
+        """Hands the new entries to a background sender so submit_dag does not wait on the dashboard.
+
+        This push exists only so a REMOTE SDK client's pipeline names reach the dashboard host; the
+        local file written just above is the durable record either way. It used to run inline, and
+        the receiving endpoint rewrites its whole manifest before replying, so every submission
+        blocked ~220 ms on the dashboard's bookkeeping even after the body shrank to a few hundred
+        bytes. Nothing about a submission depends on that reply.
+
+        Pending deltas are coalesced into one POST, so a burst of submissions does not turn into a
+        burst of whole-file rewrites on the dashboard.
+        """
+        _MANIFEST_PUSHER.submit(manifest_data)
 
     def submit_job(self, job):
         return self.submit_dag(job.id, [job])

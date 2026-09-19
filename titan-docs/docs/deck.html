@@ -500,7 +500,7 @@
           <tr><td>Transport</td><td>33-opcode binary RPC over raw TCP, no gRPC, no Netty</td></tr>
           <tr><td>Execution</td><td>5 task runners behind one interface: scripts, services, detached processes, files, PDF</td></tr>
           <tr><td>Persistence</td><td>RESP-compatible store with AOF, KV, and replication</td></tr>
-          <tr><td>Concurrency</td><td>~4,700 lines of framework-free Java across dispatch, heartbeat, and scale loops</td></tr>
+          <tr><td>Concurrency</td><td>~4,900 lines of framework-free Java across dispatch, heartbeat, and scale loops</td></tr>
         </tbody>
       </table>
     </div>
@@ -517,7 +517,7 @@
       <li><span class="k">MIXED HARDWARE</span><span class="v">One GPU box, a high-memory node, spare CPUs. <b>Capability and affinity routing are native</b>, so mixed hardware is the default case, not a workaround.</span></li>
       <li><span class="k">A HUMAN IN THE LOOP</span><span class="v">A step is expensive, irreversible, or needs sign-off. <b>A gate is one keyword argument</b>, durable for 48 hours, not a custom sensor you maintain.</span></li>
       <li><span class="k">AGENTS PAST ONE PROCESS</span><span class="v">Your agent loop needs compute on more than one machine. <b>The graph is writable at runtime</b>, state crosses nodes, and every stage stays grouped in one view.</span></li>
-      <li><span class="k">YOU WANT TO OWN IT</span><span class="v">~4,700 lines of framework-free Java, nothing inherited. <b>When it breaks you can read it and fix it.</b></span></li>
+      <li><span class="k">YOU WANT TO OWN IT</span><span class="v">~4,900 lines of framework-free Java, nothing inherited. <b>When it breaks you can read it and fix it.</b></span></li>
     </ul>
     <p style="margin-top:1.6rem; max-width:80ch"><strong>And if none of those describe you</strong>, reach for the mature tool. Airflow, Temporal and Ray are excellent, and this deck will not argue you out of a system that works.</p>
   </section>
@@ -1497,6 +1497,42 @@ job_package = <b>TitanJob</b>(
     <p style="margin-top:1.3rem; max-width:84ch">All of it is first-party: <strong>no orchestration framework, no message broker, no external database, no container runtime.</strong> The 33-opcode protocol, the scheduler, the store and the execution drivers are the project.</p>
   </section>
   <section class="slide">
+    <p class="eyebrow">Validation</p>
+    <p class="setup">Benchmarks written for your own system prove very little. So we ran someone else's.</p>
+    <h2>Real workflows, not ones we wrote.</h2>
+    <p style="max-width:74ch">WfCommons publishes DAGs recorded from production scientific workflows: astronomy,
+    genomics, seismology, agriculture. They ship the task graph, the dependencies and the measured runtimes.
+    Titan replays them, so <b>correctness is a checkable fact rather than a claim we make about ourselves</b>.</p>
+
+    <div class="grid g3" style="margin-top:22px">
+      <div class="cell">
+        <h3>10,817 tasks</h3>
+        <p style="margin:0">Five published instances, the largest a 9,805-task Montage with a single
+        level <b>6,285 tasks wide</b>.</p>
+        <span class="chip chip--ok">all completed</span>
+      </div>
+      <div class="cell">
+        <h3>12,992 edges verified</h3>
+        <p style="margin:0">Every parent-child edge checked against the recorded spans: did the child
+        really start after its parent finished.</p>
+        <span class="chip chip--ok">0 ordering violations</span>
+      </div>
+      <div class="cell">
+        <h3>Shapes, not just size</h3>
+        <p style="margin:0">2 to 11 levels deep, 28 to 6,285 wide. A scheduler can be right on one
+        topology and wrong on another.</p>
+        <span class="chip chip--run">5 topologies</span>
+      </div>
+    </div>
+
+    <p class="val" style="margin-top:20px">Ordering is a property of the scheduler, not of the machine it ran on,
+    so this result transfers to any deployment. Performance numbers do not: those are single-host and stated as such.</p>
+
+    <p style="max-width:74ch;margin-top:14px">Porting took about twenty lines. WfFormat describes a DAG as tasks with
+    parent references; so does Titan. The convergence was not planned, it is what the problem shape forces.</p>
+  </section>
+
+  <section class="slide">
     <p class="eyebrow">Landscape</p>
     <p class="setup">The honest version, where Titan wins, and where it plainly does not.</p>
     <h2>Honest scoring.</h2>
@@ -1537,9 +1573,8 @@ job_package = <b>TitanJob</b>(
             <tr><td>Recurring schedules</td><td>Delayed execution today, cron on roadmap</td></tr>
             <tr><td>Network</td><td>Assumes a flat address space (LAN / VPC)</td></tr>
             <tr><td>Service liveness</td><td>Probed once at deploy, never re-probed</td></tr>
-            <tr><td>Engine unit tests</td><td style="color:var(--gate)">Integration only, no JUnit on the core</td></tr>
             <tr><td>Scale-up cost</td><td>~2&#8239;s of dispatch-loop time per spawned worker</td></tr>
-            <tr><td>Measured scale</td><td style="color:var(--gate)">60 jobs in one submission, 5 workers / 20 slots, one host</td></tr>
+            <tr><td>Measured scale</td><td style="color:var(--gate)">9,805 tasks in one submission, 5 workers / 20 slots, one host</td></tr>
           </tbody>
         </table>
       </div>
@@ -1555,14 +1590,15 @@ job_package = <b>TitanJob</b>(
             <li>Nothing in the code structurally caps job or worker count. The queues are unbounded
               and workers self-register.</li>
             <li>The known limit is <b>throughput, not capacity</b>. Dispatch is serialised at
-              ~13&#8239;ms per job, so roughly <b>75 jobs/second</b> however many workers you add,
+              ~2&#8239;ms per job, so roughly <b>500 jobs/second</b> however many workers you add,
               and every store write funnels through one synchronised adapter.</li>
-            <li><b>Medium scale</b>, tens of workers and hundreds of jobs, is a reasonable read of
-              the code.</li>
+            <li><b>Medium scale</b> is a fair read. A single 9,805-task graph runs correctly, but
+              on <b>one host</b>: fleet size is the part that is not established.</li>
             <li>Production load, multi-day runs and many-host deployments remain
               <b>unvalidated</b>.</li>
-            <li><b>Load testing is in progress.</b> The real ceilings will be published once
-              measured. Read the figures above as the floor of what has been demonstrated, not as a
+            <li><b>Correctness is measured; capacity is not.</b> Ordering has been verified against
+              published workflows and transfers anywhere. The throughput figures are single-host and
+              should be read as the floor of what has been demonstrated, not as a
               limit anyone has hit.</li>
           </ul>
         </div>

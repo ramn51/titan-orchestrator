@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" role="img" aria-label="Wall clock against achieved concurrency">
+<style>
+  .ax{stroke:#9aa5b1;stroke-opacity:.45;stroke-width:1}
+  .lbl{fill:#7c8a99;font-size:14px;font-family:ui-monospace,Menlo,monospace}
+  .ttl{fill:#7c8a99;font-size:15px;font-weight:600;font-family:ui-monospace,Menlo,monospace}
+  .s1{fill:#5f82ad}
+  .ln{fill:none;stroke:#5f82ad;stroke-width:2.4}
+  .area{fill:#5f82ad;fill-opacity:.22}
+</style>
+<line class="ax" x1="72.0" y1="40" x2="72.0" y2="326"/>
+<text class="lbl" x="72.0" y="356" text-anchor="middle">0</text>
+<line class="ax" x1="298.0" y1="40" x2="298.0" y2="326"/>
+<text class="lbl" x="298.0" y="356" text-anchor="middle">6</text>
+<line class="ax" x1="524.0" y1="40" x2="524.0" y2="326"/>
+<text class="lbl" x="524.0" y="356" text-anchor="middle">12</text>
+<line class="ax" x1="750.0" y1="40" x2="750.0" y2="326"/>
+<text class="lbl" x="750.0" y="356" text-anchor="middle">18</text>
+<line class="ax" x1="72" y1="326.0" x2="750" y2="326.0"/>
+<text class="lbl" x="62" y="331.0" text-anchor="end">0s</text>
+<line class="ax" x1="72" y1="230.7" x2="750" y2="230.7"/>
+<text class="lbl" x="62" y="235.7" text-anchor="end">8s</text>
+<line class="ax" x1="72" y1="135.3" x2="750" y2="135.3"/>
+<text class="lbl" x="62" y="140.3" text-anchor="end">16s</text>
+<line class="ax" x1="72" y1="40.0" x2="750" y2="40.0"/>
+<text class="lbl" x="62" y="45.0" text-anchor="end">24s</text>
+<path class="ln" d="M344.7 88.9 L408.4 82.9 L644.2 211.6"/>
+<circle class="s1" cx="344.7" cy="88.9" r="7"/>
+<text class="lbl" x="358.7" y="80.9">1 worker</text>
+<text class="lbl" x="358.7" y="100.9">19.9s at 7.24 conc</text>
+<circle class="s1" cx="408.4" cy="82.9" r="7"/>
+<text class="lbl" x="422.4" y="74.9">2 workers</text>
+<text class="lbl" x="422.4" y="94.9">20.4s at 8.93 conc</text>
+<circle class="s1" cx="644.2" cy="211.6" r="7"/>
+<text class="lbl" x="658.2" y="203.6">4 workers</text>
+<text class="lbl" x="658.2" y="223.6">9.6s at 15.19 conc</text>
+<text class="ttl" x="72" y="24">wall clock vs achieved concurrency</text>
+<text class="lbl" x="411.0" y="374" text-anchor="middle">mean concurrent tasks</text>
+</svg>

@@ -315,7 +315,11 @@ def main():
     table = cluster_out.get("trendTable", "")
     check("trend chart renders something", bool(trend), f"{len(trend)}b")
     if isinstance(cluster_runs, list):
-        multi = [r for r in cluster_runs if r["runs"] >= 2]
+        # The chart plots the five pipelines with the MOST runs, so the assertions below have
+        # to interrogate that same set. Taking insertion order instead made this pass or fail
+        # on which pipelines happened to be busy, not on whether the legend works.
+        multi = sorted([r for r in cluster_runs if r["runs"] >= 2],
+                       key=lambda r: -r["runs"])
         check("run grouping found at least one pipeline", len(cluster_runs) > 0,
               f"{len(cluster_runs)} pipelines")
         check("no pipeline reports zero runs", all(r["runs"] >= 1 for r in cluster_runs))
@@ -330,7 +334,9 @@ def main():
                   "<circle" in trend and "<title>" in trend)
             check("trend axis is labelled",
                   "seconds" in trend and "run" in trend)
-            check("trend legend names the pipeline", multi[0]["name"] in trend)
+            check("trend legend names every pipeline it plots",
+                  all(r["name"] in trend for r in multi[:5]),
+                  ", ".join(r["name"] for r in multi[:5] if r["name"] not in trend) or "all named")
             # Two runs of the same pipeline seconds apart must NOT be merged into one long run.
             same = [r for r in cluster_runs if r["runs"] >= 2]
             check("repeated runs have comparable walls, not one merged total",
