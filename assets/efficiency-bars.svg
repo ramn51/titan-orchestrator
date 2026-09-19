@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" role="img" aria-label="Scheduling efficiency by workflow">
+<style>
+  .ax{stroke:#9aa5b1;stroke-opacity:.45;stroke-width:1}
+  .lbl{fill:#7c8a99;font-size:14px;font-family:ui-monospace,Menlo,monospace}
+  .ttl{fill:#7c8a99;font-size:15px;font-weight:600;font-family:ui-monospace,Menlo,monospace}
+  .s1{fill:#5f82ad}
+  .ln{fill:none;stroke:#5f82ad;stroke-width:2.4}
+  .area{fill:#5f82ad;fill-opacity:.22}
+</style>
+<line class="ax" x1="150.0" y1="40" x2="150.0" y2="316"/>
+<text class="lbl" x="150.0" y="342" text-anchor="middle">0%</text>
+<line class="ax" x1="319.5" y1="40" x2="319.5" y2="316"/>
+<text class="lbl" x="319.5" y="342" text-anchor="middle">25%</text>
+<line class="ax" x1="489.0" y1="40" x2="489.0" y2="316"/>
+<text class="lbl" x="489.0" y="342" text-anchor="middle">50%</text>
+<line class="ax" x1="658.5" y1="40" x2="658.5" y2="316"/>
+<text class="lbl" x="658.5" y="342" text-anchor="middle">75%</text>
+<line class="ax" x1="828.0" y1="40" x2="828.0" y2="316"/>
+<text class="lbl" x="828.0" y="342" text-anchor="middle">100%</text>
+<rect class="s1" x="150" y="40.0" width="589.9" height="41.2" rx="4"/>
+<text class="lbl" x="138" y="65.6" text-anchor="end">soykb</text>
+<text class="lbl" x="749.9" y="65.6">87%</text>
+<rect class="s1" x="150" y="95.2" width="515.3" height="41.2" rx="4"/>
+<text class="lbl" x="138" y="120.8" text-anchor="end">1000genome</text>
+<text class="lbl" x="675.3" y="120.8">76%</text>
+<rect class="s1" x="150" y="150.4" width="467.8" height="41.2" rx="4"/>
+<text class="lbl" x="138" y="176.0" text-anchor="end">seismology</text>
+<text class="lbl" x="627.8" y="176.0">69%</text>
+<rect class="s1" x="150" y="205.6" width="305.1" height="41.2" rx="4"/>
+<text class="lbl" x="138" y="231.2" text-anchor="end">montage 01d</text>
+<text class="lbl" x="465.1" y="231.2">45%</text>
+<rect class="s1" x="150" y="260.8" width="271.2" height="41.2" rx="4"/>
+<text class="lbl" x="138" y="286.4" text-anchor="end">montage 20d</text>
+<text class="lbl" x="431.2" y="286.4">40%</text>
+<text class="ttl" x="150" y="24">floor / actual wall clock</text>
+</svg>

@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../overview/">
+        <link rel="prev" href="../fault-tolerance/">
       
       
-        <link rel="next" href="../execution-timeline/">
+        <link rel="next" href="../internals/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>Monitoring & Logs - Titan</title>
+        <title>Validation & Benchmarks - Titan</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#monitoring-logs" class="md-skip">
+        <a href="#validation-benchmarks" class="md-skip">
           Skip to content
         </a>
       
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Monitoring & Logs
+              Validation & Benchmarks
             
           </span>
         </div>
@@ -307,13 +307,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../overview/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../visualizer/overview/" class="md-tabs__link">
           
   
   
@@ -389,11 +387,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../architecture/design/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../design/" class="md-tabs__link">
           
   
   
@@ -1261,31 +1261,28 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   
@@ -1303,7 +1300,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1321,7 +1318,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../overview/" class="md-nav__link">
+      <a href="../../visualizer/overview/" class="md-nav__link">
         
   
   
@@ -1346,37 +1343,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Monitoring & Logs
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../visualizer/monitoring/" class="md-nav__link">
         
   
   
@@ -1392,98 +1362,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#job-status-colours" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Job status colours
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reading-the-graph" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reading the graph
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#viewing-job-logs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Viewing job logs
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Viewing job logs">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#diagnosing-a-failure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Diagnosing a failure
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dag-list-view" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DAG list view
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#stopping-a-job" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Stopping a job
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1496,7 +1374,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../execution-timeline/" class="md-nav__link">
+      <a href="../../visualizer/execution-timeline/" class="md-nav__link">
         
   
   
@@ -1524,7 +1402,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../control-plane/" class="md-nav__link">
+      <a href="../../visualizer/control-plane/" class="md-nav__link">
         
   
   
@@ -1552,7 +1430,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../hitl-approval/" class="md-nav__link">
+      <a href="../../visualizer/hitl-approval/" class="md-nav__link">
         
   
   
@@ -1580,7 +1458,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../workspace-files/" class="md-nav__link">
+      <a href="../../visualizer/workspace-files/" class="md-nav__link">
         
   
   
@@ -1608,7 +1486,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../agent-runs/" class="md-nav__link">
+      <a href="../../visualizer/agent-runs/" class="md-nav__link">
         
   
   
@@ -1642,13 +1520,10 @@
       
       
         
-          
-          
-        
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
@@ -1657,7 +1532,7 @@
         <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5_8" >
         
           
-          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
             
   
   
@@ -2252,28 +2127,31 @@
       
   
   
+    
   
   
+  
     
     
     
     
+      
+        
+        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
             
   
   
@@ -2291,7 +2169,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2309,7 +2187,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/design/" class="md-nav__link">
+      <a href="../design/" class="md-nav__link">
         
   
   
@@ -2337,7 +2215,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/execution-flows/" class="md-nav__link">
+      <a href="../execution-flows/" class="md-nav__link">
         
   
   
@@ -2365,7 +2243,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/fault-tolerance/" class="md-nav__link">
+      <a href="../fault-tolerance/" class="md-nav__link">
         
   
   
@@ -2390,10 +2268,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../architecture/validation/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation & Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -2409,6 +2314,165 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#correctness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Correctness
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Correctness">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shapes-covered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shapes covered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-one-of-these-actually-looks-like" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What one of these actually looks like
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-bug-this-found" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A bug this found
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-a-runs-wall-clock-actually-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where a run's wall clock actually goes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#does-adding-slots-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does adding slots help
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overhead-separated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overhead, separated
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#engine-footprint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Engine footprint
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing-this" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing this
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reproducing this">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-this-does-not-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this does not test
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2421,7 +2485,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../architecture/internals/" class="md-nav__link">
+      <a href="../internals/" class="md-nav__link">
         
   
   
@@ -2621,44 +2685,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#job-status-colours" class="md-nav__link">
+  <a href="#correctness" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Job status colours
+        Correctness
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#reading-the-graph" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Reading the graph
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#viewing-job-logs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Viewing job logs
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Viewing job logs">
+    <nav class="md-nav" aria-label="Correctness">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#diagnosing-a-failure" class="md-nav__link">
+  <a href="#shapes-covered" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Diagnosing a failure
+        Shapes covered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-one-of-these-actually-looks-like" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What one of these actually looks like
       
     </span>
   </a>
@@ -2671,10 +2724,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dag-list-view" class="md-nav__link">
+  <a href="#a-bug-this-found" class="md-nav__link">
     <span class="md-ellipsis">
       
-        DAG list view
+        A bug this found
       
     </span>
   </a>
@@ -2682,13 +2735,91 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#stopping-a-job" class="md-nav__link">
+  <a href="#performance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Stopping a job
+        Performance
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Performance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-a-runs-wall-clock-actually-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where a run's wall clock actually goes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#does-adding-slots-help" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Does adding slots help
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overhead-separated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overhead, separated
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#engine-footprint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Engine footprint
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reproducing-this" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reproducing this
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reproducing this">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-this-does-not-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this does not test
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2712,97 +2843,472 @@
   
 
 
-<h1 id="monitoring-logs">Monitoring &amp; Logs</h1>
-<h2 id="job-status-colours">Job status colours</h2>
-<p>Each node in the pipeline graph is colour-coded to reflect the current job state:</p>
-<div class="admonition warning">
-<p class="admonition-title">Cross-check live status</p>
-<p>These colours are resolved through the client-side DAG manifest, which is being reworked, so a
-node can lag or briefly misreport. The <a href="../execution-timeline/">Execution Timeline</a> reads execution
-spans directly and the <a href="../control-plane/">Cluster</a> page reads the store, so use those to confirm.</p>
+<h1 id="validation-benchmarks">Validation &amp; Benchmarks</h1>
+<p>Titan is validated against <strong>published workflow instances from <a href="https://wfcommons.org/">WfCommons</a></strong>, not
+benchmarks written for it. These are DAGs recorded from real production scientific workflows
+(astronomy, genomics, seismology, agriculture), distributed in a documented schema called WfFormat.</p>
+<p>The reason this matters: an instance carries its own ground truth. It states exactly which tasks
+exist and which depends on which, so <em>"every task ran once"</em> and <em>"no child started before its
+parent finished"</em> become checkable facts rather than claims. It also defines its own performance
+floors, so efficiency can be reported without comparing against another system.</p>
+<div class="admonition info">
+<p class="admonition-title">Which environment these numbers come from</p>
+<p>Everything on this page is a <strong>native single-host run</strong>: the Master, workers and TitanStore all
+on one 14-core machine. This environment is right for correctness and for the <em>shape</em> of
+overheads, and wrong for anything about fleet scaling or absolute throughput.</p>
+<p><strong>Multi-node cloud results are measured separately</strong> and reported on
+<a href="../../deployment/cloud/">Multi-VM Cloud Setup</a>. Where the two disagree, the cloud numbers are
+the ones to quote for capacity, and the numbers here are the ones to quote for correctness.</p>
 </div>
+<hr />
+<h2 id="correctness">Correctness</h2>
+<p>The strongest result, and the one that does not depend on the hardware at all. For every
+parent-child edge in the real workflow, the child's span must start no earlier than the parent's
+span ends.</p>
 <table>
 <thead>
 <tr>
-<th>Colour</th>
-<th>Status</th>
-<th>Meaning</th>
+<th>Workflow</th>
+<th>Tasks</th>
+<th>Completed</th>
+<th>Dependency edges verified</th>
+<th>Order violations</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Gray</td>
-<td><code>PENDING</code></td>
-<td>Waiting for dependencies to complete, or for a worker</td>
+<td>montage 2mass-20d</td>
+<td><strong>9,805</strong></td>
+<td>9,805 / 9,805</td>
+<td>11,631</td>
+<td><strong>0</strong></td>
 </tr>
 <tr>
-<td>Blue (pulsing)</td>
-<td><code>RUNNING</code></td>
-<td>Actively executing on a worker</td>
+<td>seismology</td>
+<td>701</td>
+<td>701 / 701</td>
+<td>700</td>
+<td><strong>0</strong></td>
 </tr>
 <tr>
-<td>Green</td>
-<td><code>COMPLETED</code></td>
-<td>Finished successfully</td>
+<td>soykb</td>
+<td>156</td>
+<td>156 / 156</td>
+<td>354</td>
+<td><strong>0</strong></td>
 </tr>
 <tr>
-<td>Red</td>
-<td><code>FAILED</code></td>
-<td>Exited with a non-zero code or was rejected</td>
+<td>montage 2mass-01d</td>
+<td>103</td>
+<td>103 / 103</td>
+<td>231</td>
+<td><strong>0</strong></td>
 </tr>
 <tr>
-<td>Muted / dim</td>
-<td><code>CANCELLED</code></td>
-<td>Cancelled due to an upstream failure or manual stop</td>
+<td>1000genome</td>
+<td>52</td>
+<td>52 / 52</td>
+<td>76</td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td><strong>total</strong></td>
+<td><strong>10,817</strong></td>
+<td><strong>10,817 / 10,817</strong></td>
+<td><strong>12,992</strong></td>
+<td><strong>0</strong></td>
 </tr>
 </tbody>
 </table>
-<p><img alt="DAG mid-run showing green completed, blue running, and gray pending nodes" src="../../screenshots/visualizer_status_colors.png" /></p>
-<hr />
-<h2 id="reading-the-graph">Reading the graph</h2>
-<p>Edges (arrows) show dependency direction: an arrow from A to B means B depends on A.</p>
-<ul>
-<li>Jobs at the top (no incoming edges) run first</li>
-<li>Jobs fan out in parallel when their shared dependency completes</li>
-<li>Fan-in jobs (multiple incoming edges) wait for all parents</li>
-</ul>
-<p>HITL gate nodes appear as regular nodes in the graph — they show as <code>RUNNING</code> while waiting for approval and <code>COMPLETED</code> once approved.</p>
-<hr />
-<h2 id="viewing-job-logs">Viewing job logs</h2>
-<p>Click any node in the graph to open its log panel on the right side of the screen.</p>
-<p><img alt="Node selected with log panel showing stdout output" src="../../screenshots/visualizer_log_panel.png" /></p>
-<p>The log panel shows:</p>
-<ul>
-<li>Raw stdout and stderr from the worker process</li>
-<li>Auto-refreshes every 2 seconds while the job is <code>RUNNING</code></li>
-<li>Full output available for completed and failed jobs</li>
-<li>Scroll to follow the tail as new lines arrive</li>
-</ul>
-<p>Logs are fetched from <code>/api/logs_raw/&lt;job-id&gt;</code> and are stored in <code>titan_workspace/shared/DAG-&lt;job-id&gt;.log</code>.</p>
-<h3 id="diagnosing-a-failure">Diagnosing a failure</h3>
-<p>When a job shows red (<code>FAILED</code>):</p>
-<ol>
-<li>Click the node to open its log panel</li>
-<li>Scroll to the bottom — the error or traceback appears at the end</li>
-<li>Common causes: wrong args format, missing dependency, script exception, worker OOM</li>
-</ol>
-<hr />
-<h2 id="dag-list-view">DAG list view</h2>
-<p><code>http://127.0.0.1:5000/dags</code> shows all submitted DAGs with:</p>
-<ul>
-<li>DAG name</li>
-<li>Overall status (derived from job statuses)</li>
-<li>Total job count</li>
-<li>Link to the individual visualizer</li>
-</ul>
-<!-- Screenshot: /dags list page showing several DAGs with their statuses -->
+<p>The largest instance published by WfCommons is montage 2mass-20d: 9,805 tasks, 24,027 edges, and a
+single level <strong>6,285 tasks wide</strong>. It completes with every task run and no ordering violation.</p>
 <div class="admonition note">
-<p class="admonition-title">Screenshot needed</p>
-<p><code>visualizer_dag_list.png</code> — DAGs list page with multiple pipelines</p>
+<p class="admonition-title">Why 11,631 edges rather than 24,027</p>
+<p>Edge verification reads recorded spans, and the Master keeps the most recent 5,000 in memory
+(<code>titan.metrics.spans.max</code>). A 9,805-task run overflows that, so roughly half the edges were
+checkable from the live ring. Raise the cap, or verify against the persisted span files, to
+check all of them.</p>
+</div>
+<p>Causal ordering is a property of the scheduler, not of the machine, so this table transfers to any
+deployment.</p>
+<h3 id="shapes-covered">Shapes covered</h3>
+<p>Topology is deliberately varied, because a scheduler can be correct on one shape and broken on
+another.</p>
+<table>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>Tasks</th>
+<th>Depth</th>
+<th>Widest level</th>
+<th>Character</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>montage 2mass-20d</td>
+<td>9,805</td>
+<td>8</td>
+<td><strong>6,285</strong></td>
+<td>the largest instance published</td>
+</tr>
+<tr>
+<td>seismology</td>
+<td>701</td>
+<td>2</td>
+<td>700</td>
+<td>flat and extremely wide</td>
+</tr>
+<tr>
+<td>soykb</td>
+<td>156</td>
+<td><strong>11</strong></td>
+<td>100</td>
+<td>deep and dependency-bound</td>
+</tr>
+<tr>
+<td>montage 2mass-01d</td>
+<td>103</td>
+<td>8</td>
+<td>45</td>
+<td>densest edges per node</td>
+</tr>
+<tr>
+<td>1000genome</td>
+<td>52</td>
+<td>3</td>
+<td>28</td>
+<td>small and shallow</td>
+</tr>
+</tbody>
+</table>
+<h3 id="what-one-of-these-actually-looks-like">What one of these actually looks like</h3>
+<p>The smallest Montage instance, drawn to scale. Each block is a task, each curve a dependency, and
+each column a level of the graph. This is the 103-task variant; the 9,805-task one has the same
+shape with levels up to 6,285 wide, which is why the larger instances are described in numbers
+rather than pictures.</p>
+<figure>
+<p><img alt="Montage workflow topology: 103 tasks in 8 levels, 231 dependency edges" src="../../assets/montage-103-topology.svg" width="100%" />
+  </p>
+<figcaption>Montage 2mass-01d &mdash; 103 tasks, 231 edges, 8 levels, widest level 45.
+  Column labels show each level and its task count.</figcaption>
+</figure>
+<p>Any pipeline's graph can be exported from the DAG Visualizer as <strong>SVG</strong>, <strong>Mermaid</strong> or
+<strong>Graphviz DOT</strong>. Mermaid suits graphs under a few hundred nodes and pastes into
+mermaid.live or a Markdown fence; DOT is the one that scales to thousands via
+<code>dot -Tsvg</code> or <code>sfdp</code>.</p>
+<h2 id="a-bug-this-found">A bug this found</h2>
+<p>The seismology instance, 700 independent roots feeding one sink, exposed a <strong>silent, permanent
+dependency-loss bug</strong>. The sink never ran: it sat blocked reporting <code>654/700 parents done</code> while
+all 700 parents were <code>COMPLETED</code> in the store. No error, no retry, no log line.</p>
+<p>Completion notification was purely edge-triggered, and a DAG's jobs are admitted one at a time. So
+the roots began executing while the sink was still being registered, and every completion landing
+in that window was delivered to a child that did not exist yet. Nothing reconciled afterwards.</p>
+<p>Every existing test used narrow DAGs, where admission finishes long before any task can complete,
+so the window never opened. The fix makes admission look backwards at parents that already
+finished. Verified on the shape that exposed it (701/701) and on a 6,285-wide level (9,805/9,805).</p>
+<p>Full postmortem: <a href="https://github.com/ramn51/titan-orchestrator/blob/main/docs/BUGFIX_DAG_DEPENDENCY_LOSS.md"><code>docs/BUGFIX_DAG_DEPENDENCY_LOSS.md</code></a>.
+Corrected semantics: <a href="../execution-flows/#why-readiness-is-event-driven-and-reconciled">Execution Flows</a>.</p>
+<hr />
+<h2 id="performance">Performance</h2>
+<div class="admonition warning">
+<p class="admonition-title">Read the environment note before quoting these</p>
+<p>Single host: Master, workers and the store share 14 cores. Task durations are replayed from
+each instance's recorded runtimes rather than being the original computation.</p>
+</div>
+<p>Each instance defines its own floor. The critical path is the wall time with infinite slots; total
+work divided by slot count is the wall time with no dependencies at all. The larger of the two is
+the best any scheduler could achieve on that fleet.</p>
+<table>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>Wall clock</th>
+<th>Floor</th>
+<th>Efficiency</th>
+<th>Achieved speed-up</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>montage 2mass-20d (9,805 tasks)</td>
+<td>125.9 s</td>
+<td>49.7 s</td>
+<td><strong>40%</strong></td>
+<td>12.7 of 20 slots busy on average</td>
+</tr>
+<tr>
+<td>soykb</td>
+<td>18.2 s</td>
+<td>15.9 s</td>
+<td><strong>87%</strong></td>
+<td>2.7x of 3.1x possible</td>
+</tr>
+<tr>
+<td>1000genome</td>
+<td>13.4 s</td>
+<td>10.2 s</td>
+<td><strong>76%</strong></td>
+<td>10.3x of 13.5x</td>
+</tr>
+<tr>
+<td>seismology</td>
+<td>26.1 s</td>
+<td>18.1 s</td>
+<td><strong>69%</strong></td>
+<td>13.9x of 72.1x</td>
+</tr>
+<tr>
+<td>montage</td>
+<td>47.2 s</td>
+<td>21.1 s</td>
+<td><strong>45%</strong></td>
+<td>7.7x of 17.2x</td>
+</tr>
+</tbody>
+</table>
+<figure>
+<p><img alt="Scheduling efficiency by workflow, 40% to 87%" src="../../assets/efficiency-bars.svg" width="100%" /></p>
+</figure>
+<p>The deeper and narrower a workflow, the closer Titan runs to its floor: soykb spends its time on a
+genuine critical path rather than on scheduling. Seismology's 72x theoretical maximum is
+unreachable on 20 slots by definition; against the <em>achievable</em> floor it reaches 69%.</p>
+<p>The 9,805-task run scores lowest, at 40%, and that number is the interesting one. It held a mean of
+12.7 of 20 slots busy with a peak of 21, so the fleet was never idle for long, yet the run still
+took 125.9 s against a 49.7 s floor. With ~114 ms median task duration the per-task worker overhead
+is a large fraction of each task, and 9,805 of them is where that accumulates. This is a <strong>worker</strong>
+result, not a scheduler one.</p>
+<h3 id="where-a-runs-wall-clock-actually-goes">Where a run's wall clock actually goes</h3>
+<p>Efficiency is a single number and cannot say <em>why</em> a run was slow. Occupancy over time can: it
+shows how many tasks were executing at each moment, so a fleet starved by dependencies looks
+different from a fleet that was busy the whole time.</p>
+<figure>
+<p><img alt="Slot occupancy over the 9,805 task run: mean 12.7 against a peak of 21" src="../../assets/occupancy-9805.svg" width="100%" />
+  </p>
+<figcaption>The 9,805-task run. The fleet is busy throughout, but sits nearer 12.7 than its peak
+  of 21, and the autoscaler's extra worker is visible as the later climb.</figcaption>
+</figure>
+<p>That splits the wall clock into causes:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>47.4 s</td>
+<td>the work itself, spread across 21 slots</td>
+</tr>
+<tr>
+<td>+28.7 s</td>
+<td>per-task overhead — 603 s of slot time over 9,809 tasks, 62 ms each</td>
+</tr>
+<tr>
+<td>+49.8 s</td>
+<td>fleet not staying full — mean 12.7 against peak 21</td>
+</tr>
+<tr>
+<td><strong>125.9 s</strong></td>
+<td><strong>total</strong></td>
+</tr>
+</tbody>
+</table>
+<p>So the largest single loss is not overhead, it is the fleet not remaining saturated. Generate this
+for any run with <code>python titan_test_suite/wf_occupancy.py &lt;run-fragment&gt; --intended &lt;seconds&gt;</code>.</p>
+<h3 id="does-adding-slots-help">Does adding slots help</h3>
+<p>Measured, on one workflow at three fleet sizes:</p>
+<figure>
+<p><img alt="Wall clock falls only when achieved concurrency rises" src="../../assets/slot-sweep.svg" width="100%" /></p>
+</figure>
+<table>
+<thead>
+<tr>
+<th>Workers</th>
+<th>Configured slots</th>
+<th>Observed peak</th>
+<th>Mean concurrency</th>
+<th>Wall</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>4</td>
+<td>9</td>
+<td>7.24</td>
+<td>19.9 s</td>
+</tr>
+<tr>
+<td>2</td>
+<td>12</td>
+<td>15</td>
+<td>8.93</td>
+<td>20.4 s</td>
+</tr>
+<tr>
+<td>4</td>
+<td>16</td>
+<td>16</td>
+<td><strong>15.19</strong></td>
+<td><strong>9.6 s</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Wall clock tracks <strong>achieved</strong> concurrency, not configured slots. Going from one worker to two
+barely moved either (7.24 to 8.93) and the wall clock did not improve; reaching 15.19 halved it.
+Total slot-seconds stay roughly constant at 144 to 182 across all three, which is the consistency
+check that the model holds.</p>
+<div class="admonition warning">
+<p class="admonition-title">This sweep is confounded</p>
+<p>Titan's autoscaler adds workers whenever demand exceeds capacity, and it did so in every arm:
+the "1 worker" run reached 9 concurrent tasks. The numbers describe achieved concurrency, not a
+controlled slot count. A clean sweep needs a way to pin the fleet, which Titan does not
+currently expose.</p>
+</div>
+<h3 id="overhead-separated">Overhead, separated</h3>
+<p>A single throughput figure cannot distinguish "the scheduler is slow" from "process spawn is slow",
+so the two are measured apart.</p>
+<table>
+<thead>
+<tr>
+<th>Overhead</th>
+<th>p50</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Per-task, worker side</td>
+<td><strong>47 – 103 ms</strong></td>
+<td>process spawn plus protocol. Stable across every shape, because it does not depend on the graph.</td>
+</tr>
+<tr>
+<td>Dependency release, uncontended</td>
+<td><strong>3 ms</strong></td>
+<td>parent's completion to child's start, measured when slots were free.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition danger">
+<p class="admonition-title">Dependency release is only meaningful below saturation</p>
+<p>That metric measures parent-ends to child-starts, which <strong>includes waiting for a free slot</strong>.
+Montage records a p50 of 8,057 ms, but its levels are 45 tasks wide on 20 slots, so children
+genuinely queue. That figure is slot contention, not scheduler latency. Only the uncontended
+measurement describes the scheduler.</p>
 </div>
 <hr />
-<h2 id="stopping-a-job">Stopping a job</h2>
-<p>Running jobs can be stopped from the dashboard. A stopped job transitions to <code>CANCELLED</code> and downstream dependents do not run.</p>
+<h2 id="engine-footprint">Engine footprint</h2>
+<p>Measured on the same host, with the cluster idle after the runs above.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Master</th>
+<th>Worker</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Resident memory</td>
+<td>340 MB (live heap <strong>97 MB</strong>)</td>
+<td><strong>40 MB</strong></td>
+</tr>
+<tr>
+<td>Threads</td>
+<td>39</td>
+<td>36</td>
+</tr>
+<tr>
+<td>Classes loaded</td>
+<td>1,556</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Cold start to accepting connections</td>
+<td><strong>62 ms</strong> (median 116 ms of 3)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Distributable JAR</td>
+<td><strong>131 KB</strong>, 47 classes</td>
+</tr>
+<tr>
+<td>Runtime dependencies outside the JDK</td>
+<td><strong>none</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The Master's resident figure is dominated by the JVM's default heap reservation on a large host
+(<code>-XX:InitialHeapSize</code> was 576 MB here); the live heap is 97 MB while holding 5,000 spans and the
+full execution history. Set <code>-Xmx</code> to size it for the deployment.</p>
+<div class="admonition note">
+<p class="admonition-title">On the zero-dependency claim</p>
+<p><code>gson</code> is declared in <code>pom.xml</code> but is not imported anywhere under <code>src/main</code>, and no
+third-party classes are packaged in the JAR. The runtime is genuinely JDK-only; the stale
+declaration should be removed so the claim is verifiable by inspection rather than by grep.</p>
+</div>
+<hr />
+<h2 id="reproducing-this">Reproducing this</h2>
+<p>Any WfFormat instance works. Instances are at
+<a href="https://github.com/wfcommons/WfInstances">github.com/wfcommons/WfInstances</a>.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># fetch an instance</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-sfL<span class="w"> </span>-o<span class="w"> </span>montage.json<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>https://raw.githubusercontent.com/wfcommons/WfInstances/main/pegasus/montage/montage-chameleon-2mass-01d-001.json
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># inspect its shape without touching the cluster</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>python<span class="w"> </span>titan_test_suite/wfformat_to_titan.py<span class="w"> </span>montage.json
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># run it and derive correctness + performance</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>python<span class="w"> </span>titan_test_suite/wf_bench_runner.py<span class="w"> </span>montage.json<span class="w"> </span>--scale<span class="w"> </span><span class="m">0</span>.2
+</span></code></pre></div>
+<p>Useful flags:</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--scale F</code></td>
+<td>multiply recorded runtimes, to compress a multi-hour workflow</td>
+</tr>
+<tr>
+<td><code>--mode cpu</code></td>
+<td>burn CPU instead of sleeping, to exercise worker saturation</td>
+</tr>
+<tr>
+<td><code>--limit N</code></td>
+<td>keep N tasks, breadth-first from the roots, edges preserved</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td>machine-readable output for scripting</td>
+</tr>
+</tbody>
+</table>
+<p>The converter handles WfFormat 1.6 (<code>workflow.specification</code> plus <code>workflow.execution</code>) and the
+older flat layouts, sanitises task IDs that would otherwise break Titan's pipe-delimited wire
+format, and rejects cyclic instances rather than hanging on them.</p>
+<h3 id="what-this-does-not-test">What this does not test</h3>
+<p>Replaying an instance reproduces its <strong>task graph and timings</strong>, not its computation. Each task
+becomes a generated script that occupies a slot for the recorded duration. That makes this a
+genuine test of the scheduler, and not a test of data processing, file staging or I/O.</p>
+<p>WfCommons also does not currently publish ML or agentic workflow instances, so Titan's agentic,
+HITL and MCP paths are covered by its own suites rather than by this corpus.</p>
 
 
 
