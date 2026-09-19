@@ -492,7 +492,7 @@
         <tbody>
           <tr><td>Scheduler</td><td>Dependency resolution, capability + affinity routing, event-driven dispatch</td></tr>
           <tr><td>Transport</td><td>33-opcode binary RPC over raw TCP, no gRPC, no Netty</td></tr>
-          <tr><td>Execution</td><td>5 task runners behind one interface: scripts, services, detached processes, files, PDF</td></tr>
+          <tr><td>Execution</td><td>Task runners behind one interface: scripts, services, detached processes, archives, file staging</td></tr>
           <tr><td>Persistence</td><td>RESP-compatible store with AOF, KV, and replication</td></tr>
           <tr><td>Concurrency</td><td>~4,900 lines of framework-free Java across dispatch, heartbeat, and scale loops</td></tr>
         </tbody>
@@ -1161,7 +1161,7 @@
     <div class="grid g3">
       <div class="cell">
         <h3>RAG factory</h3>
-        <p style="margin:0">Chunk a corpus in parallel (PDF handler included), embed on GPU workers, fan in to build the index. Vector store and embedding endpoint stay up as services.</p>
+        <p style="margin:0">Chunk a corpus in parallel, embed on GPU workers, fan in to build the index. Vector store and embedding endpoint stay up as services.</p>
         <p class="val">Re-indexing is a pipeline you re-run, not a script someone babysits.</p>
         <span class="chip chip--run">batch + service + gate</span>
       </div>

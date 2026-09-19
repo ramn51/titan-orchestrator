@@ -113,7 +113,7 @@ That constraint is the point: every dependency Titan *doesn't* take is a hard pr
 |---|---|
 | **Scheduler** | Dependency resolution, capability + affinity routing, event-driven dispatch, blocked jobs cost nothing until a completion event unlocks them (no polling) |
 | **Transport** | A custom **33-opcode binary RPC protocol** over raw TCP, no gRPC, no Netty |
-| **Execution** | **5 task runners** behind one interface, ephemeral scripts, long-running services (with auto-restart), detached processes, plus file & PDF handlers |
+| **Execution** | **Task runners** behind one interface: ephemeral scripts, long-running services (with auto-restart), detached processes, zipped archives and file staging |
 | **Persistence** | A from-scratch **RESP-compatible store** (AOF, KV, replication), [swappable for real Redis](#architecture-overview) |
 | **Concurrency** | ~3,800 lines of framework-free Java: thread pools, atomics, and synchronized state coordinated across concurrent dispatch, heartbeat, and auto-scale loops |
 

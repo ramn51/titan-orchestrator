@@ -318,6 +318,11 @@ import titan.network.TitanProtocol.TitanPacket;
  *                where each definition can be parsed into a {@link titan.scheduler.Job} object.
  */
     private void parseAndSubmitDAG(String request){
+        parseAndSubmitDAG(request, false);
+    }
+
+    /** @param resume skip jobs in this DAG that already completed, and run only the rest. */
+    private void parseAndSubmitDAG(String request, boolean resume){
         String [] jobs = request.split(";");
         List<Job> parsedDagJobs = new ArrayList<>();
         for(String jobDef: jobs){
@@ -337,7 +342,7 @@ import titan.network.TitanProtocol.TitanPacket;
 
         for(Job job: parsedDagJobs){
             System.out.println("[INFO] [PARSER] Created Job: " + job.getId());
-            scheduler.submitJob(job);
+            scheduler.submitJob(job, resume);
         }
 
     }
@@ -451,8 +456,9 @@ import titan.network.TitanProtocol.TitanPacket;
                 return scheduler.getSystemStats();
 
             case TitanProtocol.OP_SUBMIT_DAG:
-                parseAndSubmitDAG(payload);
-                return "DAG_ACCEPTED";
+                boolean resume = (packet.flags & TitanProtocol.FLAG_RESUME) != 0;
+                parseAndSubmitDAG(payload, resume);
+                return resume ? "DAG_RESUMED" : "DAG_ACCEPTED";
 
             case TitanProtocol.OP_SUBMIT_JOB:
                 scheduler.submitJob(payload);

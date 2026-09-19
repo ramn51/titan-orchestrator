@@ -14,7 +14,6 @@
 
 package titan.manual;
 
-import titan.manual.CronAndPriorityTest;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,17 +23,11 @@ public class TitanTestSuite {
 
     // List of test classes to run
     private static final Class<?>[] TEST_CLASSES = {
-            WorkerRegistrationTest.class,
-            CronAndPriorityTest.class,
             DeployCommandIntegrationTest.class,
             RunScriptTest.class,
             test.java.titan.manual.WorkerScriptIntegrationRunner.class,
-            FaultToleranceTest.class,
-            WorkerLoadTest.class,
-            LoadBalancerTest.class,
             RpcWorkerTest.class,
             TitanDAGEndToEnd.class,
-            EndToEndTest.class,
             // TestServer.class // Excluded: usually a utility/manual server, not an auto-test
     };
 

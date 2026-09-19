@@ -24,6 +24,7 @@ TITAN_HOST = os.environ.get("TITAN_HOST", "127.0.0.1")
 TITAN_PORT = int(os.environ.get("TITAN_PORT", 9090))
 VERSION = 1
 OP_SUBMIT_DAG = 4
+FLAG_RESUME   = 0x01   # header flag: skip work that already completed
 OP_LOG_BATCH = 0x17
 OP_GET_LOGS = 0x16
 OP_UPLOAD_ASSET  = 0x53
@@ -181,18 +182,32 @@ class TitanJob:
         return f"{self.id}|{header}|{payload_content}|{self.priority}|{self.delay}|{parents_str}{affinity_suffix}"
 
 class TitanClient:
-    def submit_dag(self, name, jobs, agent_run_id=None):
+    def submit_dag(self, name, jobs, agent_run_id=None, resume=False):
         """Submits a list of TitanJobs as a DAG.
 
         agent_run_id: optional string — links this DAG to a logical agent run
                       so the Agent Runs view in the dashboard can show all
                       stages of one run as a connected chain.
                       Has no effect on scheduling or execution.
+
+        resume:       re-run only what has not already succeeded. Jobs in this DAG whose
+                      job_id already reached COMPLETED are skipped, and everything else
+                      runs, including the descendants of a failed job.
+
+                      Use this to fix one job and continue a long pipeline rather than
+                      starting it over. Submit the SAME job ids: identity is what lets
+                      Titan tell which work is already done.
+
+                      CAVEAT: Titan schedules on dependencies, not on data. It cannot check
+                      that a skipped job's outputs still exist, so resuming asserts that the
+                      completed prefix is still valid. If those workspaces were cleaned,
+                      re-run the DAG normally instead.
         """
         jobs = self._inject_hitl_gates(jobs)
-        print(f"[SDK] Submitting DAG: {name}")
+        print(f"[SDK] {'Resuming' if resume else 'Submitting'} DAG: {name}")
         dag_payload = " ; ".join([j.to_string() for j in jobs])
-        result = self._send_request(OP_SUBMIT_DAG, dag_payload)
+        result = self._send_request(OP_SUBMIT_DAG, dag_payload,
+                                    flags=FLAG_RESUME if resume else 0)
         self._write_dag_manifest(name, jobs, dag_payload, agent_run_id=agent_run_id)
         return result
 
@@ -710,14 +725,16 @@ class TitanClient:
                 try: os.remove(zip_filename) 
                 except: pass
 
-    def _send_request(self, op_code, payload):
+    def _send_request(self, op_code, payload, flags=0):
         s = None
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((TITAN_HOST, TITAN_PORT))
             
             payload_bytes = payload.encode('utf-8')
-            header = struct.pack('>BBBBI', VERSION, op_code, 0, 0, len(payload_bytes))
+            # The header's flags byte was unused until resume needed it, so setting it changes no
+            # payload and an older Master simply ignores the bit.
+            header = struct.pack('>BBBBI', VERSION, op_code, flags, 0, len(payload_bytes))
             s.sendall(header + payload_bytes)
 
             s.settimeout(10)

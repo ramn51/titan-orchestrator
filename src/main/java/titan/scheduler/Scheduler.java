@@ -1243,6 +1243,31 @@ import titan.storage.TitanJRedisAdapter;
  * @param job The {@link Job} object to be submitted.
  */
     public void submitJob(Job job){
+        submitJob(job, false);
+    }
+
+    /**
+     * Submits a job, optionally resuming rather than re-running.
+     *
+     * With {@code resume} set, a job that already reached COMPLETED is left exactly as it is: not
+     * re-queued, and its recorded status not overwritten. Its children still unlock, because
+     * {@link #reconcileFinishedParents} reads that same completed record when they are admitted.
+     * So resume is not a separate scheduling path; it reuses the one that already handles a parent
+     * finishing before its child was registered.
+     *
+     * Anything not COMPLETED is submitted normally. A job that was RUNNING when the pipeline died
+     * counts as not completed and re-runs, because an interrupted job produced no result.
+     *
+     * What this does NOT do is verify that a skipped job's outputs still exist. Titan models
+     * control flow, not data flow, so it cannot know whether an earlier workspace is still there.
+     * Resuming is a statement by the caller that the completed prefix is still valid.
+     */
+    public void submitJob(Job job, boolean resume){
+        if (resume && isAlreadyCompleted(job.getId())) {
+            System.out.println("[INFO] [RESUME] Skipping " + job.getId() + ", already COMPLETED.");
+            return;
+        }
+
         // Persist to Redis to act as WAL
         // This will be the basis for recovery
         safeRedisSet("job:" + job.getId() + ":payload", job.getPayload());
@@ -2752,12 +2777,37 @@ import titan.storage.TitanJRedisAdapter;
      * when a parent finishes. That misses any child not yet admitted, so admission has to look
      * backwards at the parents' recorded state as well.
      */
+    /**
+     * Has this job id already finished successfully?
+     *
+     * Checks the in-memory execution history first, then the store. The store matters because
+     * {@code executionHistory} does not survive a Master restart, and resuming after a restart is
+     * the main reason the feature exists. If TitanStore is disabled there is no durable record, so
+     * resume degrades to a full re-run rather than to a wrong answer.
+     */
+    private boolean isAlreadyCompleted(String jobId){
+        TaskExecution rec = executionHistory.get(jobId);
+        if (rec != null) {
+            return rec.status == Job.Status.COMPLETED;
+        }
+        try {
+            String persisted = redis.get("job:" + jobId + ":status");
+            return "COMPLETED".equalsIgnoreCase(persisted);
+        } catch (Exception e) {
+            return false;       // no durable record: re-run rather than wrongly skip
+        }
+    }
+
     private void reconcileFinishedParents(Job job){
         java.util.List<String> deps = job.getDependenciesIds();
         if (deps == null) return;
         for (String depId : deps) {
-            TaskExecution rec = executionHistory.get(depId);
-            if (rec != null && rec.status == Job.Status.COMPLETED) {
+            // Goes through isAlreadyCompleted so the STORE is consulted too, not just the
+            // in-memory history. After a Master restart that history is empty, so a parent which
+            // finished before the crash would look unfinished, and a child admitted on resume
+            // would wait forever on work that is already done. Reading only memory here was the
+            // same mistake as the edge-triggered bug this reconciliation exists to fix.
+            if (isAlreadyCompleted(depId)) {
                 job.resolveDependencies(depId);
             }
         }

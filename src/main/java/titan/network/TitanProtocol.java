@@ -199,13 +199,28 @@ import java.nio.charset.StandardCharsets;
  * @param payload The string payload of the message.
  * @throws IOException If an I/O error occurs during writing to the stream.
  */
+    /**
+     * Header flag: this submission should RESUME rather than re-run.
+     *
+     * The flags byte has always been written as zero and read but never used, so setting it costs
+     * nothing on the wire and changes no payload. A Master built before resume existed reads the
+     * byte, ignores it, and performs an ordinary submission, which degrades to a full re-run
+     * rather than to an error.
+     */
+    public static final byte FLAG_RESUME = 0x01;
+
     public static void send(DataOutputStream out, byte opCode, String payload) throws IOException {
+        send(out, opCode, (byte) 0x00, payload);
+    }
+
+    /** As {@link #send(DataOutputStream, byte, String)}, with header flags. */
+    public static void send(DataOutputStream out, byte opCode, byte flags, String payload) throws IOException {
         byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
         int len = payloadBytes.length;
 
         out.writeByte(CURRENT_VERSION);
         out.writeByte(opCode);
-        out.writeByte(0x00);
+        out.writeByte(flags);
         out.writeByte(0x00);
         out.writeInt(len);
 
@@ -241,7 +256,9 @@ import java.nio.charset.StandardCharsets;
         byte[] buffer = new byte[len];
         in.readFully(buffer);
         String payload = new String(buffer, StandardCharsets.UTF_8);
-        return new TitanPacket(opCode, payload);
+        TitanPacket pkt = new TitanPacket(opCode, payload);
+        pkt.flags = flags;
+        return pkt;
     }
 
     /**
@@ -252,6 +269,8 @@ import java.nio.charset.StandardCharsets;
  * The operation code of the received packet.
  */
     public byte opCode;
+        /** Header flags, e.g. {@link TitanProtocol#FLAG_RESUME}. */
+    public byte flags;
         /**
  * The string payload of the received packet.
  */

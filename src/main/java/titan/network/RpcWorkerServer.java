@@ -17,7 +17,6 @@ package titan.network;
 import titan.filesys.WorkspaceManager;
 import titan.tasks.TaskHandler;
 import titan.tasks.FileHandler;
-import titan.tasks.PdfConversionHandler;
 import titan.tasks.ScriptExecutorHandler;
 import titan.tasks.ServiceHandler;
 
@@ -65,7 +64,7 @@ public class RpcWorkerServer {
     private ScheduledExecutorService reRegisterExecutor;
 
     /**
-     * A string describing the capabilities of this worker, used by the scheduler to assign appropriate tasks. Examples include "GENERAL", "GPU", "PDF_CONVERT", etc.
+     * A string describing the capabilities of this worker, used by the scheduler to assign appropriate tasks. Examples include "GENERAL", "GPU", "HIGH_MEM", etc.
      */
     private String capability;
 
@@ -110,7 +109,7 @@ public class RpcWorkerServer {
      * @param myPort The port number on which this worker server will listen.
      * @param schedulerHost The hostname or IP address of the scheduler.
      * @param schedulerPort The port number of the scheduler.
-     * @param capability A string describing the capabilities of this worker (e.g., "GENERAL", "PDF_CONVERT").
+     * @param capability A string describing the capabilities of this worker (e.g., "GENERAL", "GPU").
      * @param isPermanent A boolean indicating if this worker is a permanent instance (true) or ephemeral (false).
      */
     public RpcWorkerServer( int myPort, String schedulerHost, int schedulerPort, String capability, boolean isPermanent){
@@ -146,7 +145,6 @@ public class RpcWorkerServer {
      * Initializes and registers various {@link titan.tasks.TaskHandler} implementations with the worker server. This method populates the {@code taskHanlderMap} with handlers for specific task types like PDF conversion, file staging, service management, and script execution.
      */
     public void addTaskHandler(){
-        taskHanlderMap.put("PDF_CONVERT", new PdfConversionHandler());
         taskHanlderMap.put("STAGE_FILE", new FileHandler());
         taskHanlderMap.put("START_SERVICE", new ServiceHandler("START", this));
         taskHanlderMap.put("STOP_SERVICE", new ServiceHandler("STOP", this));
@@ -423,7 +421,7 @@ public class RpcWorkerServer {
     /**
      * Processes a command by explicitly using a provided task type and task data. This method looks up the appropriate {@link titan.tasks.TaskHandler} from the {@code taskHanlderMap} and executes it.
      *
-     * @param taskType The explicit type of the task to execute (e.g., "PDF_CONVERT", "START_SERVICE").
+     * @param taskType The explicit type of the task to execute (e.g., "RUN_SCRIPT", "START_SERVICE").
      * @param taskData The data payload for the task handler.
      * @return A string representing the result of the task execution, or an error message if the task type is unknown or execution fails.
      */
@@ -472,7 +470,7 @@ public class RpcWorkerServer {
         if(parts.length < 2)
             return "INVALID_JOB_FORMAT";
 
-        // Ex: "START_SERVICE" or "PDF_CONVERT"
+        // Ex: "START_SERVICE" or "RUN_SCRIPT"
         String taskType = parts[0];
         // Ex: "file.jar|jobId|8085"
         String taskData = parts[1];
@@ -540,7 +538,7 @@ public class RpcWorkerServer {
                 // Result: "JOB-123|my_script.py|--verbose"
                 String payloadForHandler = jobId + "|" + taskData;
                 String result = handler.execute(payloadForHandler);
-                // This allows the worker to handle PDF_CONVERT or any other key
+                // This allows the worker to handle any registered handler key
 //                String result = processCommand(taskData);
 
                 System.out.println("[ASYNC] Finished "+ jobId);

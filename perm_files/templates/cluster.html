@@ -1394,14 +1394,17 @@ function drawLanes(b) {
            fmtMs(x.parked_ms) + '</span></div>';
   });
 
+  // Keep all four lanes on screen even at zero. Collapsing them to a single line loses the one
+  // thing this panel exists to teach: a job waiting to run is in exactly one of these four states,
+  // and which one tells you why. It also made the layout jump as work arrived and drained. The
+  // all-clear now sits ABOVE the lanes instead of replacing them.
   var idle = !(t.delayed || t.blocked || t.ready || t.parked);
-  if (idle) {
-    host.innerHTML = '<div class="allclear"><i></i><b>Queue is empty.</b>' +
-      '<span>Nothing delayed, blocked, ready or parked — every submitted job has been dispatched.</span></div>';
-    return;
-  }
+  var banner = idle
+    ? '<div class="allclear"><i></i><b>Queue is empty.</b>' +
+      '<span>Nothing delayed, blocked, ready or parked — every submitted job has been dispatched.</span></div>'
+    : '';
 
-  host.innerHTML =
+  host.innerHTML = banner +
     lane('delayed', 'Delayed', t.delayed || 0,
          'Submitted with a delay; the timer has not fired. Costs no CPU while waiting.', delayed) +
     lane('blocked', 'Blocked', t.blocked || 0,

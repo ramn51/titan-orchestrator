@@ -118,8 +118,8 @@ Supported commands include `stats`, `upload`, `submit`, `dag`, `run`, `deploy`, 
             return;
         }
         else if (input.startsWith("submit ")) {
-            // Input: "submit PDF_CONVERT file.docx"
-            // Desired Payload: "PDF_CONVERT|file.docx|1|0"
+            // Input: "submit RUN_SCRIPT task.py"
+            // Desired Payload: "RUN_SCRIPT|task.py|1|0"
             String[] parts = input.substring(7).split(" ", 2);
             if (parts.length < 2) {
                 System.out.println("[FAIL] Usage: submit <skill> <data>");
