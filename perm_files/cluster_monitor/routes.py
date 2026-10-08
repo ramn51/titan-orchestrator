@@ -56,6 +56,45 @@ def _compact_runs(manifest_path, since):
     return list(records)
 
 
+_legacy_cache_lock = threading.Lock()
+_legacy_cache = (None, ())
+
+
+def _legacy_runs(path_text, modified_ns, size):
+    """Parse an old monolithic manifest once per immutable file revision."""
+    global _legacy_cache
+    revision = (path_text, modified_ns, size)
+    with _legacy_cache_lock:
+        if _legacy_cache[0] == revision:
+            return _legacy_cache[1]
+        runs = []
+        try:
+            manifest = json.loads(Path(path_text).read_text(encoding="utf-8"))
+            for key, value in manifest.items():
+                if not key.startswith("__runs__") or not isinstance(value, list):
+                    continue
+                name = key.removeprefix("__runs__")
+                for run in value:
+                    if isinstance(run, dict) and isinstance(run.get("run_ts"), int):
+                        jobs = run.get("jobs", {})
+                        runs.append({"name": name, "run_ts": run["run_ts"],
+                                     "jobs": list(jobs) if isinstance(jobs, dict) else list(jobs or [])})
+        except (OSError, ValueError, TypeError):
+            pass
+        _legacy_cache = (revision, tuple(runs))
+        return _legacy_cache[1]
+
+
+def _cached_legacy_runs(manifest_path, since):
+    path = Path(manifest_path)
+    try:
+        stat = path.stat()
+    except OSError:
+        return []
+    return [run for run in _legacy_runs(str(path), stat.st_mtime_ns, stat.st_size)
+            if run["run_ts"] >= since]
+
+
 def create_blueprint(communicate, manifest_path):
     cluster = Blueprint("cluster_monitor", __name__)
     scripts = Path(__file__).resolve().parents[1] / "dag_samples"
@@ -140,18 +179,8 @@ def create_blueprint(communicate, manifest_path):
             spans.sort(key=lambda span: span.get("started_at", 0))
         runs = []
         if mode == "analytics":
-            try:
-                manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
-                for key, value in manifest.items():
-                    if not key.startswith("__runs__") or not isinstance(value, list):
-                        continue
-                    name = key.removeprefix("__runs__")
-                    for run in value:
-                        if (isinstance(run, dict) and isinstance(run.get("run_ts"), int)
-                                and run["run_ts"] >= since):
-                            runs.append({"name": name, "run_ts": run["run_ts"], "jobs": run.get("jobs", [])})
-            except (OSError, ValueError):
-                pass
+            # Preserve old runs during migration, but cache the large legacy parse.
+            runs = _cached_legacy_runs(manifest_path, since)
             runs.extend(_compact_runs(manifest_path, since))
             unique_runs = {}
             for run in runs:

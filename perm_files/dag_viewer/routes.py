@@ -136,7 +136,7 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
             return []
         files = []
         log = shared / f"{job_id}.log"
-        metadata = read_manifest(manifest_path).get(job_id, {})
+        metadata = catalog.metadata(job_id)
         log_offset = metadata.get("log_offset", 0) if isinstance(metadata, dict) else 0
         artifact_root = shared / "artifacts" / job_id
         candidates = [log]
@@ -191,7 +191,7 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
         if filename not in {item["name"] for item in workspace_files(dag_id, job_id)}:
             abort(404)
         if filename == f"{job_id}.log":
-            metadata = read_manifest(manifest_path).get(job_id, {})
+            metadata = catalog.metadata(job_id)
             offset = metadata.get("log_offset") if isinstance(metadata, dict) else None
             if isinstance(offset, int) and offset >= 0:
                 content = (workspace / "shared" / filename).read_bytes()
@@ -385,7 +385,7 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
             job = next((item for item in selected["jobs"] if not item["parents"]), selected["jobs"][0])
         logs = None
         if job and not historical:
-            metadata = read_manifest(manifest_path).get(job["id"], {})
+            metadata = catalog.metadata(job["id"])
             offset = metadata.get("log_offset") if isinstance(metadata, dict) else None
             log_path = workspace / "shared" / f"{job['id']}.log"
             if isinstance(offset, int) and offset >= 0 and log_path.is_file():

@@ -1,6 +1,7 @@
 """Combine submission metadata with the master's live execution snapshot."""
 
 import json
+import hashlib
 import re
 import threading
 import time
@@ -42,13 +43,53 @@ class DagCatalog:
     def __init__(self, manifest_path, yaml_root):
         self.manifest_path = Path(manifest_path)
         self.yaml_root = Path(yaml_root)
-        self._yaml_cache = ({}, 0.0)
+        self._yaml_cache = ({}, 0.0, "")
         self._status_path = self.manifest_path.with_name(self.manifest_path.name + ".status.json")
         self._status_lock = threading.Lock()
+        self._manifest_cache = (None, {})
+        self._status_cache = (None, {})
+        self._definition_cache = (None, {})
+        self._snapshot_cache = (None, None)
+
+    @staticmethod
+    def _signature(path):
+        try:
+            stat = Path(path).stat()
+            return stat.st_mtime_ns, stat.st_size
+        except OSError:
+            return None
+
+    def _cached_json(self, path, attribute):
+        signature = self._signature(path)
+        cached_signature, cached = getattr(self, attribute)
+        if signature != cached_signature:
+            cached = read_manifest(path)
+            setattr(self, attribute, (signature, cached))
+        return cached
+
+    def _saved_manifest(self):
+        return self._cached_json(self.manifest_path, "_manifest_cache")
+
+    def _saved_statuses(self):
+        return self._cached_json(self._status_path, "_status_cache")
+
+    @staticmethod
+    def _state_key(stats, service_endpoints):
+        """Hash only fields that influence the DAG catalog, excluding heartbeats."""
+        workers = []
+        for worker in (stats or {}).get("workers", []):
+            workers.append({key: worker.get(key) for key in
+                            ("host", "port", "history", "active_job", "services")})
+        relevant = {"workers": workers,
+                    "dag_jobs": (stats or {}).get("dag_jobs", {}),
+                    "execution_spans": (stats or {}).get("execution_spans", []),
+                    "service_endpoints": service_endpoints or []}
+        encoded = json.dumps(relevant, sort_keys=True, separators=(",", ":"), default=str)
+        return hashlib.sha256(encoded.encode("utf-8")).digest()
 
     def _remember_statuses(self, updates):
         with self._status_lock:
-            saved = read_manifest(self._status_path)
+            saved = dict(self._saved_statuses())
             changed = False
             for jid, result in updates.items():
                 previous = saved.get(jid, {})
@@ -68,12 +109,12 @@ class DagCatalog:
             if changed:
                 try:
                     write_manifest(self._status_path, saved)
+                    self._status_cache = (self._signature(self._status_path), saved)
                 except OSError:
                     pass  # Live status remains usable if the status cache is read-only.
             return saved
 
     def _definitions(self):
-        definitions = {}
         now = time.monotonic()
         if now - self._yaml_cache[1] > 30 and yaml is not None and self.yaml_root.exists():
             found = {}
@@ -89,10 +130,15 @@ class DagCatalog:
                             found[jid] = {"dag": name, "deps": [full_id(p) for p in item.get("depends_on", [])], "run_ts": 0}
                 except (OSError, ValueError, TypeError, yaml.YAMLError):
                     continue
-            self._yaml_cache = (found, now)
+            digest = hashlib.sha256(json.dumps(found, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+            self._yaml_cache = (found, now, digest)
+        cache_key = (self._signature(self.manifest_path), self._yaml_cache[2])
+        if cache_key == self._definition_cache[0]:
+            return self._definition_cache[1]
+        definitions = {}
         definitions.update(self._yaml_cache[0])
         try:
-            saved = json.loads(self.manifest_path.read_text(encoding="utf-8"))
+            saved = self._saved_manifest()
             legacy_services = {}
             for key, payload_info in saved.items():
                 if not key.startswith("__payload__") or not isinstance(payload_info, dict):
@@ -115,10 +161,16 @@ class DagCatalog:
                     definitions[jid] = record  # submitted metadata takes precedence
         except (OSError, ValueError):
             pass
+        self._definition_cache = (cache_key, definitions)
         return definitions
 
     def snapshot(self, stats, service_endpoints=None):
-        definitions = self._definitions()
+        definitions = dict(self._definitions())
+        raw_endpoints = service_endpoints or []
+        cache_key = (self._definition_cache[0], self._signature(self._status_path),
+                     self._state_key(stats, raw_endpoints))
+        if cache_key == self._snapshot_cache[0]:
+            return self._snapshot_cache[1]
         service_endpoints = {entry.get("id"): entry for entry in (service_endpoints or [])
                              if isinstance(entry, dict) and entry.get("id")}
         spans_by_job = {}
@@ -244,11 +296,7 @@ class DagCatalog:
                                 } if endpoint and int(endpoint.get("since") or 0) >= run_ts else None})
 
         result = []
-        saved = {}
-        try:
-            saved = json.loads(self.manifest_path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            pass
+        saved = self._saved_manifest()
         for dag in grouped.values():
             dag["can_redeploy"] = bool(saved.get(f"__payload__{dag['name']}", {}).get("dag_payload"))
             dag["jobs"].sort(key=lambda j: j["id"])
@@ -261,10 +309,17 @@ class DagCatalog:
             dag["completed"] = sum(j["status"] == "COMPLETED" for j in dag["jobs"])
             dag["total"] = len(dag["jobs"])
             result.append(dag)
-        return sorted(result, key=lambda d: (d["submitted"], d["name"]), reverse=True)
+        result = sorted(result, key=lambda d: (d["submitted"], d["name"]), reverse=True)
+        self._snapshot_cache = ((self._definition_cache[0], self._signature(self._status_path),
+                                 self._state_key(stats, raw_endpoints)), result)
+        return result
+
+    def metadata(self, job_id):
+        value = self._saved_manifest().get(job_id, {})
+        return value if isinstance(value, dict) else {}
 
     def runs_for(self, name):
-        saved = read_manifest(self.manifest_path)
+        saved = self._saved_manifest()
         runs = saved.get(f"__runs__{name}", [])
         return sorted([run for run in runs if isinstance(run, dict) and isinstance(run.get("jobs"), dict)
                        and isinstance(run.get("run_ts"), int)], key=lambda run: run["run_ts"], reverse=True)
@@ -273,7 +328,7 @@ class DagCatalog:
         run = next((item for item in self.runs_for(name) if item["run_ts"] == run_ts), None)
         if run is None:
             return None
-        saved_statuses = read_manifest(self._status_path)
+        saved_statuses = self._saved_statuses()
         jobs = []
         for jid, info in run["jobs"].items():
             seen = saved_statuses.get(f"__run__{run_ts}__{jid}") or saved_statuses.get(jid, {})

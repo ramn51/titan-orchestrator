@@ -13,6 +13,28 @@ from dag_viewer.graph import PREVIEW_LIMIT, dot_graph, preview_dag, render_graph
 from dag_viewer.routes import create_blueprint
 from flask import Flask
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
+from dag_viewer.submission import read_manifest
+
+
+def test_catalog_reuses_unchanged_manifest_and_invalidates_on_write(tmp_path):
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({
+        "DAG-A": {"dag": "first", "deps": [], "run_ts": 1000}
+    }), encoding="utf-8")
+    catalog = DagCatalog(manifest, tmp_path)
+    with patch("dag_viewer.catalog.read_manifest", wraps=read_manifest) as reader:
+        first = catalog.snapshot({"workers": []})
+        second = catalog.snapshot({"workers": []})
+        assert first is second
+        assert reader.call_count == 1
+        manifest.write_text(json.dumps({
+            "DAG-A": {"dag": "first", "deps": [], "run_ts": 1000},
+            "DAG-B": {"dag": "second", "deps": [], "run_ts": 2000},
+        }), encoding="utf-8")
+        refreshed = catalog.snapshot({"workers": []})
+        assert len(refreshed) == 2
+        assert reader.call_count == 2
 
 
 def test_service_ready_and_failed_statuses(tmp_path):
@@ -275,7 +297,8 @@ def test_deep_graph_preview_avoids_recursion(tmp_path):
 
 
 if __name__ == "__main__":
-    for case in (test_service_ready_and_failed_statuses,
+    for case in (test_catalog_reuses_unchanged_manifest_and_invalidates_on_write,
+                 test_service_ready_and_failed_statuses,
                  test_old_run_is_not_shown_as_complete, test_terminal_status_survives_restart_but_not_a_new_run,
                  test_unstarted_child_is_waiting_during_an_active_run,
                  test_yaml_definition_and_live_poll,

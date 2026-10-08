@@ -1,6 +1,8 @@
 // The server owns DAG membership and dependency structure. Poll only state.
 const selectedId = document.body.dataset.selectedDag;
 const historical = document.body.dataset.historical === 'true';
+let selectedStatus = document.body.dataset.selectedStatus;
+const terminal = status => ['COMPLETED', 'FAILED', 'DEAD', 'CANCELLED', 'UNKNOWN'].includes(status);
 document.getElementById('run-selector')?.addEventListener('change', event => {
   const run = event.target.value;
   location.href = `/dags/${encodeURIComponent(selectedId)}${run ? `?run=${encodeURIComponent(run)}` : ''}`;
@@ -108,6 +110,7 @@ async function refresh() {
         item.querySelector('[data-progress]').textContent = `${dag.completed}/${dag.total} jobs`;
       }
       if (dag.id !== selectedId) continue;
+      selectedStatus = dag.status;
       state(document.getElementById('dag-status'), dag.status);
       document.getElementById('status-note').hidden = dag.status !== 'UNKNOWN';
       if (cancelDagButton && !cancelDagButton.dataset.pending) {
@@ -164,7 +167,7 @@ async function refresh() {
     connection.classList.add('offline');
   } finally {
     refreshFiles();
-    setTimeout(refresh, 3000);
+    if (!terminal(selectedStatus)) setTimeout(refresh, 3000);
   }
 }
 refresh();
