@@ -17,21 +17,25 @@ package titan;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 
 public class TitanConfig {
     private static final Properties props = new Properties();
 
     static {
-        try {
-            try (InputStream input = new FileInputStream("titan.properties")) {
+        for (String filename : new String[] {"config.properties", "../config.properties",
+                "titan.properties", "../titan.properties"}) {
+            Path path = Path.of(filename).toAbsolutePath().normalize();
+            if (!Files.isRegularFile(path)) continue;
+            try (InputStream input = new FileInputStream(path.toFile())) {
                 props.load(input);
-                System.out.println("Loaded configuration from titan.properties");
-            } catch (IOException ex) {
-                System.out.println("titan.properties not found. Using defaults/env vars.");
+                System.out.println("Loaded configuration from " + path);
+            } catch (IOException error) {
+                System.err.println("Could not load " + path + ": " + error.getMessage());
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            break;
         }
     }
 

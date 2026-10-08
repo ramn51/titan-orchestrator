@@ -25,6 +25,10 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,6 +47,7 @@ import titan.network.TitanProtocol.TitanPacket;
     private boolean isRunning = true;
     private final ExecutorService threadPool;
     Scheduler scheduler;
+    private final StatsQueryRouter statsQueries;
     private final ServerSocket serverSocket;
 
     private static final String PERM_FILES_DIR = "perm_files";
@@ -60,6 +65,7 @@ import titan.network.TitanProtocol.TitanPacket;
         this.port = port;
         threadPool = Executors.newCachedThreadPool();
         this.scheduler = scheduler;
+        this.statsQueries = new StatsQueryRouter(scheduler);
         this.serverSocket = new ServerSocket(this.port);
     }
 
@@ -143,9 +149,9 @@ import titan.network.TitanProtocol.TitanPacket;
                         break;
                 }
 
-//                if (responsePayload.startsWith("ERROR") || responsePayload.startsWith("UNKNOWN")) {
-//                    responseOpCode = TitanProtocol.OP_ERROR;
-//                }
+                if (isErrorResponse(packet.opCode, responsePayload)) {
+                    responseOpCode = TitanProtocol.OP_ERROR;
+                }
             } catch (Throwable t) {
                 t.printStackTrace();
                 responsePayload = "SERVER_ERROR: " + t.getMessage();
@@ -161,9 +167,51 @@ import titan.network.TitanProtocol.TitanPacket;
         }
     }
 
+    /** Data replies can contain arbitrary user text, so classify only command failures. */
+    private static boolean isErrorResponse(byte requestOpCode, String response) {
+        if (response == null) return true;
+        if (requestOpCode == TitanProtocol.OP_KV_GET
+                || requestOpCode == TitanProtocol.OP_KV_SMEMBERS
+                || requestOpCode == TitanProtocol.OP_STATS
+                || requestOpCode == TitanProtocol.OP_GET_JOB_STATUS) return false;
+        if (requestOpCode == TitanProtocol.OP_GET_LOGS) {
+            return response.equals("ERROR: Invalid job ID")
+                    || response.equals("ERROR: Log file exists but unreadable");
+        }
+        return response.startsWith("ERROR") || response.startsWith("UNKNOWN")
+                || response.startsWith("UPLOAD_FAILED")
+                || response.startsWith("COMMUNICATION_ERROR")
+                || response.startsWith("SERVER_ERROR");
+    }
+
+    private static boolean isSafeFileName(String name) {
+        if (name == null || name.isBlank() || name.length() > 255
+                || name.equals(".") || name.equals("..")
+                || !name.equals(name.trim()) || name.endsWith(".")
+                || name.indexOf('/') >= 0 || name.indexOf('\\') >= 0
+                || name.indexOf(':') >= 0 || name.indexOf('|') >= 0) return false;
+        return name.chars().noneMatch(c -> c < 32 || c == 127);
+    }
+
+    /** Resolve one filename beneath a root, rejecting symlinks that point outside it. */
+    private static Path resolveSafeFile(String directory, String name) throws IOException {
+        if (!isSafeFileName(name)) throw new IllegalArgumentException("Invalid filename");
+        Path root = Path.of(directory).toAbsolutePath().normalize();
+        Path candidate = root.resolve(name).normalize();
+        if (!candidate.startsWith(root)) throw new IllegalArgumentException("Invalid filename");
+        if (Files.exists(root)) {
+            Path realRoot = root.toRealPath();
+            if (Files.exists(candidate, LinkOption.NOFOLLOW_LINKS)
+                    && !candidate.toRealPath().startsWith(realRoot)) {
+                throw new IllegalArgumentException("Filename escapes directory");
+            }
+        }
+        return candidate;
+    }
+
     /**
  * Processes a request to deploy a file (e.g., a JAR or script) to a worker.
- * It reads the specified file from the server's {@code perm_files} directory, encodes its content in Base64,
+ * It reads the specified file from {@code uploads} or {@code perm_files}, encodes its content in Base64,
  * and constructs a {@code DEPLOY_PAYLOAD} job. This job is then submitted to the {@link titan.scheduler.Scheduler}
  * for execution on a suitable worker.
  *
@@ -174,20 +222,26 @@ import titan.network.TitanProtocol.TitanPacket;
  */
     private String handleDeployRequest(String fileName, String port, String requirement) {
         try {
-            File file = new File(PERM_FILES_DIR + File.separator + fileName);
-            if (!file.exists()) {
+            if (!isSafeFileName(fileName)) return "ERROR: Invalid filename";
+            if ((port == null || port.isBlank()) && fileName.equalsIgnoreCase("Worker.jar")) port = "8085";
+            if (port == null || port.isBlank()) return "ERROR: A listening port is required";
+            try {
+                int parsedPort = Integer.parseInt(port);
+                if (parsedPort < 1 || parsedPort > 65535) return "ERROR: Invalid listening port";
+            } catch (NumberFormatException error) {
+                return "ERROR: Invalid listening port";
+            }
+            Path file = resolveSafeFile("uploads", fileName);
+            if (!Files.isRegularFile(file)) file = resolveSafeFile(PERM_FILES_DIR, fileName);
+            if (!Files.isRegularFile(file)) {
                 return "ERROR: File not found in " + PERM_FILES_DIR;
             }
 
-            byte[] fileBytes = Files.readAllBytes(file.toPath());
+            byte[] fileBytes = Files.readAllBytes(file);
             String base64Content = Base64.getEncoder().encodeToString(fileBytes);
 
             Job job = new Job("TEMP_PAYLOAD", 1, 0);
             String internalId = job.getId();
-
-            if ((port == null || port.trim().isEmpty()) && fileName.equalsIgnoreCase("Worker.jar")) {
-                port = "8085";
-            }
 
             String safeReq = (requirement == null || requirement.isEmpty()) ? "GENERAL" : requirement;
 
@@ -208,7 +262,7 @@ import titan.network.TitanProtocol.TitanPacket;
             System.out.println("[INFO] DEPLOY Job queued for file: " + fileName + " [Req: " + safeReq + "]");
             return "DEPLOY_QUEUED";
 
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             e.printStackTrace();
             return "ERROR: Server File IO issue";
         }
@@ -227,9 +281,14 @@ import titan.network.TitanProtocol.TitanPacket;
  */
     private String handleRunScript(String fileName, String requirement){
         try {
+            if (!isSafeFileName(fileName)) return "ERROR: Invalid filename";
             String safeReq = (requirement == null || requirement.isEmpty()) ? "GENERAL" : requirement;
             System.out.println("[INFO] Looking for '" + fileName + "' in workspace...");
             File file = findFileRecursive(fileName);
+            if (file == null) {
+                Path uploaded = resolveSafeFile("uploads", fileName);
+                if (Files.isRegularFile(uploaded)) file = uploaded.toFile();
+            }
 
             if (file == null || !file.exists()) {
                 System.err.println("[ERROR] File not found: " + fileName);
@@ -253,7 +312,7 @@ import titan.network.TitanProtocol.TitanPacket;
             job.setPayload(payload);
             scheduler.submitJob(job);
             return "JOB_QUEUED" + fullJobId + " on " + safeReq;
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             e.printStackTrace();
             return "ERROR: Server File IO issue";
         }
@@ -313,7 +372,7 @@ import titan.network.TitanProtocol.TitanPacket;
  * @param request A string containing one or more job definitions, typically in a format like "job1_def;job2_def;..."
  *                where each definition can be parsed into a {@link titan.scheduler.Job} object.
  */
-    private void parseAndSubmitDAG(String request){
+    private String parseAndSubmitDAG(String request){
         String [] jobs = request.split(";");
         List<Job> parsedDagJobs = new ArrayList<>();
         for(String jobDef: jobs){
@@ -323,18 +382,20 @@ import titan.network.TitanProtocol.TitanPacket;
                 parsedDagJobs.add(job);
             } catch (Exception e) {
                 System.err.println("[FAIL] Failed to parse DAG job: " + jobDef + " Error: " + e.getMessage());
+                return "ERROR: Invalid DAG job: " + e.getMessage();
             }
         }
 
+        if (parsedDagJobs.isEmpty()) return "ERROR: Empty DAG";
+
         if(detectCycle(parsedDagJobs)){
             System.err.println("[FATAL] Cycle detected in DAG! Rejecting entire payload to prevent deadlock.");
-            return;
+            return "ERROR: DAG contains a cycle";
         }
 
-        for(Job job: parsedDagJobs){
-            System.out.println("[INFO] [PARSER] Created Job: " + job.getId());
-            scheduler.submitJob(job);
-        }
+        scheduler.submitDag(parsedDagJobs);
+
+        return "DAG_ACCEPTED";
 
     }
 
@@ -371,16 +432,15 @@ import titan.network.TitanProtocol.TitanPacket;
                 return handleRunScript(runFile, runReq);
 
             case TitanProtocol.OP_STATS_JSON:
-                System.out.println("[INFO] Generating JSON Stats...");
-                return scheduler.getSystemStatsJSON();
+                return statsQueries.execute(payload);
 
             case TitanProtocol.OP_CLEAN_STATS:
-                scheduler.getLiveServiceMap().clear();
+                scheduler.clearRuntimeStats();
                 return "Stats Map Cleared. Run STATS again to see fresh state.";
 
             case TitanProtocol.OP_UNREGISTER_SERVICE:
                 String serviceId = payload;
-                scheduler.getLiveServiceMap().remove(serviceId);
+                scheduler.unregisterService(serviceId);
                 System.out.println("[INFO] Cleaned up service: " + serviceId);
                 return "ACK_UNREGISTERED";
 
@@ -388,12 +448,15 @@ import titan.network.TitanProtocol.TitanPacket;
                 if (payload.isEmpty()) return "ERROR: Missing Service ID";
                 return scheduler.stopRemoteService(payload);
 
+            case TitanProtocol.OP_RESOLVE_SERVICE:
+                if (payload.isBlank()) return "ERROR: Missing Service ID";
+                return scheduler.resolveService(payload.trim());
+
             case TitanProtocol.OP_STATS:
                 return scheduler.getSystemStats();
 
             case TitanProtocol.OP_SUBMIT_DAG:
-                parseAndSubmitDAG(payload);
-                return "DAG_ACCEPTED";
+                return parseAndSubmitDAG(payload);
 
             case TitanProtocol.OP_SUBMIT_JOB:
                 scheduler.submitJob(payload);
@@ -427,6 +490,7 @@ import titan.network.TitanProtocol.TitanPacket;
 
                 if (batchParts.length == 2) {
                     String batchJobId = batchParts[0];
+                    if (!isSafeFileName(batchJobId)) return "ERROR: Invalid job ID";
                     String fullLogBlock = batchParts[1];
 
                     // Split the block back into individual lines
@@ -435,7 +499,7 @@ import titan.network.TitanProtocol.TitanPacket;
                     for (String line : batchLines) {
                         scheduler.logStream(batchJobId, line);
                     }
-                }
+                } else return "ERROR: Invalid log batch";
                 return "ACK_BATCH";
 
             case TitanProtocol.OP_LOG_STREAM:
@@ -443,23 +507,26 @@ import titan.network.TitanProtocol.TitanPacket;
                 // Split into 2 parts max so the log message can contain pipes safely
                 String[] logParts = payload.split("\\|", 2);
                 if (logParts.length == 2) {
+                    if (!isSafeFileName(logParts[0])) return "ERROR: Invalid job ID";
                     scheduler.logStream(logParts[0], logParts[1]);
-                }
+                } else return "ERROR: Invalid log line";
                 return "ACK_LOG"; // send back an ack
 
             case TitanProtocol.OP_GET_LOGS:
                 // Payload is the jobId in this case
                 String jobId = payload;
+                if (!isSafeFileName(jobId)) return "ERROR: Invalid job ID";
                 List<String> logs = scheduler.getLogs(jobId);
                 if (logs.isEmpty()) {
-//                    File logFile = new File("titan_workspace/shared/" + jobId + ".log");
-                    File logFile = new File("titan_server_logs" + File.separator + jobId + ".log");
-                    if (logFile.exists()) {
-                        try {
-                            return new String(Files.readAllBytes(logFile.toPath()));
-                        } catch (IOException e) {
-                            return "ERROR: Log file exists but unreadable";
+                    try {
+                        Path logFile = resolveSafeFile("titan_server_logs", jobId + ".log");
+                        if (Files.isRegularFile(logFile)) {
+                            return new String(Files.readAllBytes(logFile));
                         }
+                    } catch (IOException e) {
+                        return "ERROR: Log file exists but unreadable";
+                    } catch (IllegalArgumentException e) {
+                        return "ERROR: Invalid job ID";
                     }
                 }
                 return String.join("\n", logs);
@@ -474,12 +541,14 @@ import titan.network.TitanProtocol.TitanPacket;
                 String assetData = uploadParts[1];
 
                 try{
-                    File permDir = new File("perm_files");
-                    if(!permDir.exists()) permDir.mkdirs();
+                    if (!isSafeFileName(assetName))
+                        return "ERROR: Invalid asset name";
+                    Files.createDirectories(Path.of("uploads"));
 
                     byte[] decodedBytes = Base64.getDecoder().decode(assetData);
-                    File destFile = new File(permDir, assetName);
-                    Files.write(destFile.toPath(), decodedBytes);
+                    Path destFile = resolveSafeFile("uploads", assetName);
+                    if (Files.isSymbolicLink(destFile)) return "ERROR: Invalid asset name";
+                    Files.write(destFile, decodedBytes);
                     System.out.println("[UPLOAD] Saved asset: " + assetName + " (" + decodedBytes.length + " bytes)");
                     return "UPLOAD_SUCCESS";
                 }catch (Exception e) {
@@ -490,17 +559,44 @@ import titan.network.TitanProtocol.TitanPacket;
             case TitanProtocol.OP_FETCH_ASSET:
                 // Payload: "filename" (e.g., "my_project.zip")
                 String requestedFile = payload.trim();
-                File assetFile = new File("perm_files/" + requestedFile);
-
-                if (!assetFile.exists()) {
-                    return "ERROR_NOT_FOUND";
-                }
-
+                if (!isSafeFileName(requestedFile))
+                    return "ERROR: Invalid asset name";
                 try {
-                    byte[] fileBytes = Files.readAllBytes(assetFile.toPath());
+                    Path assetFile = resolveSafeFile("uploads", requestedFile);
+                    if (!Files.isRegularFile(assetFile)) return "ERROR_NOT_FOUND";
+                    byte[] fileBytes = Files.readAllBytes(assetFile);
                     return Base64.getEncoder().encodeToString(fileBytes);
+                } catch (IllegalArgumentException e) {
+                    return "ERROR: Invalid asset name";
                 } catch (IOException e) {
                     return "ERROR_READING_FILE: " + e.getMessage();
+                }
+
+            case TitanProtocol.OP_DEPLOY_SCRIPT:
+                String[] scriptParts = payload.split("\\|", 2);
+                if (scriptParts.length != 2 || scriptParts[1].isBlank())
+                    return "ERROR: Expected filename|Base64 script content";
+                String scriptName = scriptParts[0];
+                if (!scriptName.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
+                        || scriptName.equals(".") || scriptName.equals(".."))
+                    return "ERROR: Invalid script filename";
+                if (scriptParts[1].length() > 6_000_000)
+                    return "ERROR: Script exceeds 4 MB limit";
+                try {
+                    byte[] scriptBytes = Base64.getDecoder().decode(scriptParts[1]);
+                    if (scriptBytes.length > 4_000_000) return "ERROR: Script exceeds 4 MB limit";
+                    Path scriptDir = Path.of(PERM_FILES_DIR);
+                    Files.createDirectories(scriptDir);
+                    Path scriptPath = resolveSafeFile(PERM_FILES_DIR, scriptName);
+                    if (Files.isSymbolicLink(scriptPath)) return "ERROR: Invalid script filename";
+                    Files.write(scriptPath, scriptBytes, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+                    return "SCRIPT_STAGED:" + scriptName;
+                } catch (IllegalArgumentException error) {
+                    return "ERROR: Invalid Base64 script content";
+                } catch (FileAlreadyExistsException error) {
+                    return "ERROR: Script already exists";
+                } catch (IOException error) {
+                    return "ERROR: Could not stage script: " + error.getMessage();
                 }
 
             case TitanProtocol.OP_KV_SET:
@@ -537,6 +633,9 @@ import titan.network.TitanProtocol.TitanPacket;
                 String status = scheduler.redisKVGet("job:" + payload + ":status");
                 return status == null ? "NULL" : status;
 
+            case TitanProtocol.OP_CANCEL_JOB:
+                return scheduler.cancelJob(payload.trim());
+
 
             default:
                 return "UNKNOWN_OPCODE: " + packet.opCode;
@@ -553,17 +652,27 @@ import titan.network.TitanProtocol.TitanPacket;
  *         or an {@link IOException} occurs during the directory traversal.
  */
     private File findFileRecursive(String fileName) {
-        File root = new File(PERM_FILES_DIR);
-        if (!root.exists()) return null;
+        if (!isSafeFileName(fileName)) return null;
+        Path root = Path.of(PERM_FILES_DIR);
+        if (!Files.isDirectory(root)) return null;
 
         // Check Direct Path
-        File direct = new File(root, fileName);
-        if (direct.exists()) return direct;
+        try {
+            Path direct = resolveSafeFile(PERM_FILES_DIR, fileName);
+            if (Files.isRegularFile(direct)) return direct.toFile();
+        } catch (IOException | IllegalArgumentException e) {
+            return null;
+        }
 
         // Recursive Search
-        try (java.util.stream.Stream<java.nio.file.Path> walk = Files.walk(root.toPath())) {
-            return walk.filter(p -> !Files.isDirectory(p))
+        try (java.util.stream.Stream<Path> walk = Files.walk(root)) {
+            Path realRoot = root.toRealPath();
+            return walk.filter(Files::isRegularFile)
                     .filter(p -> p.getFileName().toString().equals(fileName))
+                    .filter(p -> {
+                        try { return p.toRealPath().startsWith(realRoot); }
+                        catch (IOException e) { return false; }
+                    })
                     .findFirst()
                     .map(java.nio.file.Path::toFile)
                     .orElse(null);

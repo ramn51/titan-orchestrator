@@ -4,10 +4,10 @@ The Titan CLI is a Java-based interactive shell that connects directly to the Ma
 
 ## Connecting to the Cluster
 
-To launch the CLI, run the `TitanCli` class from your built artifact. It will automatically attempt to connect to the Master on `localhost:9090`.
+After building the project, run `TitanCLI`. It connects to the master on `localhost:9090`.
 
 ```bash
-java -cp perm_files/Worker.jar client.TitanCli
+java -cp target/classes titan.TitanCLI
 ```
 
 **Supported Commands:**
@@ -15,13 +15,22 @@ java -cp perm_files/Worker.jar client.TitanCli
 | Command                              | Description                                                                                 |
 |--------------------------------------|---------------------------------------------------------------------------------------------|
 | `stats`                              | View cluster health, active nodes, and job queues.                                          |
+| `json`                               | View the cluster status as JSON.                                                           |
+| `status <job_id>`                  | Read a job's current status.                                                               |
+| `logs <job_id>`                    | Read a job's logs.                                                                         |
+| `cancel <job_id>`                  | Cancel a job and its dependent jobs.                                                       |
+| `approve <gate_id>`                | Approve a waiting human gate, for example `approve DAG-hitl-gate-prepare`.                 |
+| `reject <gate_id>`                 | Reject a waiting human gate.                                                               |
+| `store get <key>`                  | Read a TitanStore value (`kv get` also works).                                             |
+| `store set <key> <value>`          | Write a TitanStore value (`kv set` also works).                                            |
 | `run <file>`                         | Immediately execute a script from `perm_files`.                                             |
-| `deploy <file> [port]`               | Deploy a single file or service. Supports capability requirements. Ex: deploy train.py 0 GPU |
+| `deploy <file> <port>`                | Deploy a service and wait for its listening port. Supports capability requirements. Ex: `deploy api.py 9000 GPU` |
 | `deploy Worker.jar <port> [capability]` | Manually spawn a new Worker node on a specific port with its capability (GPU or GENERAL)    |
+| `resolve <service_id>`               | Return the listening `host|port` for a ready service.                                       |
 | `stop <service_id>`                  | Gracefully stop a running service or job.                                                   |
 | `shutdown <host> <port>`             | Remotely decommission a specific worker node.                                               |
 | `dag <dag_string>`                   | Submit a raw DAG string (Advanced users).                                                   |
-| `upload <local_path>`                | Upload a file to server storage (perm_files)                                                |
+| `upload <local_path>`                | Upload a file to server storage (`uploads`).                                                |
 
 
 ## The CLI Interface
@@ -34,7 +43,7 @@ It also explicitly lists all **Live Services** currently hosted on the cluster.
     [INFO] TITAN DISTRIBUTED ORCHESTRATOR    
 ==========================================
 Connected to: localhost:9090
-Commands: stats, json, submit <skill> <data>, dag <raw_dag>, exit
+Type `help` to list all commands and examples.
 
 titan> stats
 --- TITAN SYSTEM MONITOR ---

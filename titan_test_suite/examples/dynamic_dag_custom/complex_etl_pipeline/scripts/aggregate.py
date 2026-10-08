@@ -1,0 +1,11 @@
+import time, random
+print("[AGGREGATE] All 3 shards received. Merging into unified dataset...")
+time.sleep(8)
+print("[AGGREGATE] Joining shard_a + shard_b + shard_c on entity_id...")
+time.sleep(1)
+total = random.randint(230000, 280000)
+print(f"[AGGREGATE] Merge complete. Final dataset: {total:,} records.")
+print("[AGGREGATE] Computing summary statistics...")
+time.sleep(0.5)
+print(f"[AGGREGATE] Avg value: {random.uniform(42.1, 98.7):.2f} | Std dev: {random.uniform(2.1, 8.4):.2f}")
+print("[AGGREGATE] Dataset handed off to validation stage.")

@@ -49,6 +49,18 @@ package titan.scheduler;
  * For example, "RESULT: 5050" for a successful completion or an error log for a failure.
  */
     String output; // To store "RESULT: 5050" or error logs
+    java.util.List<String> declaredParents = java.util.List.of();
+    long eligibleAt;
+    int attempt;
+    int priority;
+    String failureReason = "";
+
+    void capture(Job job, long eligibleAt) {
+        this.declaredParents = java.util.List.copyOf(job.getDependenciesIds());
+        this.eligibleAt = eligibleAt;
+        this.attempt = job.getRetryCount() + 1;
+        this.priority = job.getPriority();
+    }
 
     /**
  * Constructs a new {@code TaskExecution} instance, initializing it for a running task.
@@ -86,6 +98,14 @@ package titan.scheduler;
         this.status = Job.Status.FAILED;
         this.endTime = System.currentTimeMillis();
         this.output = error;
+        this.failureReason = error == null ? "" : error;
+    }
+
+    /** The worker declined dispatch because it was full; the job remains eligible. */
+    public void requeue(String reason) {
+        this.status = Job.Status.PENDING;
+        this.endTime = System.currentTimeMillis();
+        this.output = reason;
     }
 
     /**

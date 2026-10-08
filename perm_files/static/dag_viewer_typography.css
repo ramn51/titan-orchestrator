@@ -1,0 +1,20 @@
+.heading .pipeline-crumb {
+  margin: 0;
+  color: #79e8b6;
+  font: 750 13px/1.4 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.pipeline-crumb span { color: #b8d4c8; padding: 0 5px; }
+.service-chip { display: inline-flex; align-items: center; width: fit-content; margin: 3px 0 7px;
+  padding: 3px 7px; border: 1px solid #4a9c7b; border-radius: 4px; background: #1b4638;
+  color: #a4f5ce; font: 700 10px/1.2 'Segoe UI', Arial, sans-serif; }
+.service-deployments { padding: 7px 25px; border-bottom: 1px solid #327158; background: #153328; }
+.service-deployments>div { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; font-size: 11px; }
+.service-deployments .service-chip { margin: 0; }
+.service-deployments a,.service-endpoint a { color: #9fd5ff; overflow-wrap: anywhere; }
+.service-endpoint { padding: 7px 8px; margin: 4px 0 8px; border: 1px solid #3c805e;
+  border-radius: 4px; background: #153529; color: #a5efcb; font-size: 11px; }
+.node .service-type-chip,.node[data-status=COMPLETED] .service-type-chip,
+.node[data-status=FAILED] .service-type-chip { fill: #285846; stroke: #75d9a4; stroke-width: 1; }
+.node .service-type-chip + .node-type,.node[data-status=COMPLETED] .service-type-chip + .node-type { fill: #d9ffea; font-weight: 800; }

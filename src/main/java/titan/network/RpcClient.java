@@ -21,6 +21,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.util.ArrayDeque;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 /**
  * {@code RpcClient} provides functionality for making Remote Procedure Calls (RPC) to a server.
@@ -33,6 +39,24 @@ import java.net.Socket;
  */
     public class RpcClient {
     WorkerRegistry workerRegistry;
+    private static final int MAX_CONNECTIONS_PER_DESTINATION = 4;
+    private final Map<String, Pool> pools = new ConcurrentHashMap<>();
+
+    private static final class Pool {
+        final Semaphore capacity = new Semaphore(MAX_CONNECTIONS_PER_DESTINATION, true);
+        final ArrayDeque<Socket> idle = new ArrayDeque<>();
+        boolean closed;
+
+        synchronized Socket borrow() { return idle.pollFirst(); }
+        synchronized void recycle(Socket socket) {
+            if (closed || socket.isClosed()) closeQuietly(socket);
+            else idle.addFirst(socket);
+        }
+        synchronized void close() {
+            closed = true;
+            while (!idle.isEmpty()) closeQuietly(idle.removeFirst());
+        }
+    }
 //    public RpcClient(){}
     /**
  * Constructs a new {@code RpcClient} instance.
@@ -88,28 +112,83 @@ import java.net.Socket;
  *         IO error occurs indicating a potential network issue or dead worker.
  */
     public String sendRequest(String host, int port, byte opCode, String payload){
-        try(Socket socket = new Socket(host, port)){
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-            int timeout = 30000;
-            socket.setSoTimeout(timeout); // If i dont get response within 30 seconds I timeout (detecting failed jobs)
-            TitanProtocol.send(out, opCode, payload);
-
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            TitanProtocol.TitanPacket response = TitanProtocol.read(in);
-
-            if (response.opCode == TitanProtocol.OP_ERROR) {
-                System.err.println("[RpcClient] Server returned error: " + response.payload);
-                return "ERROR: " + response.payload;
+        String destination = host + ":" + port;
+        Pool pool = pools.computeIfAbsent(destination, key -> new Pool());
+        boolean acquired = false;
+        try {
+            acquired = pool.capacity.tryAcquire(30, TimeUnit.SECONDS);
+            if (!acquired) throw new IOException("RPC connection pool exhausted");
+            Socket socket = pool.borrow();
+            boolean reused = socket != null;
+            if (socket == null) socket = connect(host, port);
+            try {
+                String response = exchange(socket, opCode, payload);
+                pool.recycle(socket);
+                return response;
+            } catch (IOException firstFailure) {
+                closeQuietly(socket);
+                if (!reused) throw firstFailure;
+                // A reused socket may have gone stale while idle. Try the request
+                // once more on a new connection before reporting worker loss.
+                Socket fresh = connect(host, port);
+                try {
+                    String response = exchange(fresh, opCode, payload);
+                    pool.recycle(fresh);
+                    return response;
+                } catch (IOException retryFailure) {
+                    closeQuietly(fresh);
+                    throw retryFailure;
+                }
             }
-            return response.payload;
-        }catch (IOException e) {
-            System.err.println("[RpcClient] IO Error to " + host + ":" + port + " -> " + e.getMessage());
-            return null; // Signals a dead worker/main.java.titan.network issue
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (IOException e) {
+            System.err.println("[RpcClient] IO Error to " + destination + " -> " + e.getMessage());
+            return null;
+        } finally {
+            if (acquired) pool.capacity.release();
         }
-        catch (Exception e){
-            e.printStackTrace();
-            return "ERROR_CLIENT: " + e.getMessage();
+    }
+
+    private static Socket connect(String host, int port) throws IOException {
+        Socket socket = new Socket();
+        try {
+            socket.connect(new InetSocketAddress(host, port), 3000);
+            socket.setSoTimeout(30000);
+            return socket;
+        } catch (IOException e) {
+            closeQuietly(socket);
+            throw e;
         }
+    }
+
+    private static String exchange(Socket socket, byte opCode, String payload) throws IOException {
+        TitanProtocol.send(new DataOutputStream(socket.getOutputStream()), opCode, payload);
+        try {
+            TitanProtocol.TitanPacket response = TitanProtocol.read(new DataInputStream(socket.getInputStream()));
+            return response.opCode == TitanProtocol.OP_ERROR ? "ERROR: " + response.payload : response.payload;
+        } catch (IOException error) {
+            throw error;
+        } catch (Exception error) {
+            throw new IOException("Invalid RPC response", error);
+        }
+    }
+
+    public void evict(String host, int port) {
+        Pool pool = pools.remove(host + ":" + port);
+        if (pool != null) pool.close();
+    }
+
+    public void close() {
+        for (String destination : pools.keySet()) {
+            Pool pool = pools.remove(destination);
+            if (pool != null) pool.close();
+        }
+    }
+
+    private static void closeQuietly(Socket socket) {
+        try { socket.close(); } catch (IOException ignored) { }
     }
 
 }

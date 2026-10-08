@@ -164,6 +164,11 @@ import java.nio.charset.StandardCharsets;
  * OpCode for requesting the current status of a specific job.
  */
     public static final byte OP_GET_JOB_STATUS    = 0x55;
+    public static final byte OP_CANCEL_JOB        = 0x56;
+    /** Stage a script on the master: filename|Base64 content. */
+    public static final byte OP_DEPLOY_SCRIPT     = 0x57;
+    /** Resolve a ready service ID to its listening host and port. */
+    public static final byte OP_RESOLVE_SERVICE   = 0x58;
     /**
      * SEND: Wraps the payload in our 8-byte header.
      * [ Version(1) | OpCode(1) | Flags(1) | Spare(1) | Length(4) ] + [ Payload ]

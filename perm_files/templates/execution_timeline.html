@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Titan · Execution Timeline</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dag_viewer.css', v='11') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='execution_timeline.css', v='2') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='section_nav.css', v='1') }}">
+  <script src="{{ url_for('static', filename='execution_timeline.js', v='5') }}" defer></script>
+</head>
+<body data-dag-id="{{ selected.id if selected else '' }}" data-run-ts="{{ selected.submitted if selected else '' }}">
+  {% with active_section='timeline' %}{% include 'section_nav.html' %}{% endwith %}
+  <div class="timeline-layout">
+    <aside class="sidebar" aria-label="Pipelines">
+      <p class="eyebrow">WORKSPACE</p><h2>Pipeline runs</h2>
+      <input id="pipeline-search" type="search" aria-label="Search pipelines" placeholder="Search pipelines…">
+      <p class="sidebar-group">RECENT RUNS</p>
+      <div id="dag-list">
+        {% for dag in dags %}<a class="dag-link {{ 'selected' if selected and selected.id == dag.id else '' }}" href="{{ url_for('dag_viewer.timeline_page', dag=dag.id) }}"><strong><span class="status-dot" data-status="{{ dag.status }}"></span>{{ dag.name }}</strong><span class="dag-meta">{{ dag.total }} jobs · {{ dag.status }}</span></a>
+        {% else %}<p class="empty">Submit a named DAG to see its timeline.</p>{% endfor %}
+      </div>
+    </aside>
+    <main class="timeline-main">
+      {% if selected %}
+      <section class="heading"><div><p class="eyebrow">EXECUTION TIMELINE / {{ selected.id }}</p><h1>{{ selected.name }}</h1><p class="muted">Actual dispatch attempts for this run · <time id="run-time" data-timestamp="{{ selected.submitted }}">{{ selected.submitted }}</time> · <span class="run-mode">{{ 'Historical run' if runs and selected.submitted != runs[0].run_ts else 'Latest run' }}</span></p>{% if runs|length > 1 %}<label class="run-picker">Run history <select id="run-selector" aria-label="Select timeline run"><option value="">Latest run</option>{% for run in runs if run.run_ts != runs[0].run_ts %}<option value="{{ run.run_ts }}" {{ 'selected' if selected.submitted == run.run_ts else '' }}>{{ run.run_ts }}</option>{% endfor %}</select></label>{% endif %}</div><a class="return-link" href="{{ url_for('dag_viewer.page', dag_id=selected.id, run=selected.submitted) }}">Dependency graph ↗</a></section>
+      <section id="timeline-metrics" class="timeline-metrics" aria-label="Execution metrics"></section>
+      <section class="timeline-panel" aria-label="Job execution timeline">
+        <div class="timeline-toolbar"><div><h2>Dispatch attempts <small id="row-count"></small></h2><p>Queue wait and execution are shown separately. Retries appear on their own rows.</p></div><div class="timeline-filters"><input id="job-filter" type="search" aria-label="Filter timeline rows" placeholder="Filter job…"><label>Spans <select id="span-limit" aria-label="Maximum spans"><option value="100">Last 100</option><option value="500">Last 500</option><option value="1000">Last 1,000</option><option value="5000" selected>Last 5,000</option><option value="25000">All (25,000 max)</option></select></label><label>Status <select id="status-filter" aria-label="Filter span status"><option value="">All</option><option value="COMPLETED">Completed</option><option value="RUNNING">Running</option><option value="FAILED">Failed</option><option value="CANCELLED">Cancelled</option></select></label><label>Worker <select id="worker-filter" aria-label="Filter worker"><option value="">All</option></select></label><label>Window <select id="time-window" aria-label="Timeline time window"><option value="0">Full run</option><option value="300000">Last 5 min</option><option value="1800000">Last 30 min</option><option value="3600000">Last hour</option></select></label><label><input type="checkbox" id="retries-only"> Retries only</label><label><input type="checkbox" id="group-worker"> Group by worker</label><label>Scale <input id="zoom-range" type="range" min="50" max="200" step="25" value="100" aria-label="Timeline horizontal scale"><output id="zoom-label">100%</output></label><label><input type="checkbox" id="auto-refresh" {{ 'checked' if not runs or selected.submitted == runs[0].run_ts else '' }}> Auto refresh</label></div></div>
+        <div class="timeline-legend"><span><i class="legend-chip queue"></i> Queue wait</span><span><i class="legend-chip complete"></i> Completed</span><span><i class="legend-chip running"></i> Running</span><span><i class="legend-chip failed"></i> Failed</span><span><i class="legend-chip critical"></i> Critical path</span></div>
+        <div id="timeline-scroll" class="timeline-scroll" tabindex="0" aria-label="Scrollable execution timeline"><p class="empty">Loading dispatch attempts…</p></div>
+      </section>
+      <section id="attempt-detail" class="attempt-detail" aria-live="polite"><p class="empty">Select an attempt to inspect its timing, worker, and outcome.</p></section>
+      <section class="error-panel" aria-label="Execution errors"><div class="error-head"><h2>Errors <span id="error-count">0</span></h2><p>Every failed dispatch attempt in this run, including retries.</p></div><div id="error-list"></div><button id="more-errors" type="button" hidden>Show more errors</button></section>
+      {% else %}<div class="welcome"><h1>No DAG runs yet</h1><p>Submit a named DAG to populate the execution timeline.</p></div>{% endif %}
+    </main>
+  </div>
+</body>
+</html>

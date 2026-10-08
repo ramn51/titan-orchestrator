@@ -16,6 +16,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -35,7 +36,7 @@ import java.util.*;
     private Socket socket;
     private OutputStream out;
     private BufferedInputStream in;
-    private boolean isConnected;
+    private volatile boolean isConnected;
 
     /**
      * Constructs a new {@code TitanJRedisAdapter} instance.
@@ -61,7 +62,7 @@ import java.util.*;
      * @throws IOException If an I/O error occurs during socket creation or stream setup,
      *                     though most connection errors are caught and result in a disconnected state.
      */
-    public void connect() throws IOException {
+    public synchronized void connect() throws IOException {
 
         if (host == null || host.isEmpty() || port <= 0) {
             System.out.println("[INFO] No Redis config found. Running in IN-MEMORY mode (No Persistence).");
@@ -71,8 +72,11 @@ import java.util.*;
 
 
         try {
-            this.socket = new Socket(host, port);
+            if (socket != null) socket.close();
+            this.socket = new Socket();
+            this.socket.connect(new InetSocketAddress(host, port), 2000);
             this.socket.setTcpNoDelay(true); // For low latency
+            this.socket.setSoTimeout(2000);
             this.out = socket.getOutputStream();
             this.in = new BufferedInputStream(socket.getInputStream());
             this.isConnected = true;
@@ -92,6 +96,8 @@ import java.util.*;
         return this.isConnected;
     }
 
+    private boolean configured() { return host != null && !host.isEmpty() && port > 0; }
+
     /**
      * Executes a raw Redis command by sending it to the server and reading its response.
      * This method handles the RESP serialization of the command arguments and deserialization of the response.
@@ -104,8 +110,16 @@ import java.util.*;
      *                     or if Redis returns an error response.
      */
     public synchronized Object execute(String... args) throws IOException {
-        sendCommand(args);
-        return readResponse();
+        if (!isConnected) connect();
+        if (!isConnected) throw new IOException("Redis unavailable");
+        try {
+            sendCommand(args);
+            return readResponse();
+        } catch (IOException error) {
+            isConnected = false;
+            if (socket != null) socket.close();
+            throw error;
+        }
     }
 
     /**
@@ -118,11 +132,10 @@ import java.util.*;
      * @throws IOException If an I/O error occurs during the Redis operation.
      */
     public String get(String key) throws IOException {
-        if (!isConnected) return null;
+        if (!configured()) return null;
         try {
             return (String) execute("GET", key);
         } catch (IOException e) {
-            this.isConnected = false;
             return null;
         }
     }
@@ -137,14 +150,11 @@ import java.util.*;
      * @throws IOException If an I/O error occurs during the Redis operation.
      */
     public String set(String key, String value) throws IOException {
-        if (!isConnected) {
-            return null;
-        }
+        if (!configured()) return null;
         try {
             return (String) execute("SET", key, value);
         } catch (IOException e) {
             System.err.println("[INFO][FAILED] Redis Write Failed: " + e.getMessage());
-            this.isConnected = false;
             return null;
         }
     }
@@ -160,14 +170,13 @@ import java.util.*;
      * @throws IOException If an I/O error occurs during the Redis operation.
      */
     public long sadd(String key, String member) throws IOException {
-        if (!isConnected) return 0;
+        if (!configured()) return 0;
         try {
             Object res = execute("SADD", key, member);
             if (res instanceof Long) return (Long) res;
             return 0;
         } catch (IOException e) {
             System.err.println("[INFO][FAILED] Redis SADD failed: " + e.getMessage());
-            this.isConnected = false;
             return 0;
         }
     }
@@ -183,7 +192,7 @@ import java.util.*;
      * @throws IOException If an I/O error occurs during the Redis operation.
      */
     public Set<String> smembers(String key) throws IOException {
-        if (!isConnected) return Collections.emptySet();
+        if (!configured()) return Collections.emptySet();
 
         try {
             Object res = execute("SMEMBERS", key);
@@ -192,7 +201,6 @@ import java.util.*;
             }
         } catch (IOException e) {
             System.err.println("[INFO][FAILED] Redis SMEMBERS failed: " + e.getMessage());
-            this.isConnected = false;
         }
 
         return Collections.emptySet();
@@ -208,14 +216,13 @@ import java.util.*;
      *         or if the adapter is not connected or an error occurs.
      */
     public long srem(String key, String member) {
-        if (!isConnected) return 0;
+        if (!configured()) return 0;
         try {
             Object res = execute("SREM", key, member);
             if (res instanceof Long) return (Long) res;
             return 0;
         } catch (IOException e) {
             System.err.println("[INFO][FAILED] Redis SREM failed: " + e.getMessage());
-            this.isConnected = false;
             return 0;
         }
     }
@@ -342,6 +349,7 @@ import java.util.*;
      * @throws IOException If an I/O error occurs while closing the socket.
      */
     public void close() throws IOException {
+        isConnected = false;
         if (socket != null && !socket.isClosed()) {
             socket.close();
         }

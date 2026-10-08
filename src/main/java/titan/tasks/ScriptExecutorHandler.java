@@ -21,6 +21,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import titan.network.LogBatcher;
 
 /**
@@ -61,6 +63,15 @@ import titan.network.LogBatcher;
      * It is located at {@code titan_workspace/shared}.
      */
     private final File sharedWorkspace;
+    private final ConcurrentMap<String, Process> activeProcesses = new ConcurrentHashMap<>();
+    private final java.util.Set<String> cancelled = ConcurrentHashMap.newKeySet();
+
+    /** Kill an active process, or remember a cancellation racing with process startup. */
+    public void cancel(String jobId) {
+        cancelled.add(jobId);
+        Process process = activeProcesses.get(jobId);
+        if (process != null) terminateProcessTree(process);
+    }
 
     /**
      * Constructs a new {@code ScriptExecutorHandler}.
@@ -89,14 +100,14 @@ import titan.network.LogBatcher;
      * The payload is parsed to extract the job ID, script filename, and any arguments.
      * The script is then executed in an appropriate workspace directory (isolated, shared, or archive mode).
      * Standard output and error streams of the script are captured and streamed to the master via a {@link LogBatcher}.
-     * The method waits for the script to complete or times out after 60 seconds.
+     * DAG scripts may run for up to 24 hours; standalone scripts retain a 60-second limit.
      *
      * <p>Payload Format (New): {@code JOB_ID | FILENAME | ARGS}
      * <p>Payload Format (Legacy): {@code FILENAME | ... | JOB_ID} (where ARGS are not explicitly passed)
      *
      * @param payload The string payload containing script execution details.
      * @return A string indicating the execution status and result. Format: {@code COMPLETED|ExitCode|OutputContent}
-     *         or {@code ERROR: [message]} if an error occurs or the script times out.
+     *         An execution error throws an exception for the worker to report as a failed callback.
      */
     @Override
     public String execute(String payload) {
@@ -148,9 +159,7 @@ import titan.network.LogBatcher;
             scriptFile = new File(rootWorkspace, filename);
         }
 
-        if (!scriptFile.exists()) {
-            return "ERROR: Script file not found: " + filename;
-        }
+        if (!scriptFile.exists()) throw new IllegalArgumentException("Script file not found: " + filename);
 
         LogBatcher batcher = new LogBatcher(
                 jobId,
@@ -200,6 +209,8 @@ import titan.network.LogBatcher;
             ProcessBuilder pb = new ProcessBuilder(command);
 
             pb.directory(executionDir);
+            pb.environment().put("TITAN_HOST", parentServer.getSchedulerHost());
+            pb.environment().put("TITAN_PORT", String.valueOf(parentServer.getSchedulerPort()));
             // Combine Errors with Output
             pb.redirectErrorStream(true);
 
@@ -207,10 +218,15 @@ import titan.network.LogBatcher;
             System.out.println("[INFO] Executing Command: " + command);
 
             // 3. Start Process
+            if (cancelled.contains(jobId)) throw new IllegalStateException("Job cancelled before start");
             Process process = pb.start();
+            activeProcesses.put(jobId, process);
+            if (cancelled.contains(jobId)) terminateProcessTree(process);
 
             final String finalJobId = jobId;
             StringBuilder finalOutput = new StringBuilder();
+            java.util.concurrent.atomic.AtomicReference<IOException> streamError =
+                    new java.util.concurrent.atomic.AtomicReference<>();
             Thread streamer = new Thread(() -> {
                 File logFile = new File(executionDir, finalJobId + ".log");
                 System.out.println("[DEBUG] Writing logs to: " + logFile.getAbsolutePath());
@@ -231,32 +247,58 @@ import titan.network.LogBatcher;
                                finalOutput.append(line).append("\n");
                            }
                        }
-               }catch (IOException e) { e.printStackTrace();}
+               }catch (IOException e) { streamError.set(e); }
             });
 
             streamer.start();
 
             // 4. Wait for completion
-            boolean finished = process.waitFor(60, TimeUnit.SECONDS);
-            streamer.join(); // this ensures we capture the last line of the o/p.
-
+            long timeoutSeconds = timeoutSeconds(jobId);
+            boolean finished;
+            try {
+                finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                terminateProcessTree(process);
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Script execution interrupted", e);
+            }
             if (!finished) {
-                process.destroy();
-                return "ERROR: Script timed out (60s limit)";
+                terminateProcessTree(process);
+                streamer.join(1000);
+                throw new IllegalStateException("Script timed out (" + timeoutSeconds + "s limit)");
+            }
+            streamer.join(); // this ensures we capture the last line of the o/p.
+            if (streamError.get() != null) {
+                throw new IllegalStateException("Could not capture script output", streamError.get());
             }
 
             // 5. Read Output (Byte-oriented for TitanProtocol compatibility)
 //            byte[] outputBytes = process.getInputStream().readAllBytes();
 //            String output = new String(outputBytes, StandardCharsets.UTF_8).trim();
+            if (cancelled.contains(jobId)) throw new IllegalStateException("Job cancelled");
             int exitCode = process.exitValue();
             // Format: COMPLETED|ExitCode|OutputContent
             return "COMPLETED|" + exitCode + "|" + finalOutput.toString().trim();
 
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             e.printStackTrace();
-            return "ERROR: Execution failed - " + e.getMessage();
+            throw new IllegalStateException("Execution failed: " + e.getMessage(), e);
         } finally {
+            activeProcesses.remove(jobId);
+            cancelled.remove(jobId);
             batcher.close();
         }
+    }
+
+    public static long timeoutSeconds(String jobId) {
+        if (jobId != null && jobId.startsWith("DAG-hitl-gate-")) return 49 * 60 * 60;
+        return jobId != null && jobId.startsWith("DAG-") ? 24 * 60 * 60 : 60;
+    }
+
+    private static void terminateProcessTree(Process process) {
+        process.descendants().forEach(child -> child.destroyForcibly());
+        process.destroyForcibly();
     }
 }

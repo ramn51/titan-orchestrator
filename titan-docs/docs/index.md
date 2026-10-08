@@ -246,7 +246,7 @@ Titan is actively evolving. Here are the major architectural milestones planned 
 - [ ] **Security & Auth:** Implement mTLS (Mutual TLS) for encrypted, authenticated cluster communication.
 - [ ] **Containerized Execution:** Add support for Docker execution drivers to provide true filesystem isolation (currently utilizing Process-Level isolation).
 - [ ] **Cluster Autoscaler Webhooks:** Allow Titan to trigger external APIs (e.g., Azure VM Scale Sets, AWS EC2) to provision bare-metal compute automatically when queues saturate.
-- [ ] **Human-in-the-Loop (HIL):** Add the capability to pause DAG execution states and wait for external manual approval via Webhooks or the UI.
+- [x] **Human-in-the-Loop (HIL):** Python SDK approval gates can wait for a decision in the dashboard or CLI. Webhook decisions remain future work.
 
 
 ---

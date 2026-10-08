@@ -16,27 +16,19 @@ package titan.tasks;
 
 import titan.network.LogBatcher;
 import titan.network.RpcWorkerServer;
-import titan.tasks.TaskHandler;
 
 import java.io.*;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * {@code ServiceHandler} is an implementation of {@link TaskHandler} responsible for managing the lifecycle
  * of services (processes) on a worker node. It supports starting and stopping various types of services,
  * including Java JARs, Python scripts, and other executables.
  * <p>
- * This handler maintains a registry of currently running services and provides mechanisms for
- * launching them in a detached manner, capturing their output, and streaming logs back to a master server.
- * It also handles the cleanup of resources upon service termination.
+ * A shared {@link ServiceProcessManager} tracks the child processes for both start and stop requests.
+ * This handler prepares commands and streams their output to a local log and the master.
  */
-    public class ServiceHandler implements TaskHandler {
-    /**
- * A static, thread-safe map that stores references to currently running {@link Process} objects,
- * keyed by their unique service IDs. This allows for tracking and managing active services.
- */
-    private static final Map<String, Process> runningServices = new ConcurrentHashMap<>();
+public class ServiceHandler implements TaskHandler {
+    private final ServiceProcessManager serviceManager;
     /**
  * The base directory where service files are expected to be located and where service-related
  * logs and temporary files are stored.
@@ -59,11 +51,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * Constructs a new {@code ServiceHandler} with a specified operation and a reference to its parent RPC server.
  *
  * @param op The operation this handler will perform (e.g., "START", "STOP").
- * @param parentServer The {@link RpcWorkerServer} instance that created this handler, used for callbacks.
+ * @param parentServer The {@link RpcWorkerServer} instance that created this handler, used for log streaming.
+ * @param serviceManager The worker's shared service lifecycle manager.
  */
-    public ServiceHandler(String op, RpcWorkerServer parentServer){
+    public ServiceHandler(String op, RpcWorkerServer parentServer, ServiceProcessManager serviceManager){
         this.operation = op;
         this.parentServer = parentServer;
+        this.serviceManager = serviceManager;
     }
 
     /**
@@ -98,12 +92,12 @@ import java.util.concurrent.ConcurrentHashMap;
      * This method handles different types of service files:
      * </p>
      * <ul>
-     * <li>If {@code fileName} is "Worker.jar", it launches it as a Java JAR using {@code java -jar} with OS-specific detachment.</li>
+     * <li>If {@code fileName} is "Worker.jar", it launches it as a managed Java child process.</li>
      * <li>If {@code fileName} ends with ".py", it launches it using the "python" interpreter.</li>
      * <li>For any other file, it attempts to execute it directly.</li>
      * </ul>
      * <p>
-     * The process is launched in a detached manner, and its output is redirected to log files.
+     * The process runs asynchronously, with its output streamed to a log file.
      * </p>
      * * @param fileName The name or path of the script/executable file to run.
      * @param serviceId A unique identifier for the service being started.
@@ -128,95 +122,34 @@ import java.util.concurrent.ConcurrentHashMap;
         boolean isWorkerJar = fileName.equalsIgnoreCase("Worker.jar");
 
         if (isWorkerJar) {
-            try {
-                String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
-                if (System.getProperty("os.name").toLowerCase().contains("win")) javaBin += ".exe";
-
-                // We use the absolute path to the JAR we just staged in titan_workspace
-                String jarPath = scriptFile.getAbsolutePath();
-
-                ProcessBuilder pb;
-                if (System.getProperty("os.name").toLowerCase().contains("win")) {
-                    // Windows Detached: cmd /c start /b java -jar Worker.jar <port>
-                    pb = new ProcessBuilder("cmd", "/c", "start", "/b", javaBin, "-jar", "\"" + jarPath + "\"", port);
-                } else {
-                    // Linux Detached: nohup java -jar Worker.jar <port> &
-                    pb = new ProcessBuilder("nohup", javaBin, "-jar", jarPath, port, "&");
-                }
-
-                pb.redirectOutput(ProcessBuilder.Redirect.appendTo(new File(WORKSPACE_DIR + "/worker_" + port + ".log")));
-                pb.redirectError(ProcessBuilder.Redirect.appendTo(new File(WORKSPACE_DIR + "/worker_" + port + "_error.log")));
-                pb.redirectInput(ProcessBuilder.Redirect.from(new File(System.getProperty("os.name").contains("Win") ? "NUL" : "/dev/null")));
-
-                pb.directory(new File(WORKSPACE_DIR));
-
-                Process p = pb.start();
-
-                ProcessRegistry.register(serviceId, p.pid());
-
-//                p.onExit().thenRun(() -> {
-//                    titan.tasks.ProcessRegistry.unregister(serviceId);
-//                    System.out.println("[INFO] Worker JAR Stopped: " + serviceId);
-//                });
-
-                System.out.println("[DEBUG] Launched Detached JAR: " + jarPath + " on port " + port);
-                return "DEPLOYED_SUCCESS | ID: " + serviceId + " | PID: DETACHED";
-            } catch (IOException e) {
-                return "LAUNCH_ERROR: " + e.getMessage();
-            }
+            String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
+            if (System.getProperty("os.name").toLowerCase().contains("win")) javaBin += ".exe";
+            return launchManagedProcess(serviceId, new File(WORKSPACE_DIR),
+                    javaBin, "-jar", scriptFile.getAbsolutePath(), port);
         } else{
             if (fileName.endsWith(".py")) {
-                return launchDetachedProcess(serviceId, scriptFile.getParentFile(), "python", scriptFile.getAbsolutePath());
+                return launchManagedProcess(serviceId, scriptFile.getParentFile(), "python", scriptFile.getAbsolutePath());
             } else {
-                return launchDetachedProcess(serviceId, scriptFile.getParentFile(), scriptFile.getAbsolutePath());
+                return launchManagedProcess(serviceId, scriptFile.getParentFile(), scriptFile.getAbsolutePath());
             }
         }
 
     }
 
     /**
-     * Launches a generic process in a detached mode, managing its lifecycle and log streaming.
-     * <p>
-     * This method performs the following steps:
-     * </p>
-     * <ol>
-     * <li>Checks if a service with the given {@code serviceId} is already running.</li>
-     * <li>Configures a {@link ProcessBuilder} with the provided command and redirects standard error/output to a local log file.</li>
-     * <li>Sets the working directory for the process.</li>
-     * <li>Starts the process.</li>
-     * <li>Spawns a new thread to continuously read the process's output, write it to a local log file, and batch-stream it to the master server.</li>
-     * <li>Registers the process in the {@code runningServices} map and with the {@link ProcessRegistry}.</li>
-     * <li>Registers an {@code onExit} hook to clean up resources, remove the service from registries, and notify the master when the process terminates.</li>
-     * </ol>
-     * * @param serviceId A unique identifier for the service.
+     * Launches a managed process and streams its output.
+     * @param serviceId A unique identifier for the service.
      * @param executionDir The directory in which the command should be executed. If null or non-existent, {@link #WORKSPACE_DIR} is used.
      * @param command The command and its arguments to execute.
      * @return A status string indicating success or failure, including the service ID and PID if successful.
      */
-    private String launchDetachedProcess(String serviceId, File executionDir, String... command) {
-        if (runningServices.containsKey(serviceId)) {
-            return "SERVICE_ALREADY_RUNNING: " + serviceId;
-        }
-
-        try {
-            ProcessBuilder pb = new ProcessBuilder(command);
-
-            // 2. Separate Logs (Crucial for debugging background jobs)
-//            File logFile = new File(WORKSPACE_DIR, serviceId + ".log");
-//            pb.redirectOutput(logFile);
-//            pb.redirectError(logFile);
-            pb.redirectErrorStream(true);
-
-            if (executionDir != null && executionDir.exists()) {
-                pb.directory(executionDir);
-            } else {
-                pb.directory(new File(WORKSPACE_DIR));
-            }
-
-            // 3. START (Async/Detached)
-            Process process = pb.start();
-
-            new Thread(() -> {
+    private String launchManagedProcess(String serviceId, File executionDir, String... command) {
+        ProcessBuilder pb = new ProcessBuilder(command);
+        pb.redirectErrorStream(true);
+        pb.directory(executionDir != null && executionDir.exists()
+                ? executionDir : new File(WORKSPACE_DIR));
+        return serviceManager.start(serviceId, pb::start, process -> {
+            Thread output = new Thread(() -> {
                 LogBatcher batcher = new LogBatcher(
                         serviceId,
                         parentServer.getSchedulerHost(),
@@ -243,48 +176,21 @@ import java.util.concurrent.ConcurrentHashMap;
                 }finally {
                     batcher.close();
                 }
-            }).start();
-
-            // 4. Register in Memory Map
-            runningServices.put(serviceId, process);
-
-            long pid = process.pid();
-            titan.tasks.ProcessRegistry.register(serviceId, pid);
-
-            // 5. Clean up Map when process dies
-            process.onExit().thenRun(() -> {
-                runningServices.remove(serviceId);
-                titan.tasks.ProcessRegistry.unregister(serviceId);
-                System.out.println("[INFO] Service Stopped: " + serviceId);
-                parentServer.notifyMasterOfServiceStop(serviceId);
-            });
-
-            return "DEPLOYED_SUCCESS | ID: " + serviceId + " | PID: " + process.pid();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "LAUNCH_ERROR: " + e.getMessage();
-        }
+            }, "titan-service-output-" + serviceId);
+            output.setDaemon(true);
+            output.start();
+        });
     }
 
     /**
  * Attempts to stop a running service identified by its {@code serviceId}.
  * <p>
- * It retrieves the {@link Process} object associated with the {@code serviceId} from {@link #runningServices},
- * then attempts to destroy the process. If the process is found and terminated, it is removed from the map.
+ * The manager marks the stop as intentional before terminating the child process.
  *</p>
  * @param serviceId The unique identifier of the service to stop.
  * @return A status string indicating whether the service was stopped or if it was unknown.
  */
     private String stopProcess(String serviceId){
-        Process p = runningServices.get(serviceId);
-            if(p!=null){
-                p.descendants().forEach(ProcessHandle::destroyForcibly);
-                p.destroyForcibly();
-                runningServices.remove(serviceId);
-                return "STOPPED: " + serviceId;
-            } else{
-                return "UNKNOWN_SERVICE: " + serviceId;
-            }
+        return serviceManager.stop(serviceId);
     }
 }

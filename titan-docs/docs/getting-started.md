@@ -146,7 +146,9 @@ titan.redis.port=6379
 
 # Cluster Tuning
 titan.worker.heartbeat.interval=10
-titan.worker.pool.size=10
+titan.worker.slots=4
+titan.scheduler.autoscale=true
+titan.scheduler.max.workers=5
 ```
 > Note: If this file is missing, Titan will gracefully degrade to sensible defaults (purely in-memory execution with no persistence or recovery) or attempt to connect to Redis on localhost:6379.
 

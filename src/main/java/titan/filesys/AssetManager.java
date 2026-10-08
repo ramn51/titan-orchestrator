@@ -21,7 +21,7 @@ import java.util.Base64;
 
 public class AssetManager {
 
-    private static final String STORAGE_DIR = "perm_files";
+    private static final String STORAGE_DIR = "uploads";
 
     public static class ArchiveInfo {
         public final String zipName;
@@ -47,6 +47,8 @@ public class AssetManager {
         }
 
         String zipName = pointer.substring(0, zipIndex + 4); // "my_project.zip"
+        if (!new File(zipName).getName().equals(zipName) || zipName.isBlank())
+            throw new IOException("Invalid archive name");
 
         // Handle case where pointer is just "proj.zip" vs "proj.zip/main.py"
         String entryPoint = "";
@@ -55,6 +57,7 @@ public class AssetManager {
         }
 
         File zipFile = new File(STORAGE_DIR, zipName);
+        if (!zipFile.isFile()) zipFile = new File("perm_files", zipName);
         if (!zipFile.exists()) {
             throw new IOException("Asset not found: " + zipName + " (Did you upload it to " + STORAGE_DIR + "?)");
         }

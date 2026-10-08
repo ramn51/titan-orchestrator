@@ -47,9 +47,12 @@ import java.util.List;
  * The current number of jobs or tasks actively being processed by this worker.
  */
     private int currentLoad;
+    /** Latest load reported by the worker heartbeat. Kept separate so a
+     * heartbeat cannot erase slots already reserved by the scheduler. */
+    private int reportedLoad;
     /**
  * The maximum number of jobs or tasks this worker can handle concurrently.
- * This field will eventually be replaced by {@link #MAX_SLOTS}.
+ * Updated from the worker's advertised heartbeat capacity.
  */
     private int maxCap;
     /**
@@ -57,13 +60,6 @@ import java.util.List;
  * This field is public for direct access by the scheduler.
  */
     public String currentJobId = null;
-    // This will replace maxCap
-    /**
- * The maximum number of concurrent job slots available on any worker.
- * This is a static constant representing the default or system-wide maximum capacity.
- * This will replace the instance-specific {@code maxCap} field.
- */
-    public static final int MAX_SLOTS = 4;
     /**
  * The timestamp (in milliseconds) when the worker became idle (currentLoad dropped to 0).
  * A value of -1 indicates the worker is currently busy.
@@ -74,6 +70,11 @@ import java.util.List;
  * dynamically provisioned worker. Permanent workers might have different lifecycle management.
  */
     private boolean isPermanent;
+    private volatile double hostCpuPercent = -1;
+    private volatile long hostMemoryUsedBytes = -1;
+    private volatile long hostMemoryTotalBytes = -1;
+    private volatile double hostLoadAverage = -1;
+    private volatile long heartbeatRttMs = -1;
 
 
     /**
@@ -91,7 +92,8 @@ import java.util.List;
         this.capabilities = (capabilities == null) ? new ArrayList<>() : capabilities;
         this.lastSeen = System.currentTimeMillis();
         this.currentLoad = 0;
-        maxCap = 4;
+        this.reportedLoad = 0;
+        maxCap = 4; // Replaced by the worker's advertised slot count on heartbeat.
         this.isPermanent = isPermanent;
         this.idleStartTime = System.currentTimeMillis();
     }
@@ -103,6 +105,24 @@ import java.util.List;
     public synchronized void updateLastSeen() {
         this.lastSeen = System.currentTimeMillis();
     }
+    public synchronized void refreshRegistration(String capability, boolean permanent) {
+        if (capability != null && !capability.isBlank() && !capabilities.contains(capability))
+            capabilities.add(capability);
+        isPermanent |= permanent;
+        updateLastSeen();
+    }
+    public void updateHostMetrics(double cpuPercent, long usedBytes, long totalBytes) {
+        hostCpuPercent = cpuPercent;
+        hostMemoryUsedBytes = usedBytes;
+        hostMemoryTotalBytes = totalBytes;
+    }
+    public void updateHostLoadAverage(double average) { hostLoadAverage = average; }
+    public double hostLoadAverage() { return hostLoadAverage; }
+    public void updateHeartbeatRtt(long milliseconds) { heartbeatRttMs = milliseconds; }
+    public long heartbeatRttMs() { return heartbeatRttMs; }
+    public double hostCpuPercent() { return hostCpuPercent; }
+    public long hostMemoryUsedBytes() { return hostMemoryUsedBytes; }
+    public long hostMemoryTotalBytes() { return hostMemoryTotalBytes; }
 
     /**
  * Checks if this worker is designated as a permanent worker.
@@ -122,15 +142,16 @@ import java.util.List;
  * @param load The new current load value. Must be non-negative.
  */
     public synchronized void setCurrentLoad(int load) {
-        this.currentLoad = load;
-        if (load == 0) {
-            if (this.idleStartTime == -1) {
-                this.idleStartTime = System.currentTimeMillis();
-            }
-        } else {
-            // Reset this once it gets a work immediately.
-            this.idleStartTime = -1;
-        }
+        this.currentLoad = Math.max(0, load);
+        this.reportedLoad = this.currentLoad;
+        updateIdleState();
+    }
+
+    /** Reconciles a heartbeat without losing scheduler-side reservations. */
+    public synchronized void reconcileLoad(int workerReportedLoad, int assignedJobs) {
+        this.reportedLoad = Math.max(0, workerReportedLoad);
+        this.currentLoad = Math.max(this.currentLoad, Math.max(0, assignedJobs));
+        updateIdleState();
     }
 
     /**
@@ -171,7 +192,23 @@ import java.util.List;
  * @return The current number of jobs or tasks actively being processed.
  */
     public synchronized int getCurrentLoad() {
+        return Math.max(currentLoad, reportedLoad);
+    }
+
+    synchronized int getReservedLoad() {
         return currentLoad;
+    }
+
+    synchronized int getReportedLoad() {
+        return reportedLoad;
+    }
+
+    /** Atomically checks capacity and reserves one scheduler slot. */
+    public synchronized boolean tryReserveSlot() {
+        if (Math.max(currentLoad, reportedLoad) >= maxCap) return false;
+        currentLoad++;
+        updateIdleState();
+        return true;
     }
 
     /**
@@ -181,6 +218,7 @@ import java.util.List;
  */
     synchronized public void incrementCurrentLoad(){
         this.currentLoad++;
+        updateIdleState();
     }
 
     /**
@@ -192,10 +230,10 @@ import java.util.List;
         if(this.currentLoad > 0){
             this.currentLoad--;
         }
-
-        if (this.currentLoad == 0) {
-            this.idleStartTime = System.currentTimeMillis();
-        }
+        // Workers release their local slot before sending the callback. If the
+        // last heartbeat still includes that job, age that snapshot down too.
+        if (this.reportedLoad > 0) this.reportedLoad--;
+        updateIdleState();
     }
 
     /**
@@ -206,6 +244,14 @@ import java.util.List;
  */
     public synchronized boolean isSaturated(){
         return getCurrentLoad() >= maxCap;
+    }
+
+    private void updateIdleState() {
+        if (Math.max(currentLoad, reportedLoad) == 0) {
+            if (idleStartTime == -1) idleStartTime = System.currentTimeMillis();
+        } else {
+            idleStartTime = -1;
+        }
     }
 
     /**
@@ -244,6 +290,6 @@ import java.util.List;
  */
     @Override
     public String toString() {
-        return host + ":" + port + " [Load=" + currentLoad + "]";
+        return host + ":" + port + " [Load=" + getCurrentLoad() + "]";
     }
 }

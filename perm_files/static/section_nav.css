@@ -1,0 +1,12 @@
+/* Shared section navigation for every Titan dashboard page. */
+.section-nav{box-sizing:border-box;height:54px;min-height:54px;display:flex;align-items:center;gap:22px;padding:0 20px;background:#111b21;border-bottom:1px solid #25333a;color:#dce7e7;font:13px/1.45 'Segoe UI',Arial,sans-serif;flex:none}
+.section-nav .section-brand{display:flex;align-items:center;gap:8px;letter-spacing:.1em;white-space:nowrap}
+.section-nav .section-brand b{font-size:16px}
+.section-nav .brand-symbol{font-size:21px;color:#48d99b}
+.section-nav nav{height:100%;display:flex;align-items:center;gap:4px;align-self:auto}
+.section-nav nav a{height:100%;display:grid;place-items:center;padding:0 15px;color:#85969d;font-size:13px;white-space:nowrap;text-decoration:none;border-bottom:2px solid transparent}
+.section-nav nav a:hover,.section-nav nav a.active{color:#effff7;text-decoration:none}
+.section-nav nav a.active{border-bottom-color:#48d99b}
+.section-nav .section-status{margin-left:auto;color:#8fa8a4;font-size:11px;white-space:nowrap}
+.section-nav .section-status::before{content:'●';color:#48d99b;margin-right:7px}.section-nav .section-status.offline::before{color:#ff777f}
+@media(max-width:750px){.section-nav{height:auto;min-height:54px;flex-wrap:wrap;gap:0 14px;padding:7px 12px}.section-nav nav{order:3;width:100%;height:34px;overflow:auto}.section-nav nav a{padding:0 10px}.section-nav .section-status{font-size:10px}}

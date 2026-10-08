@@ -77,22 +77,11 @@ import java.util.stream.Collectors;
     public void addWorker(String host, int port, String capability, boolean isPermanent){
         String key = generateKey(host, port);
         workerMap.compute(key, (k, existingWorker) -> {
-           long now = System.currentTimeMillis();
-           List<String> newCapabilities = new ArrayList<>();
-           if(existingWorker != null){
-               newCapabilities.addAll(existingWorker.capabilities());
-           }
-
-           if(!newCapabilities.contains(capability)){
-               newCapabilities.add(capability);
-           }
-
-            boolean finalPermanentStatus = isPermanent;
-            if (existingWorker != null && existingWorker.isPermanent()) {
-                finalPermanentStatus = true; // Once permanent, stays permanent (safer)
+            if (existingWorker != null) {
+                existingWorker.refreshRegistration(capability, isPermanent);
+                return existingWorker;
             }
-
-           return new Worker(host, port, newCapabilities, finalPermanentStatus);
+            return new Worker(host, port, new ArrayList<>(List.of(capability)), isPermanent);
         });
     }
 

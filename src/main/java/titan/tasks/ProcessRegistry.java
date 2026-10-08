@@ -13,7 +13,7 @@
  */
 
 package titan.tasks;
-// This is for cleaning up processes that were zombied due to abrupt worker node shutdown/crash.
+// Compatibility facade for service process registration. The active journal is ProcessJournal.
 
 import java.io.*;
 import java.util.Map;
@@ -25,8 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * to register running processes, unregister them, and on startup, load previously registered
  * processes from a persistent file to check for and forcibly terminate any lingering zombie processes.
  * <p>
- * The registry maintains an in-memory map of service IDs to process IDs (PIDs) and persists
- * this information to a local file to ensure state can be recovered across restarts.
+ * ProcessJournal owns the absolute, shared, locked journal and checks process start times
+ * before cleaning abandoned trees. The old relative PID file is opt-in for migration only.
  * </p>
  */
     public class ProcessRegistry {
@@ -41,6 +41,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * and clean up processes after a restart.
  */
     private static final String PROCESS_REGISTRY_FILE = "titan_tasks.db";
+    private static volatile String workerIdentity = "unconfigured";
+
+    public static void setWorkerIdentity(String identity) {
+        if (identity == null || identity.isBlank()) throw new IllegalArgumentException("Worker identity is required");
+        workerIdentity = identity;
+    }
 
     /**
  * Loads the process registry from the persistent file, checks for any processes
@@ -54,6 +60,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * but do not prevent the application from starting.
  */
     public static void loadAndCleanUpProcesses(){
+        ProcessJournal.cleanup(workerIdentity);
+        if (!Boolean.getBoolean("titan.legacy.process.registry")) return;
             File f = new File(PROCESS_REGISTRY_FILE);
             if(!f.exists()) return;
 
@@ -102,6 +110,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param pid The process ID (PID) of the running process associated with the service.
  */
     public static void register(String serviceId, long pid) {
+        ProcessJournal.register(workerIdentity, serviceId, pid);
+        if (!Boolean.getBoolean("titan.legacy.process.registry")) return;
         persistentMap.put(serviceId, pid);
         saveToDisk();
     }
@@ -113,6 +123,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param serviceId The unique identifier of the service or task to unregister.
  */
     public static void unregister(String serviceId) {
+        ProcessJournal.unregister(workerIdentity, serviceId);
+        if (!Boolean.getBoolean("titan.legacy.process.registry")) return;
         persistentMap.remove(serviceId);
         saveToDisk();
     }

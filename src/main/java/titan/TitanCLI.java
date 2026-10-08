@@ -22,6 +22,7 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.Scanner;
 
 /**The `TitanCLI` class provides a command-line interface for interacting with the Titan Distributed Orchestrator. It allows users to send commands such as uploading files, deploying services, running scripts, viewing cluster statistics, and managing worker nodes to a remote Titan scheduler.
@@ -50,13 +51,24 @@ import java.util.Scanner;
     /** Prints a list of available commands and their basic usage to the console. This method is called when the user types 'help'. **/
     private void printHelp() {
         System.out.println("Commands:");
-        System.out.println("  upload <local_path>  - Upload a file to server storage (perm_files)");
-        System.out.println("  deploy <filename> [port] - Start a service/worker using a file on server");
+        System.out.println("  upload <local_path>  - Upload a file to server storage (uploads)");
+        System.out.println("  deploy <filename> <port> - Start a service using a file on server");
+        System.out.println("  resolve <service_id> - Find a ready service's listening host and port");
         System.out.println("  run <filename>       - Execute a one-off script existing on server");
         System.out.println("  stats                - View cluster status");
+        System.out.println("  json                 - View JSON cluster status");
+        System.out.println("  status <job_id>      - Job status, e.g. status DAG-extract");
+        System.out.println("  logs <job_id>        - Job logs, e.g. logs DAG-extract");
+        System.out.println("  approve <gate_id>    - Approve a waiting HITL gate, e.g. approve DAG-hitl-gate-preprocess");
+        System.out.println("  reject <gate_id>     - Reject a waiting HITL gate, e.g. reject DAG-hitl-gate-preprocess");
+        System.out.println("  store get <key>      - Read a store value, e.g. store get pipeline:owner");
+        System.out.println("  store set <key> <value> - Write a store value, e.g. store set pipeline:owner Ada");
         System.out.println("  stop <service_id>    - Stop a running service");
-        System.out.println("  shutdown <port>      - Kill a specific worker node");
+        System.out.println("  shutdown <host> <port> - Kill a specific worker node");
         System.out.println("  dag <dag_string>     - Submit raw DAG");
+        System.out.println("                         Use the Python SDK's hitl_message to insert approval gates");
+        System.out.println("  cancel <job_id>      - Cancel a job and dependent jobs");
+        System.out.println("  help                 - Show these commands");
         System.out.println("  exit");
     }
 
@@ -67,7 +79,7 @@ import java.util.Scanner;
         System.out.println("    [INFO] TITAN DISTRIBUTED ORCHESTRATOR    ");
         System.out.println("==========================================");
         System.out.println("Connected to: " + host + ":" + port);
-        System.out.println("Commands: stats, deploy, run <filename>, upload <local_path>, dag <dag_string>, exit");
+        System.out.println("Type 'help' for commands and examples.");
 
         while (true) {
             System.out.print("\ntitan> ");
@@ -90,18 +102,57 @@ Supported commands include `stats`, `upload`, `submit`, `dag`, `run`, `deploy`, 
 @param input The raw command string entered by the user.
 **/
     private void handleCommand(String input) {
+        input = input.trim();
+        String[] commandParts = input.split("\\s+", 2);
+        String verb = commandParts[0].toLowerCase(Locale.ROOT);
+        String arguments = commandParts.length == 2 ? commandParts[1].trim() : "";
         byte opCode;
         String payload = "";
 
         // 1. Map String Commands to OpCodes
-        if (input.equalsIgnoreCase("stats")) {
+        if (verb.equals("stats") && arguments.isEmpty()) {
             opCode = TitanProtocol.OP_STATS;
         }
-        else if (input.equalsIgnoreCase("json")) {
+        else if (verb.equals("json") && arguments.isEmpty()) {
             opCode = TitanProtocol.OP_STATS_JSON;
         }
-        else if (input.startsWith("upload ")) {
-            String localPath = input.substring(7).trim();
+        else if (verb.equals("status") || verb.equals("logs") || verb.equals("cancel")
+                || verb.equals("approve") || verb.equals("reject")) {
+            if (!arguments.matches("[^\\s|]+")) {
+                System.out.println("[FAIL] Usage: " + verb + (verb.equals("approve") || verb.equals("reject") ? " <gate_id>" : " <job_id>"));
+                return;
+            }
+            if (verb.equals("approve") || verb.equals("reject")) {
+                handleHitlDecision(arguments, verb.equals("approve") ? "APPROVED" : "REJECTED");
+                return;
+            }
+            opCode = switch (verb) {
+                case "status" -> TitanProtocol.OP_GET_JOB_STATUS;
+                case "logs" -> TitanProtocol.OP_GET_LOGS;
+                default -> TitanProtocol.OP_CANCEL_JOB;
+            };
+            payload = arguments;
+            if (!payload.startsWith("DAG-")) {
+                String directStatus = sendAndReceive(TitanProtocol.OP_GET_JOB_STATUS, payload);
+                if ("NULL".equals(directStatus)) payload = "DAG-" + payload;
+            }
+        }
+        else if (verb.equals("store") || verb.equals("kv")) {
+            String[] kv = arguments.split("\\s+", 3);
+            if (kv.length == 2 && kv[0].equalsIgnoreCase("get") && kv[1].matches("[^\\s|]+")) {
+                opCode = TitanProtocol.OP_KV_GET;
+                payload = kv[1];
+            } else if (kv.length == 3 && kv[0].equalsIgnoreCase("set")
+                    && kv[1].matches("[^\\s|]+") && !kv[2].isBlank()) {
+                opCode = TitanProtocol.OP_KV_SET;
+                payload = kv[1] + "|" + kv[2];
+            } else {
+                System.out.println("[FAIL] Usage: store get <key> | store set <key> <value>");
+                return;
+            }
+        }
+        else if (verb.equals("upload")) {
+            String localPath = arguments;
             if (localPath.isEmpty()) {
                 System.out.println("[FAIL] Usage: upload <local_path>");
                 return;
@@ -109,26 +160,30 @@ Supported commands include `stats`, `upload`, `submit`, `dag`, `run`, `deploy`, 
             handleUpload(localPath);
             return;
         }
-        else if (input.startsWith("submit ")) {
+        else if (verb.equals("submit")) {
             // Input: "submit PDF_CONVERT file.docx"
             // Desired Payload: "PDF_CONVERT|file.docx|1|0"
-            String[] parts = input.substring(7).split(" ", 2);
-            if (parts.length < 2) {
+            String[] parts = arguments.split("\\s+", 2);
+            if (parts.length < 2 || parts[1].isBlank()) {
                 System.out.println("[FAIL] Usage: submit <skill> <data>");
                 return;
             }
             opCode = TitanProtocol.OP_SUBMIT_JOB;
             payload = parts[0] + "|" + parts[1] + "|1|0";
         }
-        else if (input.startsWith("dag ")) {
+        else if (verb.equals("dag")) {
             // Input: "dag S1|... ; S2|..."
             opCode = TitanProtocol.OP_SUBMIT_DAG;
-            payload = input.substring(4).trim();
+            payload = arguments;
+            if (payload.isEmpty()) {
+                System.out.println("[FAIL] Usage: dag <dag_string>");
+                return;
+            }
         }
-        else if (input.startsWith("run ")) {
+        else if (verb.equals("run")) {
             // Input: "run calc.py GPU"
             // Split by whitespace
-            String[] args = input.substring(4).trim().split("\\s+");
+            String[] args = arguments.split("\\s+");
 
             if (args.length < 1 || args[0].isEmpty()) {
                 System.out.println("[FAIL] Usage: run <filename> [requirement]");
@@ -144,8 +199,8 @@ Supported commands include `stats`, `upload`, `submit`, `dag`, `run`, `deploy`, 
             // Payload sent to Server: "filename|GPU"
             payload = requirement.isEmpty() ? filename : filename + "|" + requirement;
         }
-        else if (input.startsWith("deploy ")) {
-            String[] args = input.substring(7).trim().split("\\s+");
+        else if (verb.equals("deploy")) {
+            String[] args = arguments.split("\\s+");
 
             if (args.length < 1 || args[0].isEmpty()) {
                 System.out.println("[FAIL] Usage: deploy <server_filename> [port] [requirement]");
@@ -156,6 +211,19 @@ Supported commands include `stats`, `upload`, `submit`, `dag`, `run`, `deploy`, 
 
             String filename = args[0];
             String targetPort = (args.length > 1) ? args[1] : "";
+            if (targetPort.isEmpty() && !filename.equalsIgnoreCase("Worker.jar")) {
+                System.out.println("[FAIL] A listening port is required, e.g. deploy api.py 9000");
+                return;
+            }
+            if (!targetPort.isEmpty()) {
+                try {
+                    int parsedPort = Integer.parseInt(targetPort);
+                    if (parsedPort < 1 || parsedPort > 65535) throw new NumberFormatException();
+                } catch (NumberFormatException error) {
+                    System.out.println("[FAIL] Port must be between 1 and 65535.");
+                    return;
+                }
+            }
 
             // Capture the Requirement (e.g., "GPU" or "HIGH_MEM")
             String requirement = (args.length > 2) ? args[2] : "";
@@ -180,20 +248,32 @@ Supported commands include `stats`, `upload`, `submit`, `dag`, `run`, `deploy`, 
             // Payload: "filename|port"
             payload = filename + "|" + targetPort+ "|" + requirement;
         }
-        else if (input.startsWith("stop ")) {
+        else if (verb.equals("stop")) {
+            if (!arguments.matches("[^\\s|]+")) {
+                System.out.println("[FAIL] Usage: stop <service_id>");
+                return;
+            }
             opCode = TitanProtocol.OP_STOP;
-            payload = input.substring(5);
+            payload = arguments;
         }
-        else if (input.startsWith("shutdown ")) {
-            String[] parts = input.trim().split("\\s+");
-            if (parts.length < 3) {
+        else if (verb.equals("resolve")) {
+            if (!arguments.matches("[^\\s|]+")) {
+                System.out.println("[FAIL] Usage: resolve <service_id>");
+                return;
+            }
+            opCode = TitanProtocol.OP_RESOLVE_SERVICE;
+            payload = arguments;
+        }
+        else if (verb.equals("shutdown")) {
+            String[] parts = arguments.split("\\s+");
+            if (parts.length != 2 || !parts[1].matches("\\d+")) {
                 System.out.println("[FAIL] Usage: shutdown <host> <port>");
                 // Example: shutdown 192.168.1.5 8090
                 return;
             }
             opCode = TitanProtocol.OP_KILL_WORKER;
             // payload format: "HOST|PORT"
-            payload = parts[1] + "|" + parts[2];
+            payload = parts[0] + "|" + parts[1];
         }
 
         else {
@@ -203,6 +283,23 @@ Supported commands include `stats`, `upload`, `submit`, `dag`, `run`, `deploy`, 
 
         String response = sendAndReceive(opCode, payload);
         System.out.println("[INFO] Server Response:\n" + response);
+    }
+
+    private void handleHitlDecision(String gateId, String decision) {
+        if (gateId.startsWith("hitl-gate-")) gateId = "DAG-" + gateId;
+        if (!gateId.startsWith("DAG-hitl-gate-")) {
+            System.out.println("[FAIL] Expected a gate ID such as hitl-gate-preprocess.");
+            return;
+        }
+        String key = "titan:hitl:status:" + gateId;
+        String current = sendAndReceive(TitanProtocol.OP_KV_GET, key);
+        if (!"WAITING".equals(current)) {
+            System.out.println("[FAIL] Gate is not waiting for a decision (status: " + current + ").");
+            return;
+        }
+        String response = sendAndReceive(TitanProtocol.OP_KV_SET, key + "|" + decision);
+        System.out.println("OK".equals(response) ? "[INFO] Gate " + gateId + " " + decision.toLowerCase(Locale.ROOT)
+                : "[FAIL] Could not update gate: " + response);
     }
 
     /**

@@ -14,6 +14,10 @@ import socket
 import struct
 import json
 import time
+import os
+from pathlib import Path
+from dag_viewer.routes import create_blueprint
+from cluster_monitor.routes import create_blueprint as create_cluster_blueprint
 from flask import Flask, render_template_string, request, url_for
 
 app = Flask(__name__)
@@ -79,15 +83,12 @@ DASHBOARD_HTML = """
     <title>Titan Dashboard</title>
     <meta http-equiv="refresh" content="2">
     <style>
-        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; }
         a { text-decoration: none; color: inherit; }
         a:hover { text-decoration: underline; color: #64b5f6; }
 
-        .header { text-align: center; margin-bottom: 30px; }
-        .status-dot { height: 12px; width: 12px; background-color: {{ status_color }}; border-radius: 50%; display: inline-block; }
-
         .card { background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 20px; width: 320px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
-        .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; padding: 20px; }
 
         .section-title { font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; color: #757575; margin-top: 15px; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 2px;}
         .service-tag { background: #263238; padding: 5px 8px; margin-top: 5px; border-radius: 4px; border-left: 3px solid #0288d1; font-family: monospace; font-size: 0.9em; cursor: pointer; transition: background 0.2s; }
@@ -116,16 +117,10 @@ DASHBOARD_HTML = """
             100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 183, 77, 0); }
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='section_nav.css', v='1') }}">
 </head>
 <body>
-    <div class="header">
-        <h1 style="letter-spacing: 2px;">🛰️ TITAN ORCHESTRATOR</h1>
-        <div>
-            <span class="status-dot"></span>
-            <span style="font-weight:bold; color:{{ status_color }}">{{ status_text }}</span>
-            &nbsp;|&nbsp; Workers: {{ stats.active_workers }} &nbsp;|&nbsp; Queue: {{ stats.queue_size }}
-        </div>
-    </div>
+    {% with active_section='orchestrator', nav_status=status_text ~ ' · Workers: ' ~ stats.active_workers ~ ' · Queue: ' ~ stats.queue_size %}{% include 'section_nav.html' %}{% endwith %}
 
     <div class="grid">
         {% for w in stats.workers %}
@@ -306,6 +301,17 @@ def get_raw_logs(job_id):
         return "Error fetching logs", 500
     return logs if logs else "[Titan] No logs found for this ID yet."
 
+app.register_blueprint(create_blueprint(
+    titan_communicate, OP_STATS_JSON, OP_GET_LOGS,
+    Path(os.environ.get("TITAN_DAG_MANIFEST", ".titan_dag_manifest.json")),
+    Path(os.environ.get("TITAN_DAG_YAML_DIR", ".")),
+    scripts_root=Path(os.environ.get("TITAN_DAG_SCRIPT_DIR",
+        Path(__file__).resolve().parent / "dag_samples")),
+))
+app.register_blueprint(create_cluster_blueprint(
+    titan_communicate, Path(os.environ.get("TITAN_DAG_MANIFEST", ".titan_dag_manifest.json"))
+))
+
 if __name__ == '__main__':
     print(f"Starting Dashboard on http://127.0.0.1:5000")
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='127.0.0.1', port=5000)

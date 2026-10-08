@@ -15,10 +15,11 @@
 package titan.scheduler;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Job implements Comparable<Job> {
     public enum Status{
-        PENDING, RUNNING, COMPLETED, FAILED, DEAD
+        PENDING, RUNNING, COMPLETED, FAILED, DEAD, CANCELLED
     }
 
     public static final int PRIORITY_LOW = 0;
@@ -28,7 +29,7 @@ public class Job implements Comparable<Job> {
     private String id;
     private String payload;
     private int retryCount;
-    private Status status;
+    private volatile Status status;
 
     private final int priority;
     private final long scheduledTime;
@@ -61,8 +62,8 @@ public class Job implements Comparable<Job> {
         this.scheduledTime = System.currentTimeMillis() + delayInMs;
 
         if(dependenciesIds != null && !dependenciesIds.isEmpty()){
-            this.dependenciesIds = dependenciesIds;
-            this.satisfiedDeps = new HashSet<>();
+            this.dependenciesIds = List.copyOf(new LinkedHashSet<>(dependenciesIds));
+            this.satisfiedDeps = ConcurrentHashMap.newKeySet();
         }
     }
 
@@ -173,11 +174,19 @@ public class Job implements Comparable<Job> {
     // Helper method for the File I/O logic
     private static String constructFilePayload(String type, String filename, String port) {
         try {
-            java.io.File file = new java.io.File("perm_files" + java.io.File.separator + filename);
+            if (filename == null || filename.isBlank() || filename.equals(".") || filename.equals("..")
+                    || filename.indexOf('/') >= 0 || filename.indexOf('\\') >= 0
+                    || filename.indexOf(':') >= 0)
+                throw new IllegalArgumentException("Invalid file name");
+            java.nio.file.Path root = java.nio.file.Path.of("perm_files").toAbsolutePath().normalize();
+            java.nio.file.Path file = root.resolve(filename).normalize();
+            if (!file.startsWith(root) || (java.nio.file.Files.exists(file)
+                    && !file.toRealPath().startsWith(root.toRealPath())))
+                throw new IllegalArgumentException("File escapes perm_files");
             String base64Content = "";
 
-            if (file.exists()) {
-                byte[] fileBytes = java.nio.file.Files.readAllBytes(file.toPath());
+            if (java.nio.file.Files.isRegularFile(file)) {
+                byte[] fileBytes = java.nio.file.Files.readAllBytes(file);
                 base64Content = java.util.Base64.getEncoder().encodeToString(fileBytes);
             } else {
                 System.err.println("[ERROR] Warning: File not found: " + filename);
@@ -191,8 +200,7 @@ public class Job implements Comparable<Job> {
                 return "DEPLOY_PAYLOAD|" + filename + "|" + base64Content + "|" + port;
             }
         } catch (Exception e) {
-            System.err.println("[FAIL] Payload Error: " + e.getMessage());
-            return type + "|" + filename;
+            throw new IllegalArgumentException("Cannot read staged file: " + e.getMessage(), e);
         }
     }
 

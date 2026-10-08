@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Titan · DAG Pipelines</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dag_viewer.css', v='12') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='dag_viewer_typography.css', v='2') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='section_nav.css', v='2') }}">
+  <script src="{{ url_for('static', filename='dag_viewer.js', v='11') }}" defer></script>
+  <script src="{{ url_for('static', filename='dag_viewer_zoom.js', v='1') }}" defer></script>
+  <script src="{{ url_for('static', filename='dag_viewer_hitl.js', v='1') }}" defer></script>
+</head>
+<body data-selected-dag="{{ selected.id if selected else '' }}" data-selected-job="{{ job.id if job else '' }}" data-historical="{{ 'true' if historical else 'false' }}" data-page="{{ page_number }}" data-query="{{ query }}">
+  {% with active_section='dags', nav_status='Master online' if data.online else 'Master offline' %}{% include 'section_nav.html' %}{% endwith %}
+  <div class="layout">
+    <aside class="sidebar" aria-label="Pipelines">
+      <p class="eyebrow">WORKSPACE</p>
+      <h2>Pipeline runs <span id="dag-count">{{ match_count }}</span></h2>
+      <form class="pipeline-search" action="/dags" method="get" role="search">
+        <input id="pipeline-search" name="q" type="search" aria-label="Search pipeline names" placeholder="Search pipeline names…" value="{{ query }}">
+        <button type="submit">Search</button>
+      </form>
+      <p class="sidebar-group">LATEST FIRST</p>
+      <div id="dag-list">
+        {% for dag in page_dags %}
+        <a class="dag-link {{ 'selected' if selected and selected.id == dag.id else '' }}"
+           data-dag-id="{{ dag.id }}" href="{{ url_for('dag_viewer.page', dag_id=dag.id, page=page_number, q=query) }}">
+          <strong><span class="status-dot" data-status="{{ dag.status }}"></span>{{ dag.name }}</strong>
+          <span class="dag-meta"><span class="state" data-status>{{ dag.status }}</span><span data-progress>{{ dag.completed }}/{{ dag.total }} jobs</span></span>
+        </a>
+        {% else %}<p class="empty">{{ 'No pipeline names match your search.' if query else 'Submit a named DAG with the Python SDK to see it here.' }}</p>{% endfor %}
+      </div>
+      <nav class="pipeline-pages" aria-label="Pipeline pages">
+        {% if page_number > 1 %}<a href="{{ url_for('dag_viewer.page', page=page_number - 1, q=query) }}">← Previous</a>{% endif %}
+        <span>Page {{ page_number }} of {{ page_count }}</span>
+        {% if page_number < page_count %}<a href="{{ url_for('dag_viewer.page', page=page_number + 1, q=query) }}">Next →</a>{% endif %}
+      </nav>
+    </aside>
+    <main>
+      {% if selected %}
+      <section class="heading">
+        <div><p class="pipeline-crumb">Pipelines <span>›</span> Run details</p><h1 title="{{ selected.name }}">{{ selected.name|replace('_', ' ')|replace('-', ' ')|title }}</h1>
+          <p class="muted">{{ selected.total }} stages · Run <time class="run-time" data-timestamp="{{ selected.submitted or '' }}">{{ selected.submitted or 'timestamp unavailable' }}</time></p>
+          {% if runs|length > 1 %}<label class="run-picker">Run history <select id="run-selector" aria-label="Select pipeline run"><option value="">Latest run</option>{% for run in runs if run.run_ts != runs[0].run_ts %}<option value="{{ run.run_ts }}" {{ 'selected' if selected.submitted == run.run_ts else '' }}>{{ run.run_ts }}</option>{% endfor %}</select></label>{% endif %}</div>
+        <div class="heading-actions"><span id="dag-status" class="state" data-state="{{ selected.status }}">{{ selected.status }}</span>
+          <button type="button" id="cancel-dag" class="cancel-button" data-dag-id="{{ selected.id }}"
+                  {% if historical or not selected.jobs|selectattr('status', 'in', ['WAITING', 'PENDING', 'RUNNING'])|list %}disabled{% endif %}>Stop pipeline</button>
+          {% if selected.can_redeploy %}<button type="button" id="redeploy" data-dag-id="{{ selected.id }}">Redeploy</button>{% endif %}</div>
+      </section>
+      <div id="service-deployments" class="service-deployments" {% if not selected.jobs|selectattr('service')|list %}hidden{% endif %}>
+        {% for service_job in selected.jobs if service_job.service and service_job.status == 'COMPLETED' %}
+          <div><span class="service-chip">Service ready</span><strong>{{ service_job.id }}</strong><a href="{{ service_job.service.url }}" target="_blank" rel="noopener noreferrer">{{ service_job.service.url }}</a><span>Port {{ service_job.service.port }}</span></div>
+        {% endfor %}
+      </div>
+      <p id="action-feedback" class="action-feedback" role="status" aria-live="polite"></p>
+      <section id="hitl-gates" class="hitl-gates" aria-label="Human approval gates" aria-live="polite" hidden></section>
+      <div id="status-note" class="status-note" {% if selected.status != 'UNKNOWN' %}hidden{% endif %}>This run has no recorded outcome in the current master. Its status is unknown after restart.</div>
+      <section class="summary" aria-label="Progress">
+        <div><b>{{ selected.total }}</b><small>Stages</small></div>
+        <div><b id="completed-count">{{ selected.completed }}</b><small>Completed</small></div>
+        <div><b id="running-count">{{ selected.jobs|selectattr('status', 'equalto', 'RUNNING')|list|length }}</b><small>Running</small></div>
+        <div><b id="failed-count">{{ selected.jobs|selectattr('status', 'in', ['FAILED', 'DEAD'])|list|length }}</b><small>Failed</small></div>
+        <div><b id="waiting-count">{{ selected.jobs|selectattr('status', 'in', ['WAITING', 'PENDING'])|list|length }}</b><small>Waiting</small></div>
+        <div><b id="cancelled-count">{{ selected.jobs|selectattr('status', 'equalto', 'CANCELLED')|list|length }}</b><small>Cancelled</small></div>
+      </section>
+      <div class="progress" role="progressbar" aria-label="DAG completed" aria-valuemin="0" aria-valuemax="100"
+           aria-valuenow="{{ (selected.completed * 100 / selected.total)|round|int if selected.total else 0 }}">
+        <div id="progress-fill" style="width:{{ (selected.completed * 100 / selected.total)|round|int if selected.total else 0 }}%"></div>
+      </div>
+      <section class="graph-panel" aria-label="Dependency graph">
+        <div class="panel-head graph-toolbar"><h2>Dependency graph</h2>
+          <div class="graph-tools"><span>Scroll to explore · select a stage</span>
+            <a class="graph-export" href="{{ url_for('dag_viewer.graph_export', dag_id=selected.id, format_name='svg', run=selected.submitted if historical else none) }}">Full SVG ↓</a>
+            <a class="graph-export" href="{{ url_for('dag_viewer.graph_export', dag_id=selected.id, format_name='dot', run=selected.submitted if historical else none) }}">DOT ↓</a>
+            <div class="zoom-controls" role="group" aria-label="Graph zoom">
+              <button type="button" id="zoom-out" aria-label="Zoom out">−</button>
+              <output id="zoom-level" aria-live="polite">80%</output>
+              <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
+              <button type="button" id="zoom-reset" aria-label="Reset graph zoom">Reset</button>
+            </div>
+          </div>
+        </div>
+        {% if selected.total > preview_limit %}<div class="graph-limit" role="status">This workflow has {{ selected.total }} stages. Showing the first {{ preview_limit }} by dependency order to keep the viewer responsive. Download the full SVG or DOT file above.</div>{% endif %}
+        <div class="graph-scroll" tabindex="0" aria-label="Scrollable dependency graph">{{ graph|safe }}</div>
+        <div class="graph-legend"><span><i class="status-dot" data-status="COMPLETED"></i>Complete</span><span><i class="status-dot" data-status="RUNNING"></i>Running</span><span><i class="status-dot" data-status="FAILED"></i>Failed</span><span><i class="status-dot" data-status="WAITING"></i>Waiting</span><span><i class="status-dot" data-status="CANCELLED"></i>Cancelled</span></div>
+      </section>
+      {% if job %}
+      <section class="details" aria-label="Selected job">
+        <div class="inspector">
+          <p class="eyebrow">SELECTED STAGE</p><h2>{{ job.id }}</h2>{% if job.spec.get('job_type', 'run')|lower in ['service', 'deploy_payload'] %}<span id="selected-service-chip" class="service-chip">Service task</span>{% else %}<span id="selected-service-chip" class="service-chip" hidden>Service task</span>{% endif %}
+          <div class="inspector-status"><span id="selected-status" class="state" data-state="{{ job.status }}">{{ job.status }}</span>
+            <button type="button" id="cancel-job" class="cancel-button" data-dag-id="{{ selected.id }}" data-job-id="{{ job.id }}"
+                    {% if historical or job.status not in ['WAITING', 'PENDING', 'RUNNING'] %}disabled{% endif %}>Stop job</button></div>
+          <div id="selected-service-endpoint" class="service-endpoint" {% if not job.service %}hidden{% endif %}>{% if job.service %}Ready at <a href="{{ job.service.url }}" target="_blank" rel="noopener noreferrer">{{ job.service.url }}</a> · Port {{ job.service.port }}{% endif %}</div>
+          <dl><div><dt>Worker</dt><dd id="selected-worker">{{ job.worker or 'Unassigned' }}</dd></div>
+              <div><dt>Duration</dt><dd>{{ job.duration or '—' }}</dd></div>
+              <div><dt>Parents</dt><dd>{{ job.parents|join(', ') or 'None' }}</dd></div>
+              <div><dt>Attempts</dt><dd id="selected-attempts">{{ job.attempts or '—' }}</dd></div>
+              <div><dt>Retries</dt><dd id="selected-retries">{{ job.retry_count or 0 }}</dd></div>
+              <div><dt>Exit code</dt><dd id="selected-exit">{{ job.exit_code if job.exit_code is not none else '—' }}</dd></div>
+              <div><dt>Waiting for</dt><dd id="selected-blockers">{{ job.blocked_by|join(', ') or ('Worker capacity' if job.status in ['WAITING', 'PENDING'] and not job.parents else '—') }}</dd></div>
+              <div><dt>Last error</dt><dd id="selected-error">{{ job.last_error or '—' }}</dd></div></dl>
+        </div>
+        <div class="detail-content">
+          <div class="detail-tabs" role="tablist" aria-label="Stage information">
+            <button type="button" role="tab" id="tab-logs" aria-controls="pane-logs" aria-selected="true" data-tab="logs">Logs</button>
+            <button type="button" role="tab" id="tab-files" aria-controls="pane-files" aria-selected="false" data-tab="files">Job files</button>
+            <button type="button" role="tab" id="tab-shared" aria-controls="pane-shared" aria-selected="false" data-tab="shared">Shared workspace</button>
+            <button type="button" role="tab" id="tab-info" aria-controls="pane-info" aria-selected="false" data-tab="info">Details</button>
+          </div>
+          <div id="pane-logs" class="detail-pane" role="tabpanel" aria-labelledby="tab-logs">{% if historical %}<p class="pane-note">Logs for this historical run were not archived. Current logs could contain a later run, so they are hidden here.</p>{% else %}<a class="live-logs" href="{{ url_for('view_logs', job_id=job.id) }}">Open live logs ↗</a><pre>{{ logs or 'No logs available yet.' }}</pre>{% endif %}</div>
+          <div id="pane-files" class="detail-pane" role="tabpanel" aria-labelledby="tab-files" hidden>{% if historical %}<p class="pane-note">Files for this historical run were not archived. Current workspace files are hidden here.</p>{% else %}<p class="pane-note">This job’s log and files under artifacts/{{ job.id }}/. Select a filename to download it.</p>
+            <div id="workspace-files" data-dag-id="{{ selected.id }}" data-job-id="{{ job.id }}" class="workspace-files"><p class="empty">Loading files…</p></div>{% endif %}</div>
+          <div id="pane-shared" class="detail-pane" role="tabpanel" aria-labelledby="tab-shared" hidden>{% if historical %}<p class="pane-note">Shared workspace contents reflect the current filesystem, so they are hidden for historical runs.</p>{% else %}<p class="pane-note">Unassigned files in the common worker workspace. They may belong to another pipeline.</p>
+            <div id="shared-files" class="workspace-files"><p class="empty">Loading files…</p></div>{% endif %}</div>
+          <div id="pane-info" class="detail-pane info-pane" role="tabpanel" aria-labelledby="tab-info" hidden>
+            <dl>
+              <div><dt>Full job ID</dt><dd>{{ job.id }}</dd></div>
+              <div><dt>Pipeline</dt><dd>{{ selected.name }}</dd></div>
+              <div><dt>Parent jobs</dt><dd>{{ job.parents|join(', ') or 'None' }}</dd></div>
+              <div><dt>Run timestamp</dt><dd>{{ selected.submitted or 'Unavailable' }}</dd></div>
+              <div><dt>Script</dt><dd>{{ job.spec.get('script', 'Unavailable') }}</dd></div>
+              <div><dt>Script SHA-256</dt><dd>{{ job.spec.get('sha256') or 'Unavailable' }}</dd></div>
+              <div><dt>Arguments</dt><dd>{{ job.spec.get('args') or 'None' }}</dd></div>
+              <div><dt>Requirement</dt><dd>{{ job.spec.get('requirement', 'Unavailable') }}</dd></div>
+              <div><dt>Priority</dt><dd>{{ job.spec.get('priority', 'Unavailable') }}</dd></div>
+              <div><dt>Input versions</dt><dd>{{ job.spec.get('input_versions')|tojson if job.spec.get('input_versions') else 'Not declared' }}</dd></div>
+              <div><dt>Expected outputs</dt><dd>{{ (job.spec.get('expected_outputs') or [])|join(', ') or 'Not declared' }}</dd></div>
+            </dl>
+            <p class="pane-note">Submission metadata is captured for each run. Generated files appear in Job files.</p>
+            <a class="live-logs" href="{{ url_for('dag_viewer.timeline_page', dag=selected.id, run=selected.submitted) }}">Open execution timeline ↗</a>
+          </div>
+        </div>
+      </section>
+      {% endif %}
+      {% else %}<div class="welcome"><h1>No DAGs yet</h1><p>Submit a named DAG through the SDK, then refresh this page.</p></div>{% endif %}
+    </main>
+  </div>
+</body>
+</html>

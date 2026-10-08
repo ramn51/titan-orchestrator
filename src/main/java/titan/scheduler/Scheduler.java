@@ -21,7 +21,6 @@ import titan.network.TitanProtocol;
 import titan.network.RpcClient;
 import titan.network.SchedulerServer;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
@@ -45,7 +44,10 @@ import titan.storage.TitanJRedisAdapter;
     private final SchedulerServer schedulerServer;
 
     private final ScheduledExecutorService heartBeatExecutor;
+    private final ScheduledExecutorService telemetryExecutor;
     private final ExecutorService dispatchExecutor;
+    /** One retained wake-up is enough: a single dispatcher rechecks all worker capacity. */
+    private final BlockingQueue<Boolean> capacitySignal = new ArrayBlockingQueue<>(1);
     private final ExecutorService serverExecutor;
     private volatile boolean isRunning = true;
     private int port;
@@ -59,7 +61,17 @@ import titan.storage.TitanJRedisAdapter;
 
     // This is purely for validation purpose
     private final Map<String, TaskExecution> executionHistory = new ConcurrentHashMap<>();
+    private final ExecutionTimeline executionTimeline = new ExecutionTimeline();
+    private final SchedulerTelemetry telemetry = new SchedulerTelemetry();
+    private final Map<String, Long> readySince = new ConcurrentHashMap<>();
+    private final Map<String, Job> capabilityWaiting = new ConcurrentHashMap<>();
+    private final Map<String, String> waitingReasons = new ConcurrentHashMap<>();
     private final Map<String, Worker> liveServiceMap = new ConcurrentHashMap<>();
+    public record ServiceEndpoint(String host, int port) {}
+    private final Map<String, ServiceEndpoint> serviceEndpoints = new ConcurrentHashMap<>();
+    private final Map<String, ServiceEndpoint> pendingServiceEndpoints = new ConcurrentHashMap<>();
+    private final Set<String> stoppingServices = ConcurrentHashMap.newKeySet();
+    private final ServiceReadinessMonitor readinessMonitor;
 
     // For history maintenance of (tasks all types).
     private final Map<String, Integer> workerCompletionStats = new ConcurrentHashMap<>();
@@ -67,10 +79,14 @@ import titan.storage.TitanJRedisAdapter;
 
     // Map to hold Active Job Objects for Async Retries
     private final Map<String, Job> runningJobs = new ConcurrentHashMap<>();
+    private final Map<String, Integer> heartbeatMisses = new ConcurrentHashMap<>();
+    private final Map<String, Job> knownJobs = new ConcurrentHashMap<>();
     private final Map<String, Job> dagWaitingRoom;
 
     // AutoScaling declarations
-    int MAX_WORKERS = 5;
+    private final int maxWorkers = Math.max(1, TitanConfig.getInt("titan.scheduler.max.workers", 5));
+    private final boolean autoscaleEnabled = Boolean.parseBoolean(
+            TitanConfig.get("titan.scheduler.autoscale", "true"));
     private volatile boolean scalingInProgress = false;
     private final ScheduledExecutorService scalerExecutor = Executors.newSingleThreadScheduledExecutor();
     // Remember bad ports for avoiding during scaling
@@ -90,6 +106,16 @@ import titan.storage.TitanJRedisAdapter;
  * @throws RuntimeException if the Scheduler Server fails to start due to an IOException.
  */
     public Scheduler(int port){
+        this(port, new ServiceReadinessMonitor(), null);
+    }
+
+    Scheduler(int port, ServiceReadinessMonitor readinessMonitor){
+        this(port, readinessMonitor, new TitanJRedisAdapter("", 0));
+    }
+
+    private Scheduler(int port, ServiceReadinessMonitor readinessMonitor,
+                      TitanJRedisAdapter testRedis){
+        this.readinessMonitor = readinessMonitor;
         workerRegistry = new WorkerRegistry();
         schedulerClient = new RpcClient(workerRegistry);
 //        this.taskQueue = new ConcurrentLinkedDeque<>();
@@ -100,12 +126,17 @@ import titan.storage.TitanJRedisAdapter;
 
         this.port = port;
         this.heartBeatExecutor = Executors.newSingleThreadScheduledExecutor();
+        this.telemetryExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread thread = new Thread(r, "titan-telemetry-sampler");
+            thread.setDaemon(true);
+            return thread;
+        });
         this.dispatchExecutor = Executors.newSingleThreadExecutor();
         this.serverExecutor = Executors.newSingleThreadExecutor();
 
         String rHost = TitanConfig.get("titan.redis.host", "localhost");
         int rPort = TitanConfig.getInt("titan.redis.port", 6379);
-        this.redis = new TitanJRedisAdapter(redisHost, redisPort);
+        this.redis = testRedis == null ? new TitanJRedisAdapter(redisHost, redisPort) : testRedis;
 
         try{
             this.schedulerServer = new SchedulerServer(port, this);
@@ -119,7 +150,12 @@ import titan.storage.TitanJRedisAdapter;
                 try {
                     ScheduledJob readyJob = waitingRoom.take();
                     System.out.println("Time is up Moving Job " + readyJob.getJob().getId() + " to Active Queue.");
-                    taskQueue.add(readyJob.getJob());
+                    synchronized (Scheduler.this) {
+                        if (readyJob.getJob().getStatus() == Job.Status.PENDING) {
+                            readySince.put(readyJob.getJob().getId(), System.currentTimeMillis());
+                            taskQueue.add(readyJob.getJob());
+                        }
+                    }
 
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -162,6 +198,8 @@ import titan.storage.TitanJRedisAdapter;
                 this::checkHeartBeat,
                 5, 10, TimeUnit.SECONDS
         );
+        telemetryExecutor.scheduleAtFixedRate(this::sampleTelemetry, 1,
+                Math.max(1, TitanConfig.getInt("titan.observability.sample.seconds", 1)), TimeUnit.SECONDS);
 
         dispatchExecutor.submit(() -> {
             try {
@@ -239,7 +277,7 @@ import titan.storage.TitanJRedisAdapter;
             int totalAvailableSlots = allWorkers.stream().mapToInt(Worker::getMaxCap).sum();;
             System.out.println("[SCALER] Cluster Pressure: " + totalUsedSlots + "/" + totalAvailableSlots);
 
-            if (generalPoolSaturated && totalCount < MAX_WORKERS){
+            if (autoscaleEnabled && generalPoolSaturated && totalCount < maxWorkers){
                scalingInProgress = true;
 //               int nextPort = workers.stream().mapToInt(Worker::port).max().orElse(8080) + 1;
                 // If the next port is not available then we just dont do scale up itself.
@@ -253,6 +291,7 @@ import titan.storage.TitanJRedisAdapter;
                }
 
                System.out.println("[SCALER] Cluster saturated (" + busyCount + "/" + totalCount + "). Scaling to port: " + nextPort);
+               telemetry.event("SCALE_OUT", "GENERAL worker requested on port " + nextPort);
                String serviceId = "WRK-" + nextPort + "-" + UUID.randomUUID().toString().substring(0, 8);
                String autoScalePayload = "DEPLOY_PAYLOAD|Worker.jar|INTERNAL_SCALE|" + nextPort;
 
@@ -268,7 +307,7 @@ import titan.storage.TitanJRedisAdapter;
             // Only scale down if the WHOLE cluster is idle and we have more than 1 worker
             Set<Worker> serviceHosts = new HashSet<>(liveServiceMap.values());
 
-            if (!generalPoolSaturated && totalCount > 1) {
+            if (autoscaleEnabled && !generalPoolSaturated && totalCount > 1) {
                 Worker idleTarget = allWorkers.stream()
                         .filter(w -> !w.isPermanent())
                         .filter(w -> w.port() != 8080) // Never kill the root
@@ -280,9 +319,11 @@ import titan.storage.TitanJRedisAdapter;
 
                 if (idleTarget != null) {
                     System.out.println("[SCALER] SCALE-DOWN: Worker " + idleTarget.port() + " is excess capacity. Removing.");
+                    telemetry.event("SCALE_IN", idleTarget.host() + ":" + idleTarget.port());
                     this.shutdownWorkerNode(idleTarget.host(), idleTarget.port());
                     // 2. Remove from local registry immediately
                     workerRegistry.getWorkerMap().remove(idleTarget.host() + ":" + idleTarget.port());
+                    schedulerClient.evict(idleTarget.host(), idleTarget.port());
                 }
             }
         } catch (Exception e) {
@@ -341,7 +382,7 @@ import titan.storage.TitanJRedisAdapter;
     public void checkHeartBeat(){
         System.out.println("Sending Heartbeat");
         for(Worker worker: workerRegistry.getWorkers()){
-
+            long heartbeatStarted = System.nanoTime();
             String result = schedulerClient.sendRequest(
                     worker.host(),
                     worker.port(),
@@ -350,8 +391,28 @@ import titan.storage.TitanJRedisAdapter;
             );
 
             if(result  == null){
+                telemetry.heartbeat(false);
+                String workerKey = worker.host() + ":" + worker.port();
+                if (heartbeatMisses.merge(workerKey, 1, Integer::sum) < 2) {
+                    System.err.println("[HEARTBEAT] First miss for " + workerKey + "; checking again before recovery");
+                    continue;
+                }
+                heartbeatMisses.remove(workerKey);
+                telemetry.event("WORKER_LOST", worker.host() + ":" + worker.port());
                 workerRegistry.markWorkerDead(worker.host(), worker.port());
+                schedulerClient.evict(worker.host(), worker.port());
+                recoverJobsForLostWorker(worker);
+                for (Map.Entry<String, Worker> service : new ArrayList<>(liveServiceMap.entrySet())) {
+                    if (service.getValue() == worker) unregisterService(service.getKey());
+                }
+                for (String serviceId : new ArrayList<>(pendingServiceEndpoints.keySet())) {
+                    TaskExecution record = executionHistory.get(serviceId);
+                    if (record != null && record.assignedWorker == worker) unregisterService(serviceId);
+                }
             } else if(result.startsWith("PONG")){
+                heartbeatMisses.remove(worker.host() + ":" + worker.port());
+                telemetry.heartbeat(true);
+                worker.updateHeartbeatRtt(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - heartbeatStarted));
                 String workerKey = worker.host() + ":" + worker.port();
 
                 safeRedisSadd("system:live_workers", workerKey);
@@ -360,7 +421,13 @@ import titan.storage.TitanJRedisAdapter;
                 String[] parts = result.split("\\|");
                 if (parts.length > 1) {
                     int load = Integer.parseInt(parts[1]);
-                    worker.setCurrentLoad(load);
+                    long assigned = runningJobs.keySet().stream()
+                            .map(executionHistory::get)
+                            .filter(record -> record != null && record.assignedWorker == worker)
+                            .count();
+                    int previousLoad = worker.getCurrentLoad();
+                    worker.reconcileLoad(load, (int) assigned);
+                    if (worker.getCurrentLoad() < previousLoad) signalCapacityAvailable();
 
                     safeRedisSet("worker:" + workerKey + ":load", String.valueOf(worker.getCurrentLoad()));
 
@@ -371,6 +438,16 @@ import titan.storage.TitanJRedisAdapter;
                 if (parts.length > 2) {
                     int maxCapacity = Integer.parseInt(parts[2]);
                     worker.setMaxCap(maxCapacity);
+                }
+                if (parts.length > 5) {
+                    try {
+                        worker.updateHostMetrics(Double.parseDouble(parts[3]),
+                                Long.parseLong(parts[4]), Long.parseLong(parts[5]));
+                    } catch (NumberFormatException ignored) { }
+                }
+                if (parts.length > 6) {
+                    try { worker.updateHostLoadAverage(Double.parseDouble(parts[6])); }
+                    catch (NumberFormatException ignored) { }
                 }
                 workerRegistry.updateLastSeen(worker.host(), worker.port());
             }
@@ -386,10 +463,71 @@ import titan.storage.TitanJRedisAdapter;
         return liveServiceMap;
     }
 
+    /** Retire every in-flight attempt owned by a lost worker before it can be retried elsewhere. */
+    synchronized void recoverJobsForLostWorker(Worker worker) {
+        for (Map.Entry<String, Job> entry : new ArrayList<>(runningJobs.entrySet())) {
+            String jobId = entry.getKey();
+            Job job = entry.getValue();
+            TaskExecution record = executionHistory.get(jobId);
+            if (record == null || record.assignedWorker != worker || job.getStatus() == Job.Status.CANCELLED
+                    || !runningJobs.remove(jobId, job)) continue;
+            String reason = "Assigned worker lost heartbeat: " + worker.host() + ":" + worker.port();
+            record.fail(reason);
+            telemetry.failed();
+            executionTimeline.finish(jobId, "FAILED", reason);
+            recordWorkerHistory(job, record);
+            worker.decrementCurrentLoad();
+            worker.currentJobId = null;
+            handleJobFailure(job);
+            signalCapacityAvailable();
+        }
+    }
+
+    public String resolveService(String serviceId) {
+        ServiceEndpoint endpoint = serviceEndpoints.get(serviceId);
+        return endpoint == null ? "ERROR: Service not found" : endpoint.host() + "|" + endpoint.port();
+    }
+
+    public void unregisterService(String serviceId) {
+        boolean cancelDependents = false;
+        synchronized (this) {
+            stoppingServices.remove(serviceId);
+            liveServiceMap.remove(serviceId);
+            serviceEndpoints.remove(serviceId);
+            if (pendingServiceEndpoints.remove(serviceId) != null) {
+                readinessMonitor.cancel(serviceId);
+                Job job = runningJobs.remove(serviceId);
+                if (job != null && job.getStatus() != Job.Status.CANCELLED) {
+                    String reason = "Service process exited before its port became ready";
+                    TaskExecution record = executionHistory.get(serviceId);
+                    record.fail(reason);
+                    telemetry.failed();
+                    executionTimeline.finish(serviceId, "FAILED", reason);
+                    job.setStatus(Job.Status.FAILED);
+                    safeRedisSet("job:" + serviceId + ":status", "FAILED");
+                    safeRedisSrem("system:active_jobs", serviceId);
+                    if (record.assignedWorker != null) {
+                        record.assignedWorker.currentJobId = null;
+                        record.assignedWorker.decrementCurrentLoad();
+                        signalCapacityAvailable();
+                    }
+                    recordWorkerHistory(job, record);
+                    cancelDependents = true;
+                }
+            }
+        }
+        if (cancelDependents) cancelChildren(serviceId);
+    }
+
+    public void clearRuntimeStats() {
+        workerCompletionStats.clear();
+        workerRecentHistory.clear();
+    }
+
     /**
  * Registers a new worker with the scheduler. This method adds the worker to the registry,
  * clears any `scalingInProgress` flag, and removes the port from the blacklist.
- * It also handles the 'promotion' of auto-scaled worker deployment jobs, marking the parent worker as idle.
+ * Deployment readiness callbacks release the parent worker's dispatch slot.
  *
  * @param host The hostname or IP address of the worker.
  * @param port The port number the worker is listening on.
@@ -397,33 +535,31 @@ import titan.storage.TitanJRedisAdapter;
  * @param isPermanent {@code true} if the worker is a permanent part of the cluster and should not be scaled down, {@code false} otherwise.
  */
     public synchronized void registerWorker(String host, int port, String capability, boolean isPermanent) {
+        String workerKey = workerRegistry.getWorkerKey(host, port);
+        boolean firstRegistration = !workerRegistry.getWorkerMap().containsKey(workerKey);
         this.workerRegistry.addWorker(host, port, capability, isPermanent);
+        for (Job parked : new ArrayList<>(capabilityWaiting.values())) {
+            if (workerRegistry.getWorkersByCapability(extractSkillRequirement(parked)).isEmpty()) continue;
+            if (capabilityWaiting.remove(parked.getId(), parked) && parked.getStatus() == Job.Status.PENDING) {
+                waitingReasons.remove(parked.getId());
+                taskQueue.add(parked);
+            }
+        }
+        // Workers re-register periodically for recovery. Recording each refresh
+        // would evict actual scale and failure events from the bounded journal.
+        if (firstRegistration)
+            telemetry.event("WORKER_REGISTERED", host + ":" + port + " " + capability);
+        signalCapacityAvailable();
         this.scalingInProgress = false;
         this.portBlacklist.remove(port);
 
 //        System.out.println("[DEBUG] Attempting promotion for incoming worker at " + host + ":" + port);
-        System.out.println("[INFO] New Worker Registered: " + host + ":" + port +
-                (isPermanent ? " [PERMANENT]" : " [EPHEMERAL]"));
+        if (firstRegistration)
+            System.out.println("[INFO] New Worker Registered: " + host + ":" + port +
+                    (isPermanent ? " [PERMANENT]" : " [EPHEMERAL]"));
 
-        liveServiceMap.entrySet().removeIf(entry -> {
-                    String serviceId = entry.getKey();
-                    boolean idMatches = serviceId.startsWith("WRK-" + port + "-");
-
-                    if (idMatches) {
-                        System.out.println("[PROMOTION] Job " + serviceId + " converted to Peer.");
-
-                        // 2. Find the Parent who was working on this and set them to Idle
-                        for (Worker w : workerRegistry.getWorkers()) {
-                            if (serviceId.equals(w.currentJobId)) {
-                                w.currentJobId = null; // Parent is now free!
-                                System.out.println("[DEBUG] Parent Worker " + w.port() + " is now IDLE.");
-                            }
-                        }
-                        return true;
-                    }
-
-                return false; // Removes "WRK-..." from the parent's Running Services list
-            });
+        // The deployment readiness callback releases the parent worker's slot and
+        // keeps the service endpoint registered even when the child is itself a worker.
     }
 
     /**
@@ -435,6 +571,18 @@ import titan.storage.TitanJRedisAdapter;
         return dagWaitingRoom;
     }
 
+    /** Register the whole DAG before admitting any node, including on redeploy. */
+    public synchronized void submitDag(List<Job> jobs) {
+        Set<String> ids = new HashSet<>();
+        for (Job job : jobs) {
+            if (!safeJobId(job.getId()) || !ids.add(job.getId())) {
+                throw new IllegalArgumentException("Invalid or duplicate DAG job ID");
+            }
+        }
+        for (Job job : jobs) knownJobs.put(job.getId(), job);
+        for (Job job : jobs) submitJob(job);
+    }
+
     /**
  * Submits a {@link Job} to the scheduler for processing. The job's state is persisted to Redis.
  * If the job has dependencies, it's placed in the DAG waiting room. If it has a scheduled time in the future,
@@ -442,26 +590,54 @@ import titan.storage.TitanJRedisAdapter;
  *
  * @param job The {@link Job} object to be submitted.
  */
-    public void submitJob(Job job){
+    public synchronized void submitJob(Job job){
+        if (!safeJobId(job.getId())) throw new IllegalArgumentException("Invalid job ID");
+        String payload = job.getPayload();
+        if (payload != null && (payload.contains("DEPLOY_PAYLOAD|")
+                || payload.contains("START_ARCHIVE_SERVICE|"))
+                && (liveServiceMap.containsKey(job.getId()) || pendingServiceEndpoints.containsKey(job.getId())
+                || stoppingServices.contains(job.getId()))) {
+            throw new IllegalArgumentException("Deployment Rejected: Service ID already in use: " + job.getId());
+        }
+        knownJobs.put(job.getId(), job);
+        liveLogBuffer.remove(job.getId());
         // Persist to Redis to act as WAL
         // This will be the basis for recovery
         safeRedisSet("job:" + job.getId() + ":payload", job.getPayload());
         safeRedisSet("job:" + job.getId() + ":status", "PENDING");
         safeRedisSet("job:" + job.getId() + ":priority", String.valueOf(job.getPriority()));
         safeRedisSet("job:" + job.getId() + ":delay", String.valueOf(job.getScheduledTime()));
+        safeRedisSet("job:" + job.getId() + ":dependencies", String.join(",", job.getDependenciesIds()));
         safeRedisSadd("system:active_jobs", job.getId());
 
-        System.out.println("[INFO] [DAG] Job " + job.getId() + " is waiting.");
+        // A parent can finish before its child is submitted. The same monitor guards
+        // registration and unlockChildren, so no completion can pass between the
+        // final check and insertion into the waiting room.
+        resolveCompletedParents(job);
         if (!job.isReady()) {
-            System.out.println("[INFO] Job " + job.getId() + " blocked by dependencies. Entering DAG Waiting Room.");
             dagWaitingRoom.put(job.getId(), job);
-            return;
+            resolveCompletedParents(job);
+            if (!job.isReady() || !dagWaitingRoom.remove(job.getId(), job)) return;
         }
 
+        enqueueReadyJob(job);
+    }
+
+    private void resolveCompletedParents(Job job) {
+        for (String parentId : job.getDependenciesIds()) {
+            Job parent = knownJobs.get(parentId);
+            if (parent != null && parent.getStatus() == Job.Status.COMPLETED) {
+                job.resolveDependencies(parentId);
+            }
+        }
+    }
+
+    private void enqueueReadyJob(Job job) {
         long delay = job.getScheduledTime() - System.currentTimeMillis();
         if(delay <=0){
             // Run the job now (Add to the queue, dispatcher will do the polling and execution)
             System.out.println(" ** Queueing Job: " + job.getId());
+            readySince.put(job.getId(), System.currentTimeMillis());
             taskQueue.add(job);
         } else{
             System.out.println("[INFO] Job Delayed: " + job.getId() + " for " + delay + "ms");
@@ -642,11 +818,14 @@ import titan.storage.TitanJRedisAdapter;
  * @return The string value associated with the key, or {@code null} if the key does not exist or an error occurs.
  */
     public String redisKVGet(String key){
+        long started = System.nanoTime();
         try {
             return redis.get(key);
         } catch (Exception e) {
             System.err.println("[INFO][FAILED][RECOVERY] Failed to fetch active jobs: " + e.getMessage());
             return null;
+        } finally {
+            telemetry.storeRead(System.nanoTime() - started);
         }
     }
 
@@ -657,10 +836,15 @@ import titan.storage.TitanJRedisAdapter;
  * @param value The value to associate with the key.
  */
     private void safeRedisSet(String key, String value) {
+        long started = System.nanoTime();
+        boolean succeeded = false;
         try {
             redis.set(key, value);
+            succeeded = true;
         } catch (IOException e) {
             System.err.println("[WARN] Redis SET failed for " + key + ": " + e.getMessage());
+        } finally {
+            telemetry.storeWrite(System.nanoTime() - started, succeeded);
         }
     }
 
@@ -672,10 +856,15 @@ import titan.storage.TitanJRedisAdapter;
  * @param member The member to add to the set.
  */
     private void safeRedisSadd(String key, String member) {
+        long started = System.nanoTime();
+        boolean succeeded = false;
         try {
             redis.sadd(key, member);
+            succeeded = true;
         } catch (IOException e) {
             System.err.println("[WARN] Redis SADD failed for " + key + ": " + e.getMessage());
+        } finally {
+            telemetry.storeWrite(System.nanoTime() - started, succeeded);
         }
     }
 
@@ -686,10 +875,15 @@ import titan.storage.TitanJRedisAdapter;
  * @param member The member to remove from the set.
  */
     private void safeRedisSrem(String key, String member) {
+        long started = System.nanoTime();
+        boolean succeeded = false;
         try {
             redis.srem(key, member);
+            succeeded = true;
         } catch (Exception e) { // Catch Exception broadly as srem isn't in interface yet maybe
             System.err.println("[WARN] Redis SREM failed for " + key + ": " + e.getMessage());
+        } finally {
+            telemetry.storeWrite(System.nanoTime() - started, succeeded);
         }
     }
 
@@ -754,17 +948,26 @@ import titan.storage.TitanJRedisAdapter;
                 // Calculate remaining delay (if it was a future job)
                 long remainingDelay = Math.max(0, scheduledTime - System.currentTimeMillis());
 
-                Job job = new Job(payload, priority, remainingDelay);
-                job.setId(jobId);
+                String dependencies = redis.get("job:" + jobId + ":dependencies");
+                List<String> parentIds = dependencies == null || dependencies.isBlank()
+                        ? Collections.emptyList() : Arrays.asList(dependencies.split(","));
+                Job job = new Job(jobId, payload, priority, remainingDelay, parentIds);
                 job.setStatus(Job.Status.PENDING); // Force reset to Pending
 
-                if ("COMPLETED".equals(status) || "DEAD".equals(status)) {
+                if ("COMPLETED".equals(status) || "DEAD".equals(status) || "CANCELLED".equals(status)) {
                     // Should have been removed, but if it's here, clean it.
                     safeRedisSrem("system:active_jobs", jobId);
                 } else {
                     System.out.println("[INFO][RECOVERY] Restoring Job " + jobId + " (Was " + status + ")");
                     // We bypass submitJob() to avoid writing to Redis again needlessly but we need the queue logic.
-                    if (remainingDelay > 0) {
+                    knownJobs.put(jobId, job);
+                    for (String parentId : parentIds) {
+                        if ("COMPLETED".equals(redis.get("job:" + parentId + ":status")))
+                            job.resolveDependencies(parentId);
+                    }
+                    if (!job.isReady()) {
+                        dagWaitingRoom.put(jobId, job);
+                    } else if (remainingDelay > 0) {
                         waitingRoom.add(new ScheduledJob(job));
                     } else {
                         taskQueue.add(job);
@@ -774,6 +977,19 @@ import titan.storage.TitanJRedisAdapter;
 
             } catch (Exception e) {
                 System.err.println("[ERROR][RECOVERY] Error restoring " + jobId + ": " + e.getMessage());
+            }
+        }
+        for (Job job : new ArrayList<>(knownJobs.values())) {
+            try {
+                for (String parentId : job.getDependenciesIds()) {
+                    String parentStatus = redis.get("job:" + parentId + ":status");
+                    if ("CANCELLED".equals(parentStatus) || "DEAD".equals(parentStatus)) {
+                        cancelJob(job.getId());
+                        break;
+                    }
+                }
+            } catch (IOException error) {
+                System.err.println("[RECOVERY] Could not inspect parents of " + job.getId());
             }
         }
         System.out.println("[INFO][RECOVERY] Complete. Restored " + recoveredCount + " jobs.");
@@ -791,8 +1007,12 @@ import titan.storage.TitanJRedisAdapter;
         System.out.println("Running Dispatch Loop");
         while (isRunning) {
                 Job job = taskQueue.take();
+                long cycleStarted = System.nanoTime();
+                synchronized (this) {
+                    if (job.getStatus() == Job.Status.CANCELLED) continue;
+                    job.setStatus(Job.Status.RUNNING);
+                }
                 System.out.println("DEBUG: Processing Job ID: " + job.getId());
-                job.setStatus(Job.Status.RUNNING);
 //                history.put(job.getId(), job.getStatus());
                 System.out.println(" Job Processing: " + job);
 
@@ -801,6 +1021,7 @@ import titan.storage.TitanJRedisAdapter;
                 System.out.println("[DISPATCH] Job " + job.getId() + " requires: [" + reqTaskSkill + "]");
 
                 List<Worker> availableWorkers = workerRegistry.getWorkersByCapability(reqTaskSkill);
+                long routedAt = System.nanoTime();
 
                 if (availableWorkers.isEmpty()) {
                     if (!reqTaskSkill.equals("GENERAL")) {
@@ -809,78 +1030,141 @@ import titan.storage.TitanJRedisAdapter;
                         System.out.println("[WAIT] No GENERAL workers available.");
                     }
 
-                    // Re-queue the job to try again later (Backpressure)
-                    job.setStatus(Job.Status.PENDING);
-                    taskQueue.add(job);
-                    Thread.sleep(2000);
+                    // Park until a matching worker registers; preserve eligibility time.
+                    synchronized (this) {
+                        if (job.getStatus() != Job.Status.CANCELLED) {
+                            job.setStatus(Job.Status.PENDING);
+                            capabilityWaiting.put(job.getId(), job);
+                            waitingReasons.put(job.getId(), "No worker has capability " + reqTaskSkill);
+                        }
+                    }
                     continue;
                 }
 
-                Worker selectedWorker = selectBestWorker(job, availableWorkers);
+                Worker selectedWorker = selectAndReserveWorker(job, availableWorkers);
+                long selectedAt = System.nanoTime();
 
                 if (selectedWorker == null) {
                     System.out.println("All workers SATURATED or unavailable. Re-queueing job.");
-                    job.setStatus(Job.Status.PENDING);
-                    taskQueue.put(job); // Use put for blocking
-                    Thread.sleep(1000);
+                    synchronized (this) {
+                        if (job.getStatus() != Job.Status.CANCELLED) {
+                            job.setStatus(Job.Status.PENDING);
+                            taskQueue.put(job);
+                            waitingReasons.put(job.getId(), "Matching workers are at capacity");
+                        }
+                    }
+                    awaitCapacityChange();
                     continue;
                 }
-                selectedWorker.incrementCurrentLoad();
-                TaskExecution record = new TaskExecution(job.getId(), selectedWorker);
-                executionHistory.put(job.getId(), record);
-                runningJobs.put(job.getId(), job);
-
-                safeRedisSet("job:" + job.getId() + ":status", "RUNNING");
-                safeRedisSet("job:" + job.getId() + ":worker", String.valueOf(selectedWorker.port()));
+                TaskExecution record;
+                long recordedAt;
+                long storedAt;
+                long eligibleAt = readySince.getOrDefault(job.getId(), System.currentTimeMillis());
+                synchronized (this) {
+                    if (job.getStatus() == Job.Status.CANCELLED) {
+                        selectedWorker.decrementCurrentLoad();
+                        signalCapacityAvailable();
+                        continue;
+                    }
+                    waitingReasons.remove(job.getId());
+                    selectedWorker.currentJobId = job.getId();
+                    record = new TaskExecution(job.getId(), selectedWorker);
+                    record.capture(job, eligibleAt);
+                    executionTimeline.start(job, selectedWorker, eligibleAt);
+                    readySince.remove(job.getId());
+                    executionHistory.put(job.getId(), record);
+                    runningJobs.put(job.getId(), job);
+                    telemetry.dispatched();
+                    recordedAt = System.nanoTime();
+                    safeRedisSet("job:" + job.getId() + ":status", "RUNNING");
+                    safeRedisSet("job:" + job.getId() + ":worker", String.valueOf(selectedWorker.port()));
+                    storedAt = System.nanoTime();
+                }
 
 //                Worker selectedWorker = availableWorkers.get(ThreadLocalRandom.current().nextInt(availableWorkers.size()));
                 System.out.println("[INFO] Dispatching " + job.getId() + " to Worker " + selectedWorker.port());
                 try{
+                        synchronized (this) {
+                            if (job.getStatus() == Job.Status.CANCELLED) continue;
+                        }
                         String response = executeJobRequest(job, selectedWorker);
+                        synchronized (this) {
+                            if (executionHistory.get(job.getId()) != record ||
+                                    !runningJobs.containsKey(job.getId())) continue;
+                        }
+                        telemetry.dispatchPhase(routedAt - cycleStarted, selectedAt - routedAt,
+                                recordedAt - selectedAt, storedAt - recordedAt,
+                                System.nanoTime() - storedAt);
                         System.out.println("[OK] Job Finished: " + response);
 
                         if("JOB_ACCEPTED".equals(response)){
                             System.out.println("[ASYNC] Job " + job.getId() + " accepted by worker. Waiting for callback.");
                         }else {
                             System.out.println("[SYNC] Task finished immediately: " + response);
-                            completeJob(job, response, record);
-
-                            // NOTE: For Sync jobs (Deploy), we complete and decrement immediately here
-                            // because they don't trigger the handleJobCallback.
-                            selectedWorker.decrementCurrentLoad();
+                            synchronized (this) {
+                                if (job.getStatus() != Job.Status.CANCELLED) {
+                                    runningJobs.remove(job.getId());
+                                    completeJob(job, response, record);
+                                    selectedWorker.decrementCurrentLoad();
+                                    signalCapacityAvailable();
+                                }
+                            }
                         }
 
                 } catch (Exception e){
+                    synchronized (this) {
+                        if (executionHistory.get(job.getId()) != record ||
+                                !runningJobs.containsKey(job.getId())) continue;
+                    }
+                    if (e.getMessage() != null && e.getMessage().contains("ERROR_WORKER_SATURATED")) {
+                        synchronized (this) {
+                            if (job.getStatus() == Job.Status.CANCELLED) continue;
+                            // A capacity rejection means the worker never ran the job. It
+                            // must not consume a job retry or briefly publish FAILED.
+                            record.requeue("Worker at capacity");
+                            executionTimeline.discard(job.getId());
+                            telemetry.event("DISPATCH_REJECTED", selectedWorker.host() + ":" + selectedWorker.port());
+                            runningJobs.remove(job.getId());
+                            executionHistory.remove(job.getId(), record);
+                            selectedWorker.decrementCurrentLoad();
+                            if (selectedWorker.getCurrentLoad() == 0) selectedWorker.currentJobId = null;
+                            job.setStatus(Job.Status.PENDING);
+                            readySince.putIfAbsent(job.getId(), eligibleAt);
+                            safeRedisSet("job:" + job.getId() + ":status", "PENDING");
+                            waitingReasons.put(job.getId(), "Worker at capacity; waiting for a slot");
+                            taskQueue.offer(job);
+                        }
+                        awaitCapacityChange();
+                        continue;
+                    }
+                    synchronized (this) {
+                        if (job.getStatus() == Job.Status.CANCELLED) continue;
                     System.err.println("[FAIL] Job " + job.getId() + " Error: " + e.getMessage());
                     record.fail(e.getMessage());
+                    telemetry.failed();
+                    executionTimeline.finish(job.getId(), "FAILED", e.getMessage());
 
                     runningJobs.remove(job.getId());
 
                     if (selectedWorker != null) {
                         selectedWorker.currentJobId = null;
                         selectedWorker.decrementCurrentLoad();
-                        String wKey = String.valueOf(selectedWorker.port());
-                        workerRecentHistory.computeIfAbsent(wKey, k -> new java.util.concurrent.ConcurrentLinkedDeque<>()).add(job);
-                        // Keep list size in check
-                        if (workerRecentHistory.get(wKey).size() > 10) {
-                            workerRecentHistory.get(wKey).removeFirst();
-                        }
+                        signalCapacityAvailable();
                     }
-
-                    if (e.getMessage().contains("SATURATED")) {
-                        System.out.println("[WARN] Worker " + selectedWorker.port() + " is Saturated (Optimistic check failed). Penalizing.");
-                        selectedWorker.setCurrentLoad(99);
-                    }
-
 
                     // We fail the job here and not give it retry if its a deployment issue
                     if (e.getMessage().contains("ALREADY in use") || e.getMessage().contains("Deployment Rejected")) {
                         System.err.println("[FAIL-FAST] Non-recoverable error. Cancelling retries.");
                         job.setStatus(Job.Status.FAILED);
+                        safeRedisSet("job:" + job.getId() + ":status", "FAILED");
+                        safeRedisSrem("system:active_jobs", job.getId());
+                        cancelChildren(job.getId());
                         // We do NOT call handleJobFailure(job) here, so it won't retry/become DEAD.
                     } else{
                         handleJobFailure(job);
 //                    history.put(job.getId(), job.getStatus());
+                    }
+                    recordWorkerHistory(job, record);
                     }
                 }
             }
@@ -899,6 +1183,8 @@ import titan.storage.TitanJRedisAdapter;
         if (job.getId().startsWith("WRK-")) {
             System.err.println("[SCALER] Auto-scale job " + job.getId() + " failed. Abandoning job so Scaler can pick a new port.");
             job.setStatus(Job.Status.FAILED);
+            safeRedisSet("job:" + job.getId() + ":status", "FAILED");
+            safeRedisSrem("system:active_jobs", job.getId());
             return;
         }
 
@@ -926,6 +1212,7 @@ import titan.storage.TitanJRedisAdapter;
             // We leave the record as FAILED for now so history shows it failed
             //history.put(job.getId(), Job.Status.PENDING);
             taskQueue.offer(job);
+            readySince.put(job.getId(), System.currentTimeMillis());
         }
     }
 
@@ -936,19 +1223,31 @@ import titan.storage.TitanJRedisAdapter;
  *
  * @param payload The callback string from the worker (e.g., "JOB-123|COMPLETED|Result: 5050").
  */
-    public void handleJobCallback(String payload){
-        // Payload: "JOB-123|COMPLETED|Result: 5050"
-        String[] parts = payload.split("\\|", 3);
+    public synchronized void handleJobCallback(String payload){
+        // New workers identify their port so an old attempt cannot complete a retry on another worker.
+        String[] parts = payload.split("\\|", 4);
         if (parts.length < 2) return;
 
         String jobId = parts[0];
         String statusStr = parts[1];
+        int callbackPort = -1;
         String result = (parts.length > 2) ? parts[2] : "";
+        if (parts.length > 3 && parts[2].startsWith("worker=")) {
+            try { callbackPort = Integer.parseInt(parts[2].substring(7)); }
+            catch (NumberFormatException ignored) { return; }
+            result = parts[3];
+        } else if (parts.length > 3) result = parts[2] + "|" + parts[3];
 
         TaskExecution record = executionHistory.get(jobId);
+        if (callbackPort != -1 && record != null && record.assignedWorker != null
+                && record.assignedWorker.port() != callbackPort) {
+            System.err.println("[WARN] Ignoring callback from previous worker for " + jobId);
+            return;
+        }
         Job job = runningJobs.remove(jobId);
+        if (job != null && job.getStatus() == Job.Status.CANCELLED) return;
 
-        if(record != null){
+        if(record != null && job != null){
             // Clear "Active Job" flag on Worker (Stop Pulse (for dash))
             if (record.assignedWorker != null) {
                 record.assignedWorker.currentJobId = null;
@@ -961,21 +1260,24 @@ import titan.storage.TitanJRedisAdapter;
 
                     if (record.assignedWorker != null) {
                         record.assignedWorker.decrementCurrentLoad();
+                        signalCapacityAvailable();
                     }
 //                    if(job != null) job.setStatus(Job.Status.COMPLETED);
 //                }
             } else {
                 System.err.println("[ASYNC] [FAILED] Callback: Job " + jobId + " Failed.");
                 record.fail(result);
-
-                if (job != null) {
-                    handleJobFailure(job);
-                } else {
-                    System.err.println("CRITICAL: Job object lost for " + jobId + ", cannot retry.");
+                telemetry.failed();
+                executionTimeline.finish(jobId, "FAILED", result);
+                handleJobFailure(job);
+                recordWorkerHistory(job, record);
+                if (record.assignedWorker != null) {
+                    record.assignedWorker.decrementCurrentLoad();
+                    signalCapacityAvailable();
                 }
             }
         } else {
-            System.err.println("[WARN] Received callback for unknown Job ID: " + jobId);
+            System.err.println("[WARN] Received callback for unknown or inactive Job ID: " + jobId);
         }
 
 
@@ -992,6 +1294,8 @@ import titan.storage.TitanJRedisAdapter;
  */
     private void completeJob(Job job, String result, TaskExecution record){
         record.complete(result);
+        telemetry.completed();
+        executionTimeline.finish(job.getId(), "COMPLETED", "");
 
         if (job != null) {
             job.setStatus(Job.Status.COMPLETED);
@@ -1006,16 +1310,21 @@ import titan.storage.TitanJRedisAdapter;
             String wKey = String.valueOf(record.assignedWorker.port());
             workerCompletionStats.merge(wKey, 1, Integer::sum);
 
-            if (job != null) {
-                workerRecentHistory.computeIfAbsent(wKey, k -> new java.util.concurrent.ConcurrentLinkedDeque<>()).add(job);
-                if (workerRecentHistory.get(wKey).size() > 10) {
-                    workerRecentHistory.get(wKey).removeFirst();
-                }
-            }
+            recordWorkerHistory(job, record);
 
             propagateAffinity(job.getId(), wKey);
         }
         unlockChildren(job.getId());
+    }
+
+    private void recordWorkerHistory(Job job, TaskExecution record) {
+        if (job == null || record == null || record.assignedWorker == null) return;
+        String workerKey = String.valueOf(record.assignedWorker.port());
+        java.util.Deque<Job> history = workerRecentHistory.computeIfAbsent(workerKey,
+                key -> new java.util.concurrent.ConcurrentLinkedDeque<>());
+        history.removeIf(previous -> previous.getId().equals(job.getId()));
+        history.addLast(job);
+        while (history.size() > 10) history.removeFirst();
     }
 
     /**
@@ -1027,30 +1336,24 @@ import titan.storage.TitanJRedisAdapter;
  * @param availableWorkers A list of {@link Worker} instances capable of executing the job.
  * @return The selected {@link Worker}, or {@code null} if no suitable worker is found.
  */
-    private Worker selectBestWorker(Job job, List<Worker> availableWorkers){
+    private Worker selectAndReserveWorker(Job job, List<Worker> availableWorkers){
         if(job.getPreferredWorkerId() != null){
             for(Worker w: availableWorkers){
-                if(String.valueOf(w.port()).equals(job.getPreferredWorkerId()) && !w.isSaturated()){
+                if(String.valueOf(w.port()).equals(job.getPreferredWorkerId()) && w.tryReserveSlot()){
                     System.out.println("[AFFINITY] Sticky Scheduling: Routing Job " + job.getId() + " to Worker " + w.port());
                     return w;
                 }
             }
         }
 
-        // Get the least loaded worker
-        Worker bestWorker = null;
-        int minLoad = Integer.MAX_VALUE;
-        for(Worker worker: availableWorkers){
-            if(worker.isSaturated())
-                continue;
-
-            if(worker.getCurrentLoad() < minLoad){
-                minLoad = worker.getCurrentLoad();
-                bestWorker = worker;
-            }
+        // Sort only the small eligible-worker snapshot. tryReserveSlot performs
+        // the capacity check and reservation under the same worker lock.
+        List<Worker> candidates = new ArrayList<>(availableWorkers);
+        candidates.sort(Comparator.comparingInt(Worker::getCurrentLoad));
+        for(Worker worker: candidates){
+            if(worker.tryReserveSlot()) return worker;
         }
-
-        return bestWorker;
+        return null;
     }
 
     /**
@@ -1092,7 +1395,6 @@ import titan.storage.TitanJRedisAdapter;
     private String executeJobRequest(Job job, Worker worker) throws Exception {
         String rawPayload = job.getPayload();
         String actualPayload = rawPayload;
-        worker.currentJobId = job.getId();
 
         boolean isSystemCommand = rawPayload.startsWith("DEPLOY_PAYLOAD") ||
                 rawPayload.startsWith("RUN_PAYLOAD");
@@ -1143,22 +1445,78 @@ import titan.storage.TitanJRedisAdapter;
         return sendExecuteCommand(worker, TitanProtocol.OP_RUN, payloadWithId);
     }
 
+    private synchronized ServiceEndpoint reserveService(Job job, Worker worker, int port) {
+        if (port < 1 || port > 65535) throw new IllegalArgumentException("Deployment Rejected: Invalid listening port");
+        if (liveServiceMap.containsKey(job.getId()) || pendingServiceEndpoints.containsKey(job.getId())
+                || serviceEndpoints.containsKey(job.getId()) || stoppingServices.contains(job.getId()))
+            throw new IllegalStateException("Deployment Rejected: Service ID already in use");
+        ServiceEndpoint endpoint = new ServiceEndpoint(worker.host(), port);
+        if (serviceEndpoints.containsValue(endpoint) || pendingServiceEndpoints.containsValue(endpoint))
+            throw new IllegalStateException("Deployment Rejected: Port already reserved by another service");
+        pendingServiceEndpoints.put(job.getId(), endpoint);
+        return endpoint;
+    }
+
+    private void watchService(Job job, Worker worker, ServiceEndpoint endpoint, String pid) {
+        synchronized (this) {
+            if (!pendingServiceEndpoints.containsKey(job.getId())
+                    || job.getStatus() == Job.Status.CANCELLED || job.getStatus() == Job.Status.FAILED) return;
+            readinessMonitor.watch(job.getId(), endpoint.host(), endpoint.port(), ready -> {
+            boolean stopChild = false;
+            boolean cancelDependents = false;
+            synchronized (this) {
+                if (!pendingServiceEndpoints.remove(job.getId(), endpoint)) return;
+                Job running = runningJobs.remove(job.getId());
+                if (running == null || job.getStatus() == Job.Status.CANCELLED) return;
+                TaskExecution record = executionHistory.get(job.getId());
+                worker.currentJobId = null;
+                worker.decrementCurrentLoad();
+                signalCapacityAvailable();
+                if (ready) {
+                    liveServiceMap.put(job.getId(), worker);
+                    serviceEndpoints.put(job.getId(), endpoint);
+                    completeJob(job, "DEPLOYED_SUCCESS PID:" + pid + " PORT:" + endpoint.port(), record);
+                } else {
+                    String reason = "Service did not listen on " + endpoint.host() + ":" + endpoint.port();
+                    record.fail(reason);
+                    telemetry.failed();
+                    executionTimeline.finish(job.getId(), "FAILED", reason);
+                    job.setStatus(Job.Status.FAILED);
+                    safeRedisSet("job:" + job.getId() + ":status", "FAILED");
+                    safeRedisSrem("system:active_jobs", job.getId());
+                    recordWorkerHistory(job, record);
+                    stoppingServices.add(job.getId());
+                    stopChild = true;
+                    cancelDependents = true;
+                }
+            }
+            if (stopChild) {
+                try { sendExecuteCommand(worker, TitanProtocol.OP_STOP, job.getId()); }
+                catch (Exception error) { System.err.println("[DEPLOY] Could not stop unready service: " + error); }
+            }
+            if (cancelDependents) cancelChildren(job.getId());
+            });
+        }
+    }
+
     /**
  * Executes a deployment sequence on a worker. This involves staging a file (e.g., a JAR or script)
  * and then starting it as a service on a specified port. It includes checks for port availability
- * and waits for the deployed service to become reachable.
+ * and starts asynchronous readiness checks for the declared listening port.
  * Special handling is included for internal auto-scaling deployments.
  *
  * @param job The {@link Job} representing the deployment.
  * @param worker The {@link Worker} on which to deploy.
  * @param payload The deployment payload, including filename, base64 content, and optional target port.
- * @return A success message including the PID if available.
- * @throws Exception If staging fails, starting the service fails, or the deployed service does not become reachable.
+ * @return {@code JOB_ACCEPTED} while readiness checks continue outside the dispatch loop.
+ * @throws Exception If validation, staging, or process startup fails.
  */
     private String executeDeploySequence(Job job, Worker worker, String payload) throws Exception {
+        boolean started = false;
         try {
-//            String[] parts = payload.split("\\|", 4);
-            String[] parts = payload.split("\\|");
+            String[] parts = payload.split("\\|", -1);
+            if (parts.length < 3 || parts[1].isBlank())
+                throw new IllegalArgumentException("Deployment Rejected: Invalid deployment payload");
 
             // Format: DEPLOY_PAYLOAD | filename | base64 | port | [DAG-ID]
             // DAG-ID is only if its a DAG job
@@ -1176,30 +1534,20 @@ import titan.storage.TitanJRedisAdapter;
                 base64Script = Base64.getEncoder().encodeToString(fileContent);
             }
 
-            String portString = (parts.length > 3) ? parts[3] : null;
-            int targetPort = -1;
-            if (portString != null && !portString.isEmpty()) {
-                // If User explicitly provided a port, need to verify this
-                try {
-                    targetPort = Integer.parseInt(portString);
-                } catch (NumberFormatException e) {
-                    // It wasn't a number (it was likely the DAG-ID).
-                    // This means no port was provided. Default to 8085.
-                    targetPort = 8085;
-                    portString = "8085";
-                }
-            } else if (filename.contains("Worker.jar")) {
-                // It's a Worker, but no port provided -> Default to 8085
-                targetPort = 8085;
-                portString = "8085";
+            String portString = (parts.length > 3) ? parts[3] : "";
+            if (portString.isBlank() && filename.equalsIgnoreCase("Worker.jar")) portString = "8085";
+            if (portString.isBlank())
+                throw new IllegalArgumentException("Deployment Rejected: A listening port is required");
+            int targetPort;
+            try { targetPort = Integer.parseInt(portString); }
+            catch (NumberFormatException error) {
+                throw new IllegalArgumentException("Deployment Rejected: Invalid listening port", error);
             }
-
-            if (targetPort != -1) {
-                System.out.println("[DEPLOY] Checking if port " + targetPort + " is free...");
-                if (isWorkerAlive(worker.host(), targetPort)) {
-                    throw new RuntimeException("Deployment Rejected: Port " + targetPort + " is ALREADY in use by another service.");
-                }
-            }
+            if (targetPort < 1 || targetPort > 65535)
+                throw new IllegalArgumentException("Deployment Rejected: Invalid listening port");
+            if (isWorkerAlive(worker.host(), targetPort))
+                throw new IllegalStateException("Deployment Rejected: Port " + targetPort + " is ALREADY in use");
+            ServiceEndpoint endpoint = reserveService(job, worker, targetPort);
 
             // Step 1: Stage
             String stagePayload = filename + "|" + base64Script;
@@ -1210,45 +1558,25 @@ import titan.storage.TitanJRedisAdapter;
             System.out.println("[OK] File Staged");
 
             // Step 2: Start
-            String safePortArg = (portString != null) ? portString : "0";
-            String startPayload = filename + "|" + job.getId() + "|" + safePortArg;
+            String startPayload = filename + "|" + job.getId() + "|" + targetPort;
 
             String startResp = sendExecuteCommand(worker, TitanProtocol.OP_START_SERVICE, startPayload);
             if (!startResp.contains("DEPLOYED_SUCCESS")) {
-                throw new RuntimeException("Start failed. Expected DEPLOYED_SUCCESS, got: " + startResp);
+                throw new IllegalStateException("Deployment Rejected: " + startResp);
             }
+            started = true;
 
             String pid = startResp.contains("PID:") ? startResp.split("PID:")[1].trim() : "UNKNOWN";
-
-            if (targetPort != -1) {
-                boolean alive = false;
-
-                // Try 10 times, once every 2 seconds
-                for (int i = 1; i <= 10; i++) {
-                    Thread.sleep(2000);
-                    if (isWorkerAlive(worker.host(), targetPort)) {
-                        alive = true;
-                        System.out.println("[OK] Worker port " + targetPort + " detected on attempt " + i);
-                        break;
-                    }
-                    System.out.println("[DEPLOY] Port " + targetPort + " not ready... (Attempt " + i + "/10)");
-                }
-
-                if (!alive) {
-                    // LOCK RESET:  before throwing exception
-                    if (job.getId().startsWith("WRK-")) {
-                        this.scalingInProgress = false;
-                    }
-                    throw new RuntimeException("Deployment Failed: Process started (PID " + pid + ") but port " + targetPort
-                            + " never became reachable after 20s.");
-                }
-            }
-
-            liveServiceMap.put(job.getId(), worker);
-            // Since deploy tasks are synchronous (kind of) so we clear it off and say its completed.
-            worker.currentJobId = null;
-            return "DEPLOYED_SUCCESS PID:" + pid;
+            watchService(job, worker, endpoint, pid);
+            return "JOB_ACCEPTED";
         } catch (Exception e) {
+            pendingServiceEndpoints.remove(job.getId());
+            readinessMonitor.cancel(job.getId());
+            if (started) {
+                stoppingServices.add(job.getId());
+                try { sendExecuteCommand(worker, TitanProtocol.OP_STOP, job.getId()); }
+                catch (Exception stopError) { System.err.println("[DEPLOY] Cleanup failed: " + stopError); }
+            }
             if (job.getId().startsWith("WRK-")) {
                 // Unlock the scaler so it can try a different port in the next cycle
                 this.scalingInProgress = false;
@@ -1270,7 +1598,8 @@ import titan.storage.TitanJRedisAdapter;
  * @return {@code true} if the worker is reachable, {@code false} otherwise.
  */
     private boolean isWorkerAlive(String host, int port) {
-        try (Socket s = new Socket(host, port)) {
+        try (Socket s = new Socket()) {
+            s.connect(new java.net.InetSocketAddress(host, port), 300);
             return true;
         } catch (IOException e) {
             return false;
@@ -1360,36 +1689,49 @@ import titan.storage.TitanJRedisAdapter;
     /**
  * Starts a long-running service from an archived (ZIP) asset on a worker.
  * This method resolves the archive pointer, extracts the entry point and base64 content of the archive,
- * and instructs the worker to start it as a detached service on a specified port.
+ * and instructs the worker to start it as a managed service on a specified port.
  *
  * @param job The {@link Job} representing the archived service.
  * @param worker The {@link Worker} on which to start the service.
  * @param payload The payload containing the archive pointer, optional arguments, and target port.
- * @return The response from the worker, typically indicating deployment success.
+ * @return {@code JOB_ACCEPTED} while readiness checks continue.
  * @throws Exception If resolving the archive pointer fails or the service start command fails.
  */
     private String executeServiceArchive(Job job, Worker worker, String payload) throws Exception {
-        // Payload Format: START_ARCHIVE_SERVICE | zip_name.zip/entry.py | args | port
-        String[] parts = payload.split("\\|");
-
-        String pointer = parts[1];
-        String args = (parts.length > 2) ? parts[2] : "";
-        String port = (parts.length > 3) ? parts[3] : "8085";
-
-        AssetManager.ArchiveInfo fileInfo = AssetManager.resolvePointer(pointer);
-
-        // Worker Protocol for Service Archive: SERVICE_ID | ENTRY_FILE | PORT | BASE64_ZIP
-        String workerPayload = job.getId() + "|" + fileInfo.entryPoint + "|" + port + "|" + fileInfo.base64Content;
-
-        System.out.println("🚀 [ARCHIVE] Starting Service " + job.getId() + " on Port " + port);
-
-        String response = sendExecuteCommand(worker, TitanProtocol.OP_START_SERVICE_ARCHIVE, workerPayload);
-
-        if (response.contains("DEPLOYED_SUCCESS")) {
-            liveServiceMap.put(job.getId(), worker);
-            worker.currentJobId = null; // Since the Services are detached
+        String[] parts = payload.split("\\|", -1);
+        if (parts.length < 4 || parts[3].isBlank())
+            throw new IllegalArgumentException("Deployment Rejected: A listening port is required");
+        int port;
+        try { port = Integer.parseInt(parts[3]); }
+        catch (NumberFormatException error) {
+            throw new IllegalArgumentException("Deployment Rejected: Invalid listening port", error);
         }
-        return response;
+        if (port < 1 || port > 65535)
+            throw new IllegalArgumentException("Deployment Rejected: Invalid listening port");
+        if (isWorkerAlive(worker.host(), port))
+            throw new IllegalStateException("Deployment Rejected: Port " + port + " is ALREADY in use");
+        ServiceEndpoint endpoint = reserveService(job, worker, port);
+        boolean started = false;
+        try {
+            AssetManager.ArchiveInfo fileInfo = AssetManager.resolvePointer(parts[1]);
+            String workerPayload = job.getId() + "|" + fileInfo.entryPoint + "|" + port + "|" + fileInfo.base64Content;
+            String response = sendExecuteCommand(worker, TitanProtocol.OP_START_SERVICE_ARCHIVE, workerPayload);
+            if (!response.contains("DEPLOYED_SUCCESS"))
+                throw new IllegalStateException("Deployment Rejected: " + response);
+            started = true;
+            String pid = response.contains("PID:") ? response.split("PID:")[1].trim() : "UNKNOWN";
+            watchService(job, worker, endpoint, pid);
+            return "JOB_ACCEPTED";
+        } catch (Exception error) {
+            pendingServiceEndpoints.remove(job.getId(), endpoint);
+            readinessMonitor.cancel(job.getId());
+            if (started) {
+                stoppingServices.add(job.getId());
+                try { sendExecuteCommand(worker, TitanProtocol.OP_STOP, job.getId()); }
+                catch (Exception stopError) { System.err.println("[DEPLOY] Cleanup failed: " + stopError); }
+            }
+            throw error;
+        }
     }
 
     /**
@@ -1430,9 +1772,8 @@ import titan.storage.TitanJRedisAdapter;
 
         try {
             String response = sendExecuteCommand(targetWorker, TitanProtocol.OP_STOP, serviceId);
-            if (response.contains("SUCCESS") || response.contains("STOPPED")) {
-                liveServiceMap.remove(serviceId);
-            }
+            // Keep the ID reserved until the worker's exit callback unregisters it.
+            // STOPPED means a kill was requested, not that the process has exited.
             return response;
         } catch (Exception e) {
             return "COMMUNICATION_ERROR: " + e.getMessage();
@@ -1474,6 +1815,17 @@ import titan.storage.TitanJRedisAdapter;
         System.out.println("[INFO] Initiating Graceful Shutdown for Worker " + targetPort);
         List<String> servicesToStop = new java.util.ArrayList<>();
 
+        // Autoscaled workers are child services on their parent worker. Stop
+        // that service first so its process supervisor sees an intentional
+        // shutdown and does not relaunch the child after OP_KILL_WORKER.
+        String autoWorkerPrefix = "WRK-" + targetPort + "-";
+        for (String serviceId : new java.util.ArrayList<>(liveServiceMap.keySet())) {
+            if (serviceId.startsWith(autoWorkerPrefix)) {
+                String result = stopRemoteService(serviceId);
+                System.out.println("[INFO] Stopping autoscaled worker service " + serviceId + ": " + result);
+            }
+        }
+
         for(Map.Entry<String, Worker> entry: liveServiceMap.entrySet()){
             if(entry.getValue().equals(targetWorker)){
                 servicesToStop.add(entry.getKey());
@@ -1485,7 +1837,11 @@ import titan.storage.TitanJRedisAdapter;
             stopRemoteService(serviceId);
         }
 
-        liveServiceMap.entrySet().removeIf(entry -> entry.getKey().contains("WRK-" + targetPort + "-"));
+        liveServiceMap.entrySet().removeIf(entry -> {
+            boolean match = entry.getKey().startsWith(autoWorkerPrefix);
+            if (match) serviceEndpoints.remove(entry.getKey());
+            return match;
+        });
         // Send the Kill Command to the Worker
         try {
             schedulerClient.sendRequest(targetWorker.host(), targetWorker.port(), TitanProtocol.OP_KILL_WORKER, "NOW");
@@ -1493,6 +1849,7 @@ import titan.storage.TitanJRedisAdapter;
             System.err.println("[WARN] Worker might have died before receiving ACK: " + e.getMessage());
         }
         workerRegistry.getWorkerMap().remove(targetWorker.host() + ":" + targetWorker.port());
+        schedulerClient.evict(targetWorker.host(), targetWorker.port());
         return "SUCCESS: Worker " + targetPort + " and " + servicesToStop.size() + " services shut down.";
     }
 
@@ -1503,15 +1860,16 @@ import titan.storage.TitanJRedisAdapter;
  *
  * @param parentId The ID of the parent job that has just completed.
  */
-    private void unlockChildren(String parentId){
+    private synchronized void unlockChildren(String parentId){
         for(Job waitingJob: dagWaitingRoom.values()){
             if(waitingJob.getDependenciesIds()!=null && waitingJob.getDependenciesIds().contains(parentId)){
                 waitingJob.resolveDependencies(parentId);
 
                 if(waitingJob.isReady()){
                     System.out.println("[INFO] DAG: All dependencies met for " + waitingJob.getId() + ". Moving to Active Queue.");
-                    dagWaitingRoom.remove(waitingJob.getId());
-                    submitJob(waitingJob);
+                    if (dagWaitingRoom.remove(waitingJob.getId(), waitingJob)) {
+                        enqueueReadyJob(waitingJob);
+                    }
                 }
             }
         }
@@ -1525,25 +1883,220 @@ import titan.storage.TitanJRedisAdapter;
  * @param failedParentId The ID of the parent job that failed.
  */
     public void cancelChildren(String failedParentId){
-        for(Job job: dagWaitingRoom.values()){
-            if(job.getDependenciesIds().contains(failedParentId)){
-                System.err.println("[ERROR] Cancelling Job " + job.getId() + " because parent " + failedParentId + " failed.");
+        for (Job job : new ArrayList<>(knownJobs.values())) {
+            if (job.getDependenciesIds().contains(failedParentId)) cancelJob(job.getId());
+        }
+    }
 
-                job.setStatus(Job.Status.DEAD);
-                // Create a Ghost execution record so getJobStatus() returns DEAD
-                // We pass null for the worker because it never left the main.java.titan.scheduler.
-                TaskExecution record = new TaskExecution(job.getId(), null);
-                record.status = Job.Status.DEAD;
-                record.endTime = System.currentTimeMillis(); // Died immediately
-                record.output = "Cancelled: Parent " + failedParentId + " failed";
+    private void signalCapacityAvailable() {
+        capacitySignal.offer(Boolean.TRUE);
+    }
 
-                executionHistory.put(job.getId(), record);
+    private void awaitCapacityChange() throws InterruptedException {
+        // The token is retained if it arrives before the dispatcher waits. A timeout
+        // still retries when a worker disappears without delivering a signal.
+        capacitySignal.poll(1, TimeUnit.SECONDS);
+    }
 
-                dagWaitingRoom.remove(job.getId());
-                this.deadLetterQueue.offer(job);
-                cancelChildren(job.getId());
+    private void sampleTelemetry() {
+        try {
+            long now = System.currentTimeMillis();
+            long oldestReady = taskQueue.stream()
+                    .mapToLong(job -> now - readySince.getOrDefault(job.getId(), now)).max().orElse(0);
+            long oldestParked = capabilityWaiting.values().stream()
+                    .mapToLong(job -> now - readySince.getOrDefault(job.getId(), now)).max().orElse(0);
+            telemetry.sample(taskQueue.size(), dagWaitingRoom.size(), capabilityWaiting.size(),
+                    waitingRoom.size(), oldestReady, oldestParked,
+                    runningJobs.size(), workerRegistry.getWorkers(),
+                    redis.isConnected(), executionTimeline.droppedWrites(), executionTimeline.pendingWrites());
+        } catch (RuntimeException error) {
+            System.err.println("[METRICS] Sample failed: " + error.getMessage());
+        }
+    }
+
+    public String timelineJSON(long since, int limit) {
+        return executionTimeline.json(since, Math.min(limit, 5000));
+    }
+    public String spanHistoryJSON(String day, int limit) {
+        try { return executionTimeline.history(java.time.LocalDate.parse(day), limit); }
+        catch (java.time.format.DateTimeParseException error) { return "ERROR: Invalid UTC date"; }
+    }
+    public String metricsJSON(long since, int limit) { return telemetry.json(since, limit); }
+
+    public String bulkStatusJSON(String ids) {
+        StringBuilder json = new StringBuilder("{");
+        int count = 0;
+        for (String raw : ids.split(",")) {
+            if (count >= 500) break;
+            String id = raw.trim();
+            if (id.isEmpty()) continue;
+            if (count++ > 0) json.append(',');
+            Job job = knownJobs.get(id);
+            TaskExecution record = executionHistory.get(id);
+            json.append(ExecutionTimeline.quoted(id)).append(":{\"status\":")
+                    .append(ExecutionTimeline.quoted(job == null ? "UNKNOWN" : job.getStatus().name()))
+                    .append(",\"waiting_reason\":")
+                    .append(ExecutionTimeline.quoted(waitingReasons.getOrDefault(id, "")))
+                    .append(",\"worker\":")
+                    .append(ExecutionTimeline.quoted(record == null || record.assignedWorker == null
+                            ? "" : record.assignedWorker.host() + ":" + record.assignedWorker.port()))
+                    .append(",\"eligible_at\":").append(record == null ? readySince.getOrDefault(id, 0L) : record.eligibleAt)
+                    .append(",\"started_at\":").append(record == null ? 0 : record.startTime)
+                    .append(",\"ended_at\":").append(record == null ? 0 : record.endTime)
+                    .append(",\"attempt\":").append(record == null ? job == null ? 0 : job.getRetryCount() + 1 : record.attempt)
+                    .append(",\"priority\":").append(record == null ? job == null ? 0 : job.getPriority() : record.priority)
+                    .append(",\"failure_reason\":")
+                    .append(ExecutionTimeline.quoted(record == null ? "" : record.failureReason))
+                    .append(",\"result\":")
+                    .append(ExecutionTimeline.quoted(record == null || record.output == null ? "" : record.output))
+                    .append(",\"parents\":[");
+            List<String> parents = record == null ? job == null ? List.of() : job.getDependenciesIds() : record.declaredParents;
+            for (int i = 0; i < parents.size(); i++) {
+                if (i > 0) json.append(',');
+                json.append(ExecutionTimeline.quoted(parents.get(i)));
+            }
+            json.append(']')
+                    .append('}');
+        }
+        return json.append('}').toString();
+    }
+
+    public String queueBoardJSON(int limit) {
+        int bounded = Math.max(1, Math.min(limit, 500));
+        StringBuilder json = new StringBuilder("{\"counts\":{\"ready\":").append(taskQueue.size())
+                .append(",\"dependencies\":").append(dagWaitingRoom.size())
+                .append(",\"capability\":").append(capabilityWaiting.size())
+                .append(",\"delayed\":").append(waitingRoom.size())
+                .append(",\"running\":").append(runningJobs.size())
+                .append("},\"jobs\":[");
+        int count = 0;
+        List<Job> boardJobs = new ArrayList<>(knownJobs.values());
+        boardJobs.sort(Comparator.comparingInt(Job::getPriority).reversed()
+                .thenComparing(job -> readySince.getOrDefault(job.getId(), Long.MAX_VALUE)));
+        for (Job job : boardJobs) {
+            if (count >= bounded) break;
+            if (job.getStatus() != Job.Status.PENDING && job.getStatus() != Job.Status.RUNNING) continue;
+            if (count++ > 0) json.append(',');
+            String reason = waitingReasons.get(job.getId());
+            if (reason == null) {
+                if (dagWaitingRoom.containsKey(job.getId())) reason = "Waiting for parents";
+                else if (waitingRoom.stream().anyMatch(delayed -> delayed.getJob() == job)) reason = "Scheduled for later";
+                else if (runningJobs.containsKey(job.getId())) reason = "Executing";
+                else reason = "Ready for dispatch";
+            }
+            String lane = dagWaitingRoom.containsKey(job.getId()) ? "blocked"
+                    : capabilityWaiting.containsKey(job.getId()) ? "parked"
+                    : waitingRoom.stream().anyMatch(delayed -> delayed.getJob() == job) ? "delayed"
+                    : runningJobs.containsKey(job.getId()) ? "running" : "ready";
+            json.append("{\"job_id\":").append(ExecutionTimeline.quoted(job.getId()))
+                    .append(",\"status\":").append(ExecutionTimeline.quoted(job.getStatus().name()))
+                    .append(",\"lane\":").append(ExecutionTimeline.quoted(lane))
+                    .append(",\"reason\":").append(ExecutionTimeline.quoted(reason))
+                    .append(",\"capability\":").append(ExecutionTimeline.quoted(extractSkillRequirement(job)))
+                    .append(",\"priority\":").append(job.getPriority())
+                    .append(",\"eligible_at\":").append(readySince.getOrDefault(job.getId(), 0L))
+                    .append('}');
+        }
+        json.append("],\"dead_letter\":[");
+        count = 0;
+        for (Job job : deadLetterQueue) {
+            if (count++ >= bounded) break;
+            if (count > 1) json.append(',');
+            TaskExecution record = executionHistory.get(job.getId());
+            json.append("{\"job_id\":").append(ExecutionTimeline.quoted(job.getId()))
+                    .append(",\"reason\":").append(ExecutionTimeline.quoted(
+                            record == null ? "" : record.failureReason)).append('}');
+        }
+        json.append("],\"services\":[");
+        count = 0;
+        for (Map.Entry<String, ServiceEndpoint> entry : serviceEndpoints.entrySet()) {
+            if (count++ >= bounded) break;
+            if (count > 1) json.append(',');
+            Worker worker = liveServiceMap.get(entry.getKey());
+            TaskExecution record = executionHistory.get(entry.getKey());
+            json.append("{\"id\":").append(ExecutionTimeline.quoted(entry.getKey()))
+                    .append(",\"host\":").append(ExecutionTimeline.quoted(entry.getValue().host()))
+                    .append(",\"port\":").append(entry.getValue().port())
+                    .append(",\"worker\":").append(ExecutionTimeline.quoted(worker == null ? "" : worker.host() + ":" + worker.port()))
+                    .append(",\"since\":").append(record == null ? 0 : record.endTime)
+                    .append(",\"deploy_attempts\":").append(record == null ? 0 : record.attempt)
+                    .append('}');
+        }
+        return json.append("]}").toString();
+    }
+
+    /** Cancel a job and every transitive dependent. A terminal job is never rewritten. */
+    public String cancelJob(String jobId) {
+        if (jobId == null || jobId.isBlank()) return "ERROR: Missing job ID";
+        List<Map.Entry<Worker, String>> toKill = new ArrayList<>();
+        List<Map.Entry<Worker, String>> servicesToStop = new ArrayList<>();
+        int cancelled = 0;
+        synchronized (this) {
+            Job root = knownJobs.get(jobId);
+            if (root == null) return "ERROR: Unknown job ID";
+            if (isTerminal(root.getStatus())) return "ALREADY_TERMINAL:" + root.getStatus();
+            Queue<String> pending = new ArrayDeque<>();
+            Set<String> visited = new HashSet<>();
+            pending.add(jobId);
+            while (!pending.isEmpty()) {
+                String id = pending.remove();
+                if (!visited.add(id)) continue;
+                for (Job child : knownJobs.values()) {
+                    if (child.getDependenciesIds().contains(id)) pending.add(child.getId());
+                }
+                Job job = knownJobs.get(id);
+                if (job == null || isTerminal(job.getStatus())) continue;
+                job.setStatus(Job.Status.CANCELLED);
+                taskQueue.remove(job);
+                capabilityWaiting.remove(id);
+                waitingReasons.remove(id);
+                readySince.remove(id);
+                waitingRoom.removeIf(delayed -> delayed.getJob() == job);
+                dagWaitingRoom.remove(id);
+                TaskExecution record = executionHistory.computeIfAbsent(id, key -> new TaskExecution(id, null));
+                record.status = Job.Status.CANCELLED;
+                record.endTime = System.currentTimeMillis();
+                record.output = id.equals(jobId) ? "Cancelled by request" : "Cancelled with parent " + jobId;
+                executionTimeline.finish(id, "CANCELLED", record.output);
+                Job running = runningJobs.remove(id);
+                boolean pendingService = pendingServiceEndpoints.remove(id) != null;
+                if (pendingService) {
+                    readinessMonitor.cancel(id);
+                    stoppingServices.add(id);
+                }
+                if (running != null && record.assignedWorker != null) {
+                    Worker worker = record.assignedWorker;
+                    worker.currentJobId = null;
+                    worker.decrementCurrentLoad();
+                    signalCapacityAvailable();
+                    recordWorkerHistory(job, record);
+                    if (pendingService) servicesToStop.add(Map.entry(worker, id));
+                    else toKill.add(Map.entry(worker, id));
+                }
+                safeRedisSet("job:" + id + ":status", "CANCELLED");
+                safeRedisSrem("system:active_jobs", id);
+                cancelled++;
             }
         }
+        for (Map.Entry<Worker, String> target : toKill) {
+            try {
+                sendExecuteCommand(target.getKey(), TitanProtocol.OP_CANCEL_JOB, target.getValue());
+            } catch (Exception error) {
+                System.err.println("[CANCEL] Worker kill failed for " + target.getValue() + ": " + error.getMessage());
+            }
+        }
+        for (Map.Entry<Worker, String> target : servicesToStop) {
+            try { sendExecuteCommand(target.getKey(), TitanProtocol.OP_STOP, target.getValue()); }
+            catch (Exception error) {
+                System.err.println("[CANCEL] Service stop failed for " + target.getValue() + ": " + error);
+            }
+        }
+        return "CANCELLED:" + cancelled;
+    }
+
+    private static boolean isTerminal(Job.Status status) {
+        return status == Job.Status.COMPLETED || status == Job.Status.FAILED
+                || status == Job.Status.DEAD || status == Job.Status.CANCELLED;
     }
 
     // Methods for sending the logs to stream to the UI
@@ -1556,6 +2109,7 @@ import titan.storage.TitanJRedisAdapter;
  * @param line The log line to stream.
  */
     public void logStream(String jobId, String line) {
+        if (!safeJobId(jobId)) throw new IllegalArgumentException("Invalid job ID");
         liveLogBuffer.computeIfAbsent(jobId, k -> Collections.synchronizedList(new LinkedList<>()));
         List<String> logs = liveLogBuffer.get(jobId);
 
@@ -1578,19 +2132,27 @@ import titan.storage.TitanJRedisAdapter;
  * @param line The log line to append.
  */
     private void appendLogToDisk(String jobId, String line) {
-        File directory = new File("titan_server_logs");
-        if (!directory.exists()) {
-            boolean created = directory.mkdirs(); // Force create the directory
-            if (created) System.out.println("[INFO] Created log directory: titan_server_logs");
-        }
-
-        File logFile = new File(directory, jobId + ".log");
-
-        try (FileWriter fw = new FileWriter("titan_server_logs/" + jobId + ".log", true)) {
-            fw.write(line + "\n");
+        try {
+            java.nio.file.Path directory = java.nio.file.Path.of("titan_server_logs")
+                    .toAbsolutePath().normalize();
+            java.nio.file.Files.createDirectories(directory);
+            java.nio.file.Path logFile = directory.resolve(jobId + ".log").normalize();
+            if (!logFile.startsWith(directory) || java.nio.file.Files.isSymbolicLink(logFile))
+                throw new IOException("Invalid log file path");
+            java.nio.file.Files.writeString(logFile, line + "\n",
+                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND,
+                    java.nio.file.LinkOption.NOFOLLOW_LINKS);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static boolean safeJobId(String id) {
+        return id != null && !id.isBlank() && id.length() <= 255
+                && !id.equals(".") && !id.equals("..")
+                && id.indexOf('/') < 0 && id.indexOf('\\') < 0
+                && id.indexOf(':') < 0 && id.indexOf('|') < 0
+                && id.chars().noneMatch(c -> c < 32 || c == 127);
     }
 
     // Helper method for the UI to retrieve the logs
@@ -1737,12 +2299,14 @@ import titan.storage.TitanJRedisAdapter;
                 int hCount = 0;
                 for (Job j : history) {
                     String duration = "N/A";
+                    long completedAt = 0;
                     TaskExecution exec = executionHistory.get(j.getId());
                     if (exec != null) {
                         duration = exec.getDuration() + "ms";
+                        completedAt = exec.endTime;
                     }
-                    json.append(String.format("{\"id\": \"%s\", \"status\": \"%s\", \"time\": \"%s\"}",
-                            j.getId(), j.getStatus(), duration));
+                    json.append(String.format("{\"id\": \"%s\", \"status\": \"%s\", \"time\": \"%s\", \"completed_at\": %d}",
+                            j.getId(), exec == null ? j.getStatus() : exec.status, duration, completedAt));
                     if (hCount < history.size() - 1) json.append(",");
                     hCount++;
                 }
@@ -1773,7 +2337,19 @@ import titan.storage.TitanJRedisAdapter;
             }
         }
 
-        json.append("]}");
+        json.append("],\"dag_jobs\":{");
+        boolean firstDagJob = true;
+        for (Map.Entry<String, TaskExecution> entry : executionHistory.entrySet()) {
+            if (!entry.getKey().startsWith("DAG-")) continue;
+            if (!firstDagJob) json.append(",");
+            TaskExecution exec = entry.getValue();
+            String assigned = exec.assignedWorker == null ? "" :
+                    exec.assignedWorker.host() + ":" + exec.assignedWorker.port();
+            json.append(String.format("\"%s\":{\"status\":\"%s\",\"completed_at\":%d,\"time\":\"%dms\",\"worker\":\"%s\"}",
+                    entry.getKey(), exec.status, exec.endTime, exec.getDuration(), assigned));
+            firstDagJob = false;
+        }
+        json.append("},\"execution_spans\":").append(executionTimeline.json(0, 500)).append("}");
         return json.toString();
     }
 
@@ -1784,6 +2360,8 @@ import titan.storage.TitanJRedisAdapter;
  * @return The {@link Job.Status} of the job, or {@link Job.Status#PENDING} if the job is not found in execution history.
  */
     public Job.Status getJobStatus(String id) {
+        Job known = knownJobs.get(id);
+        if (known != null) return known.getStatus();
         if (executionHistory.containsKey(id)) {
             return executionHistory.get(id).status;
         }
@@ -1802,7 +2380,11 @@ import titan.storage.TitanJRedisAdapter;
 
             serverExecutor.shutdownNow();
             heartBeatExecutor.shutdownNow();
+            telemetryExecutor.shutdownNow();
             dispatchExecutor.shutdownNow();
+            schedulerClient.close();
+            readinessMonitor.close();
+            executionTimeline.close();
         }
     }
 }

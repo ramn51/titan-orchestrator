@@ -15,19 +15,26 @@
 package titan.network;
 
 import titan.filesys.WorkspaceManager;
+import titan.TitanConfig;
 import titan.tasks.TaskHandler;
 import titan.tasks.FileHandler;
 import titan.tasks.PdfConversionHandler;
 import titan.tasks.ScriptExecutorHandler;
+import titan.tasks.ScriptOutcome;
 import titan.tasks.ServiceHandler;
+import titan.tasks.ServiceProcessManager;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -81,17 +88,48 @@ public class RpcWorkerServer {
     /**
      * The maximum number of concurrent tasks that this worker can execute simultaneously in its worker pool.
      */
-    private static final int MAX_THREADS = 4;
+    private static final int DEFAULT_SLOTS = 4;
+    private static final int MAX_CONFIGURED_SLOTS = 64;
+    private final int maxThreads;
+
+    static int parseSlots(String value) {
+        if (value == null || value.isBlank()) return DEFAULT_SLOTS;
+        try {
+            int slots = Integer.parseInt(value.trim());
+            if (slots < 1 || slots > MAX_CONFIGURED_SLOTS) throw new IllegalArgumentException(
+                    "titan.worker.slots must be between 1 and " + MAX_CONFIGURED_SLOTS);
+            return slots;
+        } catch (NumberFormatException error) {
+            throw new IllegalArgumentException("titan.worker.slots must be an integer", error);
+        }
+    }
+
+    private static int configuredSlots() {
+        return parseSlots(TitanConfig.get("titan.worker.slots", String.valueOf(DEFAULT_SLOTS)));
+    }
 
     /**
      * A fixed-size thread pool dedicated to executing actual tasks (jobs). This limits the concurrent workload on the worker.
      */
     private final ExecutorService workerPool;
+    private final ScheduledExecutorService registrationExecutor = Executors.newSingleThreadScheduledExecutor(
+            task -> { Thread thread = new Thread(task, "titan-worker-registration"); thread.setDaemon(true); return thread; });
+    private volatile ServerSocket listeningSocket;
+    private final AtomicInteger missedRegistrations = new AtomicInteger();
+    private final ServiceProcessManager serviceManager;
 
     /**
      * An atomic counter tracking the number of jobs currently being processed by the {@code workerPool}. Used to manage worker saturation.
      */
     private final AtomicInteger activeJobs;
+
+    private boolean reserveSlot() {
+        while (true) {
+            int active = activeJobs.get();
+            if (active >= maxThreads) return false;
+            if (activeJobs.compareAndSet(active, active + 1)) return true;
+        }
+    }
 
     /**
      * Constructs a new {@code RpcWorkerServer} instance.
@@ -111,8 +149,12 @@ public class RpcWorkerServer {
         this.taskHanlderMap = new HashMap<>();
         this.isPermanent = isPermanent;
 
-        workerPool = Executors.newFixedThreadPool(MAX_THREADS);
+        maxThreads = configuredSlots();
+        workerPool = Executors.newFixedThreadPool(maxThreads);
+        System.out.println("[WORKER] Job slots: " + maxThreads);
         activeJobs =  new AtomicInteger(0);
+        titan.tasks.ProcessRegistry.setWorkerIdentity("worker:" + myPort);
+        serviceManager = new ServiceProcessManager(this::notifyMasterOfServiceStop);
 
         addTaskHandler();
     }
@@ -137,8 +179,8 @@ public class RpcWorkerServer {
     public void addTaskHandler(){
         taskHanlderMap.put("PDF_CONVERT", new PdfConversionHandler());
         taskHanlderMap.put("STAGE_FILE", new FileHandler());
-        taskHanlderMap.put("START_SERVICE", new ServiceHandler("START", this));
-        taskHanlderMap.put("STOP_SERVICE", new ServiceHandler("STOP", this));
+        taskHanlderMap.put("START_SERVICE", new ServiceHandler("START", this, serviceManager));
+        taskHanlderMap.put("STOP_SERVICE", new ServiceHandler("STOP", this, serviceManager));
         taskHanlderMap.put("RUN_SCRIPT", new ScriptExecutorHandler(this));
 
         taskHanlderMap.put("DEPLOY_PAYLOAD", new FileHandler());
@@ -165,19 +207,32 @@ public class RpcWorkerServer {
     public void start() throws Exception {
         System.out.println("DEBUG: Attempting to bind to port: " + this.port);
         System.out.println("---- Worker Startup Check ----");
-        titan.tasks.ProcessRegistry.loadAndCleanUpProcesses();
-
         try(ServerSocket serverSocket = new ServerSocket(port)){
+            listeningSocket = serverSocket;
+            titan.tasks.ProcessRegistry.loadAndCleanUpProcesses();
             System.out.println("Worker Server started on port " + port);
             registerWithScheduler();
+            registrationExecutor.scheduleWithFixedDelay(() -> {
+                if (!isRunning) return;
+                if (registerWithScheduler()) missedRegistrations.set(0);
+                else if (!isPermanent && missedRegistrations.incrementAndGet() >= 6) {
+                    System.err.println("[WORKER] Master unavailable for six registration checks; stopping ephemeral worker.");
+                    stop();
+                }
+            }, 10, 10, TimeUnit.SECONDS);
 
             while(this.isRunning){
                 Socket clientSocket = serverSocket.accept();
                 threadPool.submit(() -> clientHandler(clientSocket));
             }
 
+        } catch (SocketException e) {
+            if (isRunning) e.printStackTrace();
         } catch (Exception e){
             e.printStackTrace();
+        } finally {
+            listeningSocket = null;
+            registrationExecutor.shutdownNow();
         }
     }
 
@@ -186,20 +241,27 @@ public class RpcWorkerServer {
      *
      * @throws Exception If an I/O error occurs during communication with the scheduler or if registration fails.
      */
-    private void registerWithScheduler() throws Exception {
-        try(Socket socket = new Socket(schedulerHost, schedulerPort);
+    private boolean registerWithScheduler() {
+        try(Socket socket = new Socket();){
+            socket.connect(new InetSocketAddress(schedulerHost, schedulerPort), 2_000);
+            socket.setSoTimeout(2_000);
+            try (
             DataInputStream in = new DataInputStream(socket.getInputStream());
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream())){
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
             String requestPayload = port + "||" + capability + "||" + this.isPermanent;
             TitanProtocol.send(out, TitanProtocol.OP_REGISTER, requestPayload);
             TitanProtocol.TitanPacket responsePacket = TitanProtocol.read(in);
             if ("REGISTERED".equals(responsePacket.payload)) {
                 System.out.println("[OK] Successfully registered with Scheduler!");
+                return true;
             } else {
                 System.err.println("[FAIL] Registration failed: " + responsePacket.payload);
+                return false;
             }
-        }catch (IOException e){
-            e.printStackTrace();
+            }
+        } catch (Exception e) {
+            System.err.println("[WORKER] Scheduler registration unavailable: " + e.getMessage());
+            return false;
         }
     }
 
@@ -221,18 +283,20 @@ public class RpcWorkerServer {
 
                     if (packet.opCode == TitanProtocol.OP_HEARTBEAT) {
 
-                        int activeThreads = 0;
-                        int maxThreads = 4;
+                        int activeThreads = activeJobs.get();
+                        int maxThreads = this.maxThreads;
 
-                        if(this.workerPool !=null){
-                            if (this.workerPool instanceof java.util.concurrent.ThreadPoolExecutor) {
-                                activeThreads = ((java.util.concurrent.ThreadPoolExecutor) this.workerPool).getActiveCount();
-                            } else{
-                                activeThreads = activeJobs.get();
-                            }
+                        double cpu = -1;
+                        long usedMemory = -1, totalMemory = -1;
+                        java.lang.management.OperatingSystemMXBean os =
+                                java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+                        if (os instanceof com.sun.management.OperatingSystemMXBean host) {
+                            cpu = host.getCpuLoad() * 100;
+                            totalMemory = host.getTotalMemorySize();
+                            usedMemory = totalMemory - host.getFreeMemorySize();
                         }
-
-                        String stats = "PONG|" + activeThreads + "|" + maxThreads;
+                        String stats = "PONG|" + activeThreads + "|" + maxThreads + "|"
+                                + cpu + "|" + usedMemory + "|" + totalMemory + "|" + os.getSystemLoadAverage();
                         TitanProtocol.send(out, TitanProtocol.OP_ACK, stats);
 
                     } else if(packet.opCode == TitanProtocol.OP_RUN_ARCHIVE){
@@ -259,6 +323,9 @@ public class RpcWorkerServer {
 //                            System.exit(0);
 //                        }
                         handleAsyncExecution(out, packet.payload);
+                    } else if (packet.opCode == TitanProtocol.OP_CANCEL_JOB) {
+                        ((ScriptExecutorHandler) taskHanlderMap.get("RUN_SCRIPT")).cancel(packet.payload.trim());
+                        TitanProtocol.send(out, TitanProtocol.OP_ACK, "CANCEL_SIGNALLED");
                     } else if (packet.opCode == TitanProtocol.OP_KILL_WORKER) {
                         System.out.println("[INFO] Worker received Kill Signal (OP_KILL_WORKER). Shutting down...");
                         TitanProtocol.send(out, TitanProtocol.OP_KILL_WORKER, "SUCCESS: Worker shutting down.");
@@ -295,12 +362,11 @@ public class RpcWorkerServer {
      * @param forceTaskType An optional parameter to explicitly specify the task type, overriding parsing from the payload.
      */
     private void handleExecution(DataOutputStream out, String payload, String forceTaskType) {
-        if(activeJobs.get() >= MAX_THREADS){
+        if(!reserveSlot()){
             try {
                 TitanProtocol.send(out, TitanProtocol.OP_ERROR, "ERROR_WORKER_SATURATED");
             } catch (IOException e) { e.printStackTrace(); }
         } else {
-            activeJobs.incrementAndGet();
             try {
                 workerPool.submit(() -> {
                     try {
@@ -479,7 +545,7 @@ public class RpcWorkerServer {
      * @param payload The task-specific data, potentially including a job ID (format: "JOB_ID|TASK_DATA" or just "TASK_DATA").
      */
     private void handleAsyncExecution(DataOutputStream out, String payload){
-        if(activeJobs.get() >= MAX_THREADS){
+        if(!reserveSlot()){
             try{
                 TitanProtocol.send(out, TitanProtocol.OP_ERROR, "ERROR_WORKER_SATURATED");
             } catch (IOException e){
@@ -488,7 +554,7 @@ public class RpcWorkerServer {
             return;
         }
 
-        activeJobs.incrementAndGet();
+        try {
         workerPool.submit(() ->{
             // Parse Job ID for Callback
             // Payload Format expected: "JOB-123|calc.py" (Standard) or "calc.py" (Legacy/Direct)
@@ -497,6 +563,8 @@ public class RpcWorkerServer {
             String taskData = (parts.length > 1) ? parts[1] : payload;
             // This for Test jobs
             if(parts[0].equals("TEST")) { jobId = "TEST-JOB"; taskData = parts[1]; }
+            String callbackStatus;
+            String callbackResult;
             try {
                 System.out.println("[ASYNC] Starting job "+ jobId + ": " + taskData);
                 TaskHandler handler = taskHanlderMap.get("RUN_SCRIPT");
@@ -507,19 +575,32 @@ public class RpcWorkerServer {
 
                 // Result: "JOB-123|my_script.py|--verbose"
                 String payloadForHandler = jobId + "|" + taskData;
-                String result = handler.execute(payloadForHandler);
+                callbackResult = handler.execute(payloadForHandler);
                 // This allows the worker to handle PDF_CONVERT or any other key
 //                String result = processCommand(taskData);
 
-                System.out.println("[ASYNC] Finished "+ jobId);
-                sendCallback(jobId, "COMPLETED", result);
+                callbackStatus = ScriptOutcome.callbackStatus(callbackResult);
+                System.out.println("[ASYNC] Finished " + jobId + " with " + callbackStatus);
             } catch(Exception e){
                 System.err.println("[ASYNC] Failed " + jobId + ": " + e.getMessage());
-                sendCallback(jobId, "FAILED", e.getMessage());
-            } finally {
-                activeJobs.decrementAndGet();
+                callbackStatus = "FAILED";
+                callbackResult = e.getMessage();
             }
+            // Execution has ended, so release the local slot before telling the
+            // master. Otherwise the master can dispatch replacement work while
+            // this worker still reports itself full and reject the new request.
+            String completedJobId = jobId;
+            String completedStatus = callbackStatus;
+            String completedResult = callbackResult;
+            releaseSlotBeforeCallback(activeJobs,
+                    () -> sendCallback(completedJobId, completedStatus, completedResult));
         });
+        } catch (java.util.concurrent.RejectedExecutionException stopping) {
+            activeJobs.decrementAndGet();
+            try { TitanProtocol.send(out, TitanProtocol.OP_ERROR, "ERROR_WORKER_STOPPING"); }
+            catch (IOException ignored) { }
+            return;
+        }
         try {
             TitanProtocol.send(out, TitanProtocol.OP_ACK, "JOB_ACCEPTED");
         } catch (IOException e) {
@@ -541,17 +622,7 @@ public class RpcWorkerServer {
     private void sendCallback(String jobId, String status, String result) {
         if(jobId.equals("UNKNOWN") || jobId.equals("TEST-JOB")) return;
 
-        try (Socket socket = new Socket(schedulerHost, schedulerPort);
-             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
-
-            String msg = jobId + "|" + status + "|" + result;
-            TitanProtocol.send(out, TitanProtocol.OP_JOB_COMPLETE, msg);
-            TitanProtocol.read(in);
-
-        } catch (Exception e) {
-            System.err.println("[FAIL] Callback failed: " + e.getMessage());
-        }
+        CompletionCallbackSender.send(schedulerHost, schedulerPort, jobId, status, result, port);
     }
 
     /**
@@ -594,7 +665,20 @@ public class RpcWorkerServer {
      */
     public void stop(){
         isRunning = false;
-        threadPool.shutdown();
+        try { if (listeningSocket != null) listeningSocket.close(); }
+        catch (IOException ignored) { }
+        registrationExecutor.shutdownNow();
+        threadPool.shutdownNow();
+        workerPool.shutdownNow();
+    }
+
+    static void releaseSlotBeforeCallback(AtomicInteger activeJobs, Runnable callback) {
+        int remaining = activeJobs.decrementAndGet();
+        if (remaining < 0) {
+            activeJobs.incrementAndGet();
+            throw new IllegalStateException("Worker slot released without a reservation");
+        }
+        callback.run();
     }
 
     /**
@@ -651,8 +735,6 @@ public class RpcWorkerServer {
         System.out.println("Target Scheduler: " + schedHost + ":" + schedPort);
         System.out.println("Capability: " + capability);
         System.out.println("Mode:             " + (isPermanent ? "PERMANENT (Protected)" : "EPHEMERAL (Auto-Scaleable)"));
-
-        titan.tasks.ProcessRegistry.loadAndCleanUpProcesses();
 
         RpcWorkerServer rpcWorkerServer = new RpcWorkerServer(myPort, schedHost, schedPort, capability, isPermanent);
         rpcWorkerServer.start();

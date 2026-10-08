@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Titan · Cluster Monitor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='section_nav.css', v='1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='cluster_monitor.css', v='1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='cluster_monitor_interactions.css', v='9') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='cluster_monitor_workspace.css', v='1') }}">
+  <script type="module" src="{{ url_for('static', filename='cluster_monitor.js', v='16') }}"></script>
+</head>
+<body>
+  {% include 'section_nav.html' %}
+  <main class="cluster-shell">
+    <div class="cluster-head">
+      <div><div class="eyebrow">Titan / Control plane</div><h1>Cluster Monitor</h1><p>Scheduling decisions, worker pressure, and fleet health on one clock.</p></div>
+      <div class="connection" id="cluster-connection" role="status">Connecting to master…</div>
+    </div>
+    <nav class="cluster-section-nav" aria-label="Cluster monitor views">
+      <div class="cluster-nav-title"><span>CONTROL PLANE</span><strong>Observe</strong></div>
+      <a href="#health" class="active"><span class="cluster-nav-icon" aria-hidden="true">◫</span><span>Overview<small>Health and pressure</small></span></a>
+      <a href="#diagnostics"><span class="cluster-nav-icon" aria-hidden="true">◇</span><span>Diagnostics<small>Blocked work and retries</small></span></a>
+      <a href="#queue"><span class="cluster-nav-icon" aria-hidden="true">≡</span><span>Queue board<small>Admission lanes</small></span></a>
+      <a href="#performance"><span class="cluster-nav-icon" aria-hidden="true">↯</span><span>Scheduler<small>Latency budget</small></span></a>
+      <a href="#topology"><span class="cluster-nav-icon" aria-hidden="true">⌘</span><span>Fleet<small>Workers and services</small></span></a>
+      <a href="#trends"><span class="cluster-nav-icon" aria-hidden="true">⌁</span><span>Metrics<small>Live control signals</small></span></a>
+      <div class="cluster-nav-title cluster-nav-group"><span>OPERATIONS</span></div>
+      <a href="#services"><span class="cluster-nav-icon" aria-hidden="true">⬡</span><span>Services<small>Long-lived processes</small></span></a>
+      <a href="#scaling"><span class="cluster-nav-icon" aria-hidden="true">↕</span><span>Autoscaling<small>Capacity decisions</small></span></a>
+      <a href="#analytics-view" id="analytics-jump"><span class="cluster-nav-icon" aria-hidden="true">∿</span><span>Analytics<small>Historical runs</small></span></a>
+    </nav>
+    <div class="toolbar" aria-label="Cluster controls">
+      <div class="tabs" role="tablist" aria-label="Cluster data mode"><button class="tab active" data-view="live" role="tab" aria-selected="true">● Live</button><button class="tab" data-view="analytics" role="tab" aria-selected="false">Historical analytics</button></div>
+      <label>History <select id="time-range"><option value="600000">10 min</option><option value="3600000">1 hour</option><option value="86400000">24 hours</option></select></label>
+      <label>Refresh <select id="refresh-rate"><option value="3000">3s</option><option value="10000">10s</option><option value="30000">30s</option><option value="0">Paused</option></select></label>
+      <label>Demo <select id="demo-preset" aria-label="Demo scenario"><option value="basic">Normal basic</option><option value="fan_out">Fan out</option><option value="deep_dag">Deep DAG</option><option value="saturation_burst">Saturation burst</option><option value="long_saturation">Long saturation</option><option value="load">Load</option></select></label>
+      <button class="tool-button demo-launch" id="run-demo">Run demo</button>
+      <button class="tool-button" id="refresh-now">↻ Refresh</button>
+      <button class="tool-button" id="download-json">↓ JSON</button>
+      <span class="sample-age" id="sample-age">No sample yet</span>
+    </div>
+    <div class="demo-status" id="demo-status" role="status" hidden></div>
+    <div class="notice" id="cluster-notice" hidden></div>
+
+    <section id="live-view" class="view">
+      <details class="reading-guide"><summary>How to read Live graphs · signals and bottlenecks</summary><div class="guide-content guide-list">
+        <p><b>Queue composition</b> · Stacked areas show total jobs and which lane occupies the most. Ready rising while running stays flat means dispatch or capacity is blocked. Blocked means unmet DAG parents.</p>
+        <p><b>Dispatch loop duration</b> · Spikes mean scheduler placement itself is slow. Compare with phase costs below to locate the step.</p>
+        <p><b>Throughput</b> · Completions should rise as load arrives. Failure spikes alongside throughput indicate retries or bad tasks.</p>
+        <p><b>Failure rate</b> · A rising percentage means a larger share of settled jobs failed; inspect recent spans and worker logs.</p>
+        <p><b>Saturation</b> · Near 100% with a growing ready queue means more worker slots or less work per task are needed.</p>
+        <p><b>Where dispatch time goes</b> · The phase table shows min, median, max, and share. A dominant store phase points to persistence; send points to worker RPC.</p>
+        <p><b>Store latency</b> · Rising read/write time with dispatch store time suggests the store is slowing admission or completion.</p>
+        <p><b>Heartbeat round-trip</b> · Sustained or one-worker spikes suggest a slow or unreachable worker. Select a fleet node for its own history.</p>
+        <p><b>Worker slot utilization</b> · One worker pinned while others are idle suggests placement imbalance or capability constraints.</p>
+        <p><b>Oldest waiting job</b> · Age rising while throughput is low reveals starvation; check the queue board for its waiting reason.</p>
+        <p><b>Queue wait tail</b> · p95 far above p50 means a subset waits much longer. Inspect priority, capability, and worker placement.</p>
+        <p><b>Backlog versus drain</b> · If ready jobs grow faster than completions, the cluster is falling behind.</p>
+        <p><b>Capability debt</b> · Parked jobs need a capability no registered worker offers; add that worker or correct the job requirement.</p>
+        <p><b>Placement imbalance</b> · A persistent high spread means work is concentrated on some workers despite spare slots elsewhere.</p>
+        <p><b>Retry pressure</b> · Rising retries can hide unstable workers or scripts; compare with failure rate and recent events.</p>
+        <p><b>Fleet scale / utilization</b> · Worker and available-slot steps show scale-out or scale-in. Used slots close to available slots means the fleet is saturated. A flat worker count during sustained saturation points to an autoscaler limit or failure.</p>
+      </div></details>
+      <div class="section-intro" id="health"><h2>Health at a glance</h2><span>Current control-plane state</span></div>
+      <div class="kpi-grid" id="health-tiles"></div>
+      <div class="store-strip" id="store-strip"></div>
+
+      <section class="cluster-row" id="diagnostics"><div class="row-title"><div><h2>Why work is not moving</h2><p>Independent signals for routing, retries, and queue starvation</p></div></div><div class="diagnostics-grid" id="diagnostic-panels"></div></section>
+
+      <section class="cluster-row" id="queue"><div class="row-title"><div><h2>Pre-dispatch board</h2><p>Every waiting job belongs to one lane. Ready jobs are shown by priority.</p></div></div><div class="lane-grid" id="queue-lanes"></div></section>
+
+      <section class="cluster-row" id="performance"><div class="row-title"><div><h2>Latency budget</h2><p>Queue wait, dispatch placement, store writes, and worker hand-off</p></div></div><div id="latency-budget" class="budget"></div></section>
+
+      <section class="cluster-row" id="topology"><div class="row-title"><div><h2>Fleet topology</h2><p>Click Master for queue and health; click a worker for details. Blue routes mark workers currently handling jobs.</p></div></div><div class="topology-layout"><div class="topology-canvas" id="topology-canvas"></div><div class="inspector" id="worker-inspector">Select Master or a worker to inspect it.</div></div></section>
+
+      <section class="cluster-row" id="trends"><div class="row-title"><div><h2>Live trends</h2><p>Shared time window; each panel uses measured values only</p></div></div><div class="charts-grid">
+        <article class="chart-card"><h3>Queue composition</h3><p>Ready, running, blocked, and delayed jobs</p><div class="chart" data-chart="queue"></div></article>
+        <article class="chart-card"><h3>Dispatch loop duration</h3><p>Route → select → record → store → send</p><div class="chart" data-chart="dispatch"></div></article>
+        <article class="chart-card"><h3>Throughput</h3><p>Completed and failed jobs per minute</p><div class="chart" data-chart="throughput"></div></article>
+        <article class="chart-card"><h3>Failure rate</h3><p>Failed share of settled work</p><div class="chart" data-chart="failure"></div></article>
+        <article class="chart-card"><h3>Saturation</h3><p>Occupied worker slots / available slots</p><div class="chart" data-chart="saturation"></div></article>
+        <article class="chart-card"><h3>Where dispatch time goes</h3><p>Five measured scheduler phases</p><div class="chart" data-chart="phases"></div><div class="table-wrap phase-table"><table><thead><tr><th>Phase</th><th>Share</th><th>Min</th><th>Median</th><th>Max</th></tr></thead><tbody id="phase-table-body"></tbody></table></div></article>
+        <article class="chart-card"><h3>Store latency</h3><p>Measured TitanStore operations, in milliseconds</p><div class="chart" data-chart="store"></div><p id="store-coverage" class="store-coverage"></p></article>
+        <article class="chart-card"><h3>Heartbeat round-trip</h3><p>Master ↔ worker, in milliseconds</p><div class="chart" data-chart="heartbeat"></div></article>
+        <article class="chart-card"><h3>Worker slot utilization</h3><p>Each node’s load over time</p><div class="chart" data-chart="workers"></div></article>
+        <article class="chart-card"><h3>Oldest waiting job</h3><p>Age of the head of ready and parked work</p><div class="chart" data-chart="queue-age"></div></article>
+        <article class="chart-card"><h3>Queue wait tail</h3><p>Rolling p50 and p95 from dispatch spans</p><div class="chart" data-chart="queue-tail"></div></article>
+        <article class="chart-card"><h3>Backlog versus drain</h3><p>Ready jobs and jobs completed since the previous sample</p><div class="chart" data-chart="backlog"></div></article>
+        <article class="chart-card"><h3>Capability debt</h3><p>Jobs parked because no matching worker exists</p><div class="chart" data-chart="capability-debt"></div></article>
+        <article class="chart-card"><h3>Placement imbalance</h3><p>Difference between busiest and least busy worker, by slot percentage</p><div class="chart" data-chart="imbalance"></div></article>
+        <article class="chart-card"><h3>Retry pressure</h3><p>Retries and failed dispatch attempts over the window</p><div class="chart" data-chart="retry-pressure"></div></article>
+      </div></section>
+
+      <section class="cluster-row compact-services" id="services"><div class="row-title"><div><h2>Long-lived services</h2><p>A ready deploy job starts a service; the process remains live until stopped.</p></div></div><div class="table-wrap"><table><thead><tr><th>Service</th><th>Dialable address</th><th>Host worker</th><th>Uptime</th><th>Deploy attempts</th><th>State</th></tr></thead><tbody id="services-body"></tbody></table></div></section>
+
+      <section class="cluster-row" id="scaling"><div class="row-title"><div><h2>Scaling and worker events</h2><p>Fleet size, slot capacity, and actual slot use, followed by decisions that changed the fleet.</p></div></div><div class="split-panels"><article class="chart-card"><h3>Fleet scale / utilization</h3><p>Worker count · used slots · available slots</p><div class="chart" data-chart="scaling"></div><div class="mini-stats" id="scale-stats"></div></article><article class="chart-card"><h3>Recent events</h3><div class="event-list" id="cluster-events"></div></article></div></section>
+    </section>
+
+    <section id="analytics-view" class="view" hidden>
+      <details class="reading-guide"><summary>How to read Analytics graphs · run comparisons</summary><div class="guide-content guide-list">
+        <p><b>Success rate</b> · Rolling share of completed terminal attempts. A dip means more failures or cancellations; retries are separate attempts.</p>
+        <p><b>Job duration distribution</b> · Bars show how many jobs fall in each runtime bucket. A growing long tail points to slow tasks.</p>
+        <p><b>Queue wait percentiles</b> · p50 is typical; p95 and p99 expose delayed outliers. High waits with short job durations indicate scheduling pressure.</p>
+        <p><b>Per-worker slot utilization</b> · Compare workers over the same time window; a repeatedly full worker beside idle peers suggests skew.</p>
+        <p><b>Does priority work?</b> · Values are numeric priorities; higher numbers should usually wait less when jobs compete. The counts below show sample size.</p>
+        <p><b>Pipeline duration trend</b> · Each color is one DAG. Points are runs; a downward line is faster. The table counts runs and compares the latest with the previous run. A change under 5% is stable.</p>
+      </div></details>
+      <div class="section-intro"><h2>Run analytics</h2><span>Computed from retained samples and completed spans</span></div>
+      <div class="kpi-grid" id="analytics-tiles"></div>
+      <div class="charts-grid analytics-grid">
+        <article class="chart-card"><h3>Success rate</h3><p>Rolling completed share of the last 20 terminal attempts; retries count separately</p><div class="chart" data-chart="success"></div></article>
+        <article class="chart-card"><h3>Job duration distribution</h3><p>Fixed buckets for comparable runs</p><div class="chart" data-chart="duration"></div></article>
+        <article class="chart-card"><h3>Queue wait percentiles</h3><p>p50 / p95 / p99 eligibility to dispatch</p><div class="chart" data-chart="wait"></div></article>
+        <article class="chart-card"><h3>Historical worker occupancy</h3><p>Concurrent occupied slots reconstructed from persisted execution spans</p><div class="chart" data-chart="workers-analytics"></div></article>
+        <article class="chart-card"><h3>Does priority work?</h3><p>Numeric job priority; higher numbers dispatch first when eligible. Waits ≥250ms.</p><div class="chart" data-chart="priority"></div><div class="verdict" id="priority-verdict"></div></article>
+        <article class="chart-card"><h3>Pipeline duration trend</h3><p>One color per DAG · latest run versus previous</p><div class="chart" data-chart="pipelines"></div><div class="table-wrap small-table"><table><thead><tr><th>DAG</th><th>Runs</th><th>Latest</th><th>Trend</th></tr></thead><tbody id="pipeline-table"></tbody></table></div></article>
+      </div>
+    </section>
+
+  </main>
+  <dialog id="chart-dialog" class="chart-dialog" aria-labelledby="chart-dialog-title">
+    <div class="chart-dialog-head"><div><div class="eyebrow">CHART INSPECTOR</div><h2 id="chart-dialog-title">Chart</h2><p id="chart-dialog-subtitle"></p></div><button id="chart-close" class="tool-button" aria-label="Close chart">✕</button></div>
+    <div class="chart-dialog-controls"><button id="chart-zoom-out" class="tool-button" aria-label="Zoom out">−</button><span id="chart-zoom-label">1×</span><button id="chart-zoom-in" class="tool-button" aria-label="Zoom in">+</button><label>Pan <input id="chart-pan" type="range" min="0" max="100" value="100" aria-label="Pan chart through history"></label><button id="chart-reset" class="tool-button">Reset</button></div>
+    <div id="chart-expanded" class="chart expanded-chart"></div>
+    <p class="chart-dialog-hint">Hover the chart to inspect values. Zoom narrows the time range; Pan moves through it.</p>
+  </dialog>
+</body>
+</html>

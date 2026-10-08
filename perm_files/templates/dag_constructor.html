@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Titan — DAG Constructor</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dag_constructor_builder.css', v='5') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='section_nav.css', v='1') }}">
+</head>
+<body>
+  {% with active_section='constructor' %}{% include 'section_nav.html' %}{% endwith %}
+  <div id="root"></div>
+
+  <script src="{{ url_for('static', filename='dag_constructor_model.js') }}"></script>
+  <script type="text/babel" src="{{ url_for('static', filename='dag_constructor_app.jsx', v='3') }}"></script>
+</body>
+</html>
