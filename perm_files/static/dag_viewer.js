@@ -2,7 +2,8 @@
 const selectedId = document.body.dataset.selectedDag;
 const historical = document.body.dataset.historical === 'true';
 let selectedStatus = document.body.dataset.selectedStatus;
-const terminal = status => ['COMPLETED', 'FAILED', 'DEAD', 'CANCELLED', 'UNKNOWN'].includes(status);
+const terminal = status => ['COMPLETED', 'FAILED', 'DEAD', 'CANCELLED'].includes(status);
+const refreshDelay = status => document.hidden ? 60000 : terminal(status) ? 30000 : status === 'UNKNOWN' ? 10000 : 3000;
 document.getElementById('run-selector')?.addEventListener('change', event => {
   const run = event.target.value;
   location.href = `/dags/${encodeURIComponent(selectedId)}${run ? `?run=${encodeURIComponent(run)}` : ''}`;
@@ -167,7 +168,9 @@ async function refresh() {
     connection.classList.add('offline');
   } finally {
     refreshFiles();
-    if (!terminal(selectedStatus)) setTimeout(refresh, 3000);
+    // Keep a low-rate check after completion so an SDK redeploy or recovered
+    // master eventually appears without returning to the old three-second load.
+    setTimeout(refresh, refreshDelay(selectedStatus));
   }
 }
 refresh();

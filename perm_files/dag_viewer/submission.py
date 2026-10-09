@@ -6,15 +6,58 @@ import json
 import os
 import re
 import tempfile
+import threading
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 NAME = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 ACCEPTED = "DAG_ACCEPTED"
+_manifest_locks_guard = threading.Lock()
+_manifest_locks = {}
 
 
 class GraphError(ValueError):
     pass
+
+
+@contextmanager
+def manifest_lock(path, timeout=60.0):
+    """Serialize manifest read-modify-write transactions across threads and processes."""
+    path = Path(path)
+    lock_path = Path(str(path) + ".lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with _manifest_locks_guard:
+        local_lock = _manifest_locks.setdefault(str(lock_path.resolve()), threading.RLock())
+    with local_lock, lock_path.open("a+b") as lock_file:
+        if lock_file.tell() == 0:
+            lock_file.write(b"0")
+            lock_file.flush()
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                lock_file.seek(0)
+                if os.name == "nt":
+                    import msvcrt
+                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(f"Timed out waiting for manifest lock: {lock_path}")
+                time.sleep(0.01)
+        try:
+            yield
+        finally:
+            lock_file.seek(0)
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 
 def normalize(body, scripts_root):
@@ -135,7 +178,15 @@ def write_manifest(path, data):
             json.dump(data, file, indent=2)
             file.flush()
             os.fsync(file.fileno())
-        os.replace(temp, path)
+        for attempt in range(6):
+            try:
+                os.replace(temp, path)
+                temp = None
+                break
+            except PermissionError:
+                if attempt == 5:
+                    raise
+                time.sleep(0.01 * (2 ** attempt))
     finally:
         if temp and os.path.exists(temp):
             os.unlink(temp)
@@ -168,32 +219,33 @@ def log_offsets(path, jobs):
 
 
 def record_run(path, name, jobs, payload, submitted_at, offsets=None):
-    data = read_manifest(path)
-    run_jobs = {}
-    offsets = offsets or {}
-    for key, value in list(data.items()):
-        if isinstance(value, dict) and value.get("dag") == name:
-            del data[key]
-    for job in jobs:
-        record = {
-            "dag": name, "deps": [f"DAG-{p}" for p in job["depends_on"]],
-            "run_ts": submitted_at,
-            "log_offset": offsets.get(f"DAG-{job['id']}", 0),
-            "spec": {"script": job["filename"], "sha256": hashlib.sha256(job["path"].read_bytes()).hexdigest(),
-                     "args": job["args"], "requirement": job["requirement"],
-                     "job_type": job["job_type"], "port": job["port"],
-                     "priority": job["priority"], "delay_ms": job["delay"],
-                     "input_versions": job.get("input_versions") or {},
-                     "expected_outputs": job.get("expected_outputs") or []},
-        }
-        data[f"DAG-{job['id']}"] = record
-        run_jobs[f"DAG-{job['id']}"] = record
-    runs = data.setdefault(f"__runs__{name}", [])
-    runs.append({"run_ts": submitted_at, "jobs": run_jobs})
-    data[f"__runs__{name}"] = runs[-30:]
-    data[f"__payload__{name}"] = {"dag": name, "dag_payload": payload,
-                                  "run_ts": submitted_at}
-    write_manifest(path, data)
+    with manifest_lock(path):
+        data = read_manifest(path)
+        run_jobs = {}
+        offsets = offsets or {}
+        for key, value in list(data.items()):
+            if isinstance(value, dict) and value.get("dag") == name:
+                del data[key]
+        for job in jobs:
+            record = {
+                "dag": name, "deps": [f"DAG-{p}" for p in job["depends_on"]],
+                "run_ts": submitted_at,
+                "log_offset": offsets.get(f"DAG-{job['id']}", 0),
+                "spec": {"script": job["filename"], "sha256": hashlib.sha256(job["path"].read_bytes()).hexdigest(),
+                         "args": job["args"], "requirement": job["requirement"],
+                         "job_type": job["job_type"], "port": job["port"],
+                         "priority": job["priority"], "delay_ms": job["delay"],
+                         "input_versions": job.get("input_versions") or {},
+                         "expected_outputs": job.get("expected_outputs") or []},
+            }
+            data[f"DAG-{job['id']}"] = record
+            run_jobs[f"DAG-{job['id']}"] = record
+        runs = data.setdefault(f"__runs__{name}", [])
+        runs.append({"run_ts": submitted_at, "jobs": run_jobs})
+        data[f"__runs__{name}"] = runs[-30:]
+        data[f"__payload__{name}"] = {"dag": name, "dag_payload": payload,
+                                      "run_ts": submitted_at}
+        write_manifest(path, data)
 
 
 def submit(communicate, opcode, manifest_path, name, jobs, payload):
@@ -226,16 +278,20 @@ def redeploy(communicate, opcode, manifest_path, name):
     response = communicate(opcode, payload)
     if response != ACCEPTED:
         raise GraphError(f"Master rejected DAG: {response or 'No response'}")
-    for jid, value in data.items():
-        if isinstance(value, dict) and value.get("dag") == name:
-            value["run_ts"] = submitted_at
-            value["log_offset"] = offsets.get(jid, 0)
-    run_jobs = {jid: dict(info) for jid, info in data.items()
-                if jid.startswith("DAG-") and isinstance(info, dict) and info.get("dag") == name}
-    runs = data.setdefault(f"__runs__{name}", [])
-    runs.append({"run_ts": submitted_at, "jobs": run_jobs})
-    data[f"__runs__{name}"] = runs[-30:]
-    write_manifest(manifest_path, data)
+    with manifest_lock(manifest_path):
+        # Re-read after master acknowledgement so another accepted submission
+        # cannot be overwritten by the copy read before this RPC.
+        data = read_manifest(manifest_path)
+        for jid, value in data.items():
+            if isinstance(value, dict) and value.get("dag") == name:
+                value["run_ts"] = submitted_at
+                value["log_offset"] = offsets.get(jid, 0)
+        run_jobs = {jid: dict(info) for jid, info in data.items()
+                    if jid.startswith("DAG-") and isinstance(info, dict) and info.get("dag") == name}
+        runs = data.setdefault(f"__runs__{name}", [])
+        runs.append({"run_ts": submitted_at, "jobs": run_jobs})
+        data[f"__runs__{name}"] = runs[-30:]
+        write_manifest(manifest_path, data)
     append_run_history(manifest_path, name,
                        [{"id": jid.removeprefix("DAG-")} for jid in run_jobs], submitted_at)
     return response

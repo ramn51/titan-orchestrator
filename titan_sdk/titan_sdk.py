@@ -17,7 +17,10 @@ import hashlib
 import os
 import copy
 import re
+import threading
+import time
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 import json as _json
 
@@ -37,6 +40,46 @@ OP_GET_JOB_STATUS = 0x55
 OP_CANCEL_JOB = 0x56
 OP_DEPLOY_SCRIPT = 0x57
 OP_RESOLVE_SERVICE = 0x58
+_manifest_locks_guard = threading.Lock()
+_manifest_locks = {}
+
+
+@contextmanager
+def _manifest_lock(path, timeout=60.0):
+    """Serialize SDK manifest updates across clients without another dependency."""
+    lock_path = os.path.abspath(path) + ".lock"
+    with _manifest_locks_guard:
+        local_lock = _manifest_locks.setdefault(lock_path, threading.RLock())
+    with local_lock, open(lock_path, "a+b") as lock_file:
+        lock_file.seek(0, os.SEEK_END)
+        if lock_file.tell() == 0:
+            lock_file.write(b"0")
+            lock_file.flush()
+        deadline = time.monotonic() + timeout
+        while True:
+            try:
+                lock_file.seek(0)
+                if os.name == "nt":
+                    import msvcrt
+                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(f"Timed out waiting for manifest lock: {lock_path}")
+                time.sleep(0.01)
+        try:
+            yield
+        finally:
+            lock_file.seek(0)
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 class TitanJob:
     def __init__(self, job_id, filename, job_type="RUN_PAYLOAD", args=None,
@@ -211,9 +254,17 @@ class TitanClient:
 
     def _write_dag_manifest(self, dag_name, jobs, run_ts, dag_payload=None, offsets=None):
         """Record a successful submission for dashboard discovery, atomically."""
+        manifest_path = os.path.abspath(os.environ.get("TITAN_DAG_MANIFEST", ".titan_dag_manifest.json"))
+        try:
+            with _manifest_lock(manifest_path):
+                self._write_dag_manifest_unlocked(manifest_path, dag_name, jobs, run_ts, dag_payload, offsets)
+        except (OSError, TimeoutError, ValueError) as exc:
+            print(f"[SDK][WARN] Could not update DAG manifest: {exc}")
+
+    def _write_dag_manifest_unlocked(self, manifest_path, dag_name, jobs, run_ts,
+                                     dag_payload=None, offsets=None):
         import tempfile
 
-        manifest_path = os.path.abspath(os.environ.get("TITAN_DAG_MANIFEST", ".titan_dag_manifest.json"))
         temp_path = None
         try:
             existing = {}
@@ -255,7 +306,15 @@ class TitanClient:
                 _json.dump(existing, f, indent=2)
                 f.flush()
                 os.fsync(f.fileno())
-            os.replace(temp_path, manifest_path)
+            for attempt in range(6):
+                try:
+                    os.replace(temp_path, manifest_path)
+                    temp_path = None
+                    break
+                except PermissionError:
+                    if attempt == 5:
+                        raise
+                    time.sleep(0.01 * (2 ** attempt))
         except (OSError, ValueError) as exc:
             print(f"[SDK][WARN] Could not update DAG manifest: {exc}")
         finally:

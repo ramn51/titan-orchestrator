@@ -10,12 +10,29 @@ from pathlib import Path
 from flask import Flask
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from cluster_monitor.routes import create_blueprint, _history_days
+from cluster_monitor.routes import create_blueprint, _compact_runs, _history_days
 from cluster_monitor.demos import PRESETS, build, recover_latest
 from dag_viewer.submission import normalize
 
 
 class ClusterMonitorTests(unittest.TestCase):
+    def test_compact_run_history_is_bounded_and_invalidates_after_append(self):
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "manifest.json"
+            history = Path(directory) / ".titan_dag_run_history.jsonl"
+            history.write_text("".join(json.dumps({"name": "demo", "run_ts": index,
+                                                     "jobs": [f"DAG-{index}"]}) + "\n"
+                                       for index in range(600)), encoding="utf-8")
+            first = _compact_runs(manifest, 0)
+            second = _compact_runs(manifest, 550)
+            self.assertEqual(500, len(first))
+            self.assertEqual(100, first[0]["run_ts"])
+            self.assertEqual(50, len(second))
+            with history.open("a", encoding="utf-8") as file:
+                file.write(json.dumps({"name": "new", "run_ts": 600, "jobs": ["DAG-new"]}) + "\n")
+            refreshed = _compact_runs(manifest, 600)
+            self.assertEqual([600], [run["run_ts"] for run in refreshed])
+
     def test_presets_are_bounded_valid_dags(self):
         scripts = Path(__file__).resolve().parents[1] / "dag_samples"
         self.assertEqual({"basic", "fan_out", "deep_dag", "saturation_burst",

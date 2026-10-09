@@ -37,23 +37,39 @@ def _history_days(since, now=None):
             for offset in range((today - earliest).days + 1)]
 
 
+_compact_cache_lock = threading.Lock()
+_compact_cache = {}
+
+
 def _compact_runs(manifest_path, since):
-    """Read only the bounded tail of the append-only dashboard run index."""
+    """Parse each compact history revision once and retain only its bounded tail."""
     path = Path(manifest_path).with_name(".titan_dag_run_history.jsonl")
+    try:
+        stat = path.stat()
+        revision = (stat.st_ino, stat.st_ctime_ns, stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        return []
+    key = str(path.resolve())
+    with _compact_cache_lock:
+        cached = _compact_cache.get(key)
+        if cached and cached[0] == revision:
+            return [record for record in cached[1] if record["run_ts"] >= since]
     records = deque(maxlen=MAX_RUNS)
     try:
         with path.open(encoding="utf-8") as file:
             for line in file:
                 try:
                     record = json.loads(line)
-                    if (isinstance(record, dict) and isinstance(record.get("run_ts"), int)
-                            and record["run_ts"] >= since):
+                    if isinstance(record, dict) and isinstance(record.get("run_ts"), int):
                         records.append(record)
                 except ValueError:
                     continue
     except OSError:
         pass
-    return list(records)
+    result = tuple(records)
+    with _compact_cache_lock:
+        _compact_cache[key] = (revision, result)
+    return [record for record in result if record["run_ts"] >= since]
 
 
 _legacy_cache_lock = threading.Lock()

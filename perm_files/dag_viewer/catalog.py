@@ -46,6 +46,7 @@ class DagCatalog:
         self._yaml_cache = ({}, 0.0, "")
         self._status_path = self.manifest_path.with_name(self.manifest_path.name + ".status.json")
         self._status_lock = threading.Lock()
+        self._cache_lock = threading.RLock()
         self._manifest_cache = (None, {})
         self._status_cache = (None, {})
         self._definition_cache = (None, {})
@@ -55,17 +56,20 @@ class DagCatalog:
     def _signature(path):
         try:
             stat = Path(path).stat()
-            return stat.st_mtime_ns, stat.st_size
+            # Atomic replacement can preserve size and mtime. File identity and ctime
+            # keep such a replacement from serving the previous manifest revision.
+            return stat.st_ino, stat.st_ctime_ns, stat.st_mtime_ns, stat.st_size
         except OSError:
             return None
 
     def _cached_json(self, path, attribute):
-        signature = self._signature(path)
-        cached_signature, cached = getattr(self, attribute)
-        if signature != cached_signature:
-            cached = read_manifest(path)
-            setattr(self, attribute, (signature, cached))
-        return cached
+        with self._cache_lock:
+            signature = self._signature(path)
+            cached_signature, cached = getattr(self, attribute)
+            if signature != cached_signature:
+                cached = read_manifest(path)
+                setattr(self, attribute, (signature, cached))
+            return cached
 
     def _saved_manifest(self):
         return self._cached_json(self.manifest_path, "_manifest_cache")
@@ -115,6 +119,10 @@ class DagCatalog:
             return saved
 
     def _definitions(self):
+        with self._cache_lock:
+            return self._definitions_locked()
+
+    def _definitions_locked(self):
         now = time.monotonic()
         if now - self._yaml_cache[1] > 30 and yaml is not None and self.yaml_root.exists():
             found = {}
@@ -165,6 +173,12 @@ class DagCatalog:
         return definitions
 
     def snapshot(self, stats, service_endpoints=None):
+        # Flask serves requests concurrently. Serialize cache construction so an
+        # older read cannot overwrite a newer revision after an atomic replace.
+        with self._cache_lock:
+            return self._snapshot_locked(stats, service_endpoints)
+
+    def _snapshot_locked(self, stats, service_endpoints=None):
         definitions = dict(self._definitions())
         raw_endpoints = service_endpoints or []
         cache_key = (self._definition_cache[0], self._signature(self._status_path),
@@ -316,7 +330,7 @@ class DagCatalog:
 
     def metadata(self, job_id):
         value = self._saved_manifest().get(job_id, {})
-        return value if isinstance(value, dict) else {}
+        return dict(value) if isinstance(value, dict) else {}
 
     def runs_for(self, name):
         saved = self._saved_manifest()

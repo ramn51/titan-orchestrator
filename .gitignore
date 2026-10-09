@@ -55,6 +55,7 @@ titan_test_suite/examples/agents_examples/doc_generator_agent/tools/.env
 
 # Runtime-generated — do not commit
 .titan_dag_manifest.json
+.titan_dag_manifest.json.lock
 .titan_dag_manifest.json.status.json
 .titan_dag_manifest.*.tmp
 .titan_dag_run_history.jsonl
