@@ -246,6 +246,28 @@ def test_cancel_routes_target_only_jobs_in_selected_pipeline(tmp_path):
         assert client.post("/api/dag/cancel/DAG-demo/DAG-A").status_code == 409
 
 
+def test_page_fetches_logs_for_automatically_selected_job(tmp_path):
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({
+        "DAG-FIRST": {"dag": "demo", "deps": [], "run_ts": 0},
+    }))
+    calls = []
+
+    def communicate(opcode, payload):
+        calls.append((opcode, payload))
+        return json.dumps({"workers": []}) if opcode == 9 else "first job logs"
+
+    app = Flask(__name__, template_folder=str(Path(__file__).resolve().parents[1] / "templates"),
+                static_folder=str(Path(__file__).resolve().parents[1] / "static"))
+    app.add_url_rule("/logs/<job_id>", "view_logs", lambda job_id: job_id)
+    app.register_blueprint(create_blueprint(communicate, 9, 22, manifest, tmp_path))
+    with app.test_client() as client:
+        response = client.get("/dags/DAG-demo")
+    assert response.status_code == 200
+    assert (22, "DAG-FIRST") in calls
+    assert (22, None) not in calls
+
+
 def test_pipeline_pages_search_and_full_graph_exports(tmp_path):
     manifest = tmp_path / "manifest.json"
     saved = {f"DAG-job-{number}": {"dag": f"pipeline-{number:02}", "deps": [],
@@ -305,6 +327,7 @@ if __name__ == "__main__":
                  test_current_failure_overrides_old_worker_history,
                  test_workspace_files_and_download_are_scoped_to_selected_job,
                  test_cancel_routes_target_only_jobs_in_selected_pipeline,
+                 test_page_fetches_logs_for_automatically_selected_job,
                  test_pipeline_pages_search_and_full_graph_exports,
                  test_deep_graph_preview_avoids_recursion):
         with TemporaryDirectory() as directory:

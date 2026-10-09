@@ -392,7 +392,7 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
                 content = log_path.read_bytes()
                 logs = content[min(offset, len(content)):].decode("utf-8", errors="replace")[-200_000:]
             else:
-                logs = communicate(logs_opcode, job_id)
+                logs = communicate(logs_opcode, job["id"])
         return render_template("dag_viewer.html", data=data, page_dags=page_dags,
                                match_count=match_count, page_count=page_count,
                                page_number=page_number, query=query,
