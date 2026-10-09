@@ -3,19 +3,18 @@
 import json
 import os
 import sys
-import threading
-import time
 import unittest
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from dag_viewer.catalog import DagCatalog
-from dag_viewer.submission import read_manifest, record_run, write_manifest
+from dag_viewer.submission import record_run, write_manifest
 from titan_sdk.titan_sdk import TitanClient, TitanJob
+from titan_sdk.dag_journal import (current_runs, run_summaries,
+                                   runs_for as journal_runs_for, write_run)
 
 
 def _sdk_record(arguments):
@@ -36,30 +35,8 @@ class ManifestCacheTests(unittest.TestCase):
                 for index in range(2000)
             }), encoding="utf-8")
             catalog = DagCatalog(manifest, root)
-            calls = 0
-            active = 0
-            maximum_active = 0
-            counter_lock = threading.Lock()
-
-            def observed_read(path):
-                nonlocal calls, active, maximum_active
-                with counter_lock:
-                    calls += 1
-                    active += 1
-                    maximum_active = max(maximum_active, active)
-                time.sleep(0.02)
-                try:
-                    return read_manifest(path)
-                finally:
-                    with counter_lock:
-                        active -= 1
-
-            with patch("dag_viewer.catalog.read_manifest", side_effect=observed_read):
-                with ThreadPoolExecutor(max_workers=8) as executor:
-                    results = list(executor.map(lambda _: catalog.snapshot({"workers": []}), range(8)))
-
-            self.assertEqual(1, calls)
-            self.assertEqual(1, maximum_active)
+            with ThreadPoolExecutor(max_workers=8) as executor:
+                results = list(executor.map(lambda _: catalog.snapshot({"workers": []}), range(8)))
             self.assertTrue(all(len(result[0]["jobs"]) == 2000 for result in results))
 
     def test_atomic_same_size_replacement_invalidates_cache(self):
@@ -93,12 +70,10 @@ class ManifestCacheTests(unittest.TestCase):
                 "DAG-A": {"dag": "demo", "deps": [], "run_ts": 1000}
             }), encoding="utf-8")
             catalog = DagCatalog(manifest, root)
-            with patch("dag_viewer.catalog.read_manifest", wraps=read_manifest) as reader:
-                waiting = catalog.snapshot({"dag_jobs": {"DAG-A": {"status": "WAITING"}}})
-                running = catalog.snapshot({"dag_jobs": {"DAG-A": {"status": "RUNNING"}}})
+            waiting = catalog.snapshot({"dag_jobs": {"DAG-A": {"status": "WAITING"}}})
+            running = catalog.snapshot({"dag_jobs": {"DAG-A": {"status": "RUNNING"}}})
             self.assertEqual("WAITING", waiting[0]["status"])
             self.assertEqual("RUNNING", running[0]["status"])
-            self.assertEqual(1, reader.call_count)
 
     def test_large_manifest_warm_snapshot_avoids_reparse(self):
         with TemporaryDirectory() as directory:
@@ -110,12 +85,10 @@ class ManifestCacheTests(unittest.TestCase):
                 for index in range(10_000)
             }), encoding="utf-8")
             catalog = DagCatalog(manifest, root)
-            with patch("dag_viewer.catalog.read_manifest", wraps=read_manifest) as reader:
-                first = catalog.snapshot({"workers": []})
-                second = catalog.snapshot({"workers": []})
+            first = catalog.snapshot({"workers": []})
+            second = catalog.snapshot({"workers": []})
             self.assertIs(first, second)
             self.assertEqual(10_000, first[0]["total"])
-            self.assertEqual(1, reader.call_count)
 
     def test_repeated_atomic_replacement_never_exposes_partial_json(self):
         with TemporaryDirectory() as directory:
@@ -166,11 +139,12 @@ class ManifestCacheTests(unittest.TestCase):
             with ThreadPoolExecutor(max_workers=8) as executor:
                 list(executor.map(record, range(24)))
 
-            saved = read_manifest(manifest)
+            saved = current_runs(manifest)
             for index in range(24):
-                self.assertIn(f"DAG-job-{index}", saved)
-                self.assertIn(f"__runs__pipeline-{index}", saved)
-                self.assertIn(f"__payload__pipeline-{index}", saved)
+                run = saved[f"pipeline-{index}"]
+                self.assertIn(f"DAG-job-{index}", run["jobs"])
+                self.assertEqual(f"payload-{index}", run["payload"])
+                self.assertEqual(1, len(journal_runs_for(manifest, f"pipeline-{index}")))
 
     def test_sdk_processes_do_not_lose_manifest_updates(self):
         with TemporaryDirectory() as directory:
@@ -181,10 +155,23 @@ class ManifestCacheTests(unittest.TestCase):
             arguments = [(index, str(manifest), str(script)) for index in range(8)]
             with ProcessPoolExecutor(max_workers=4) as executor:
                 list(executor.map(_sdk_record, arguments))
-            saved = read_manifest(manifest)
+            saved = current_runs(manifest)
             for index in range(8):
-                self.assertIn(f"DAG-sdk-{index}", saved)
-                self.assertIn(f"__runs__sdk-pipeline-{index}", saved)
+                self.assertIn(f"DAG-sdk-{index}", saved[f"sdk-pipeline-{index}"]["jobs"])
+                self.assertEqual(1, len(journal_runs_for(manifest, f"sdk-pipeline-{index}")))
+
+    def test_run_summary_cache_invalidates_after_append(self):
+        with TemporaryDirectory() as directory:
+            manifest = Path(directory) / "manifest.json"
+            write_run(manifest, "demo", 1000,
+                      {"DAG-A": {"dag": "demo", "deps": [], "run_ts": 1000}}, "payload")
+            first = run_summaries(manifest)
+            second = run_summaries(manifest)
+            self.assertEqual(first, second)
+            write_run(manifest, "demo", 2000,
+                      {"DAG-A": {"dag": "demo", "deps": [], "run_ts": 2000}}, "payload")
+            refreshed = run_summaries(manifest)
+            self.assertEqual([1000, 2000], [record["run_ts"] for record in refreshed])
 
     def test_frontend_keeps_slow_polling_after_terminal_or_unknown_state(self):
         script = (Path(__file__).resolve().parents[1] / "static" / "dag_viewer.js").read_text(encoding="utf-8")

@@ -2,17 +2,20 @@
 
 import json
 import sys
+import time
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from dag_viewer.submission import GraphError, normalize, payload_for, read_manifest, redeploy, submit
+from dag_viewer.submission import GraphError, normalize, payload_for, redeploy, submit
 from dag_viewer.routes import create_blueprint
 from flask import Flask
+from titan_sdk.dag_journal import latest_run, runs_for as journal_runs_for
 
 
-def test_submit_and_redeploy(tmp):
+def test_submit_and_redeploy(tmp_path):
+    tmp = tmp_path
     script = tmp / "task.py"
     script.write_text("print('done')", encoding="utf-8")
     body = {"name": "DEMO", "jobs": [
@@ -27,17 +30,19 @@ def test_submit_and_redeploy(tmp):
     calls = []
     rpc = lambda opcode, value: calls.append((opcode, value)) or "DAG_ACCEPTED"
     submit(rpc, 4, manifest, name, jobs, payload)
-    saved = read_manifest(manifest)
-    assert saved["DAG-TWO"]["deps"] == ["DAG-ONE"]
-    assert saved["__payload__DEMO"]["dag_payload"] == payload
-    saved["DAG-ONE"]["run_ts"] = 1
-    manifest.write_text(json.dumps(saved), encoding="utf-8")
+    saved = latest_run(manifest, "DEMO")
+    assert saved["jobs"]["DAG-TWO"]["deps"] == ["DAG-ONE"]
+    assert saved["payload"] == payload
+    first_run = saved["run_ts"]
+    time.sleep(0.002)
     redeploy(rpc, 4, manifest, "DEMO")
     assert calls == [(4, payload), (4, payload)]
-    assert read_manifest(manifest)["DAG-ONE"]["run_ts"] > 1
+    assert latest_run(manifest, "DEMO")["run_ts"] > first_run
+    assert len(journal_runs_for(manifest, "DEMO")) == 2
 
 
-def test_reject_cycle_and_escape(tmp):
+def test_reject_cycle_and_escape(tmp_path):
+    tmp = tmp_path
     (tmp / "task.py").write_text("pass", encoding="utf-8")
     cyclic = {"name": "BAD", "jobs": [
         {"id": "A", "filename": "task.py", "depends_on": ["B"]},
@@ -57,7 +62,8 @@ def test_reject_cycle_and_escape(tmp):
         assert "under" in str(exc)
 
 
-def test_constructor_routes(tmp):
+def test_constructor_routes(tmp_path):
+    tmp = tmp_path
     scripts = tmp / "scripts"
     scripts.mkdir()
     (scripts / "task.py").write_text("print('ok')", encoding="utf-8")
@@ -73,7 +79,7 @@ def test_constructor_routes(tmp):
         assert client.post("/api/dag/submit", json=body).status_code == 200
         assert client.get("/api/dag/constructor_state/FROM_UI").json["nodes"][0]["id"] == "node-1"
         assert client.post("/api/dag/redeploy/DAG-FROM_UI").status_code == 200
-        assert "DAG-first" in read_manifest(manifest)
+        assert "DAG-first" in latest_run(manifest, "FROM_UI")["jobs"]
 
 
 if __name__ == "__main__":

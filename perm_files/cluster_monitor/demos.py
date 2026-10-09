@@ -1,9 +1,9 @@
 """Fixed, bounded DAG scenarios for control-plane demonstrations."""
 
-import json
 from datetime import datetime, timezone
-from pathlib import Path
 from secrets import token_hex
+
+from titan_sdk.dag_journal import current_runs
 
 
 PRESETS = {
@@ -19,23 +19,19 @@ PRESETS = {
 def recover_latest(manifest_path):
     """Restore the most recent demo banner after a dashboard restart."""
     try:
-        manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+        saved_runs = current_runs(manifest_path)
+    except (OSError, ValueError, TimeoutError):
         return None
     newest = None
-    for key, runs in manifest.items():
-        if not key.startswith("__runs__CLUSTER_") or not isinstance(runs, list):
+    for name, run in saved_runs.items():
+        if not name.startswith("CLUSTER_") or not isinstance(run, dict):
             continue
-        name = key.removeprefix("__runs__")
         preset = next((item for item in PRESETS if name.startswith(f"CLUSTER_{item.upper()}_")), None)
         if not preset:
             continue
-        for run in runs:
-            if not isinstance(run, dict) or not isinstance(run.get("jobs"), dict):
-                continue
-            if newest is None or run.get("run_ts", 0) > newest[0]:
-                newest = (run.get("run_ts", 0), {"preset": preset, "label": PRESETS[preset][0],
-                           "dag_id": f"DAG-{name}", "job_ids": list(run["jobs"])})
+        if isinstance(run.get("jobs"), dict) and (newest is None or run.get("run_ts", 0) > newest[0]):
+            newest = (run.get("run_ts", 0), {"preset": preset, "label": PRESETS[preset][0],
+                      "dag_id": f"DAG-{name}", "job_ids": list(run["jobs"])})
     return newest[1] if newest else None
 
 

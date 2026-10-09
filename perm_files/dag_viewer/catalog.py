@@ -8,6 +8,8 @@ import time
 from pathlib import Path
 
 from .submission import read_manifest, write_manifest
+from titan_sdk.dag_journal import (current_runs, ensure_legacy_imported,
+                                   journal_signature, runs_for as journal_runs_for)
 
 try:
     import yaml
@@ -47,7 +49,7 @@ class DagCatalog:
         self._status_path = self.manifest_path.with_name(self.manifest_path.name + ".status.json")
         self._status_lock = threading.Lock()
         self._cache_lock = threading.RLock()
-        self._manifest_cache = (None, {})
+        self._journal_cache = (None, {})
         self._status_cache = (None, {})
         self._definition_cache = (None, {})
         self._snapshot_cache = (None, None)
@@ -71,8 +73,12 @@ class DagCatalog:
                 setattr(self, attribute, (signature, cached))
             return cached
 
-    def _saved_manifest(self):
-        return self._cached_json(self.manifest_path, "_manifest_cache")
+    def _saved_runs(self):
+        ensure_legacy_imported(self.manifest_path)
+        signature = journal_signature(self.manifest_path)
+        if signature != self._journal_cache[0]:
+            self._journal_cache = (signature, current_runs(self.manifest_path))
+        return self._journal_cache[1]
 
     def _saved_statuses(self):
         return self._cached_json(self._status_path, "_status_cache")
@@ -140,23 +146,23 @@ class DagCatalog:
                     continue
             digest = hashlib.sha256(json.dumps(found, sort_keys=True, default=str).encode("utf-8")).hexdigest()
             self._yaml_cache = (found, now, digest)
-        cache_key = (self._signature(self.manifest_path), self._yaml_cache[2])
+        saved_runs = self._saved_runs()
+        cache_key = (journal_signature(self.manifest_path), self._yaml_cache[2])
         if cache_key == self._definition_cache[0]:
             return self._definition_cache[1]
         definitions = {}
         definitions.update(self._yaml_cache[0])
         try:
-            saved = self._saved_manifest()
             legacy_services = {}
-            for key, payload_info in saved.items():
-                if not key.startswith("__payload__") or not isinstance(payload_info, dict):
-                    continue
-                for line in str(payload_info.get("dag_payload") or "").split(" ; "):
+            for saved_run in saved_runs.values():
+                for line in str(saved_run.get("payload") or "").split(" ; "):
                     fields = line.split("|", 5)
                     if len(fields) > 4 and fields[1] in ("DEPLOY_PAYLOAD", "START_ARCHIVE_SERVICE"):
                         legacy_services[full_id(fields[0])] = fields[4]
-            for jid, info in saved.items():
-                if not jid.startswith("__") and isinstance(info, dict) and info.get("dag"):
+            for saved_run in saved_runs.values():
+                for jid, info in saved_run.get("jobs", {}).items():
+                    if not isinstance(info, dict) or not info.get("dag"):
+                        continue
                     record = dict(info)
                     spec = dict(record.get("spec") or {})
                     if not spec.get("job_type") and jid in legacy_services:
@@ -310,9 +316,9 @@ class DagCatalog:
                                 } if endpoint and int(endpoint.get("since") or 0) >= run_ts else None})
 
         result = []
-        saved = self._saved_manifest()
+        saved = self._saved_runs()
         for dag in grouped.values():
-            dag["can_redeploy"] = bool(saved.get(f"__payload__{dag['name']}", {}).get("dag_payload"))
+            dag["can_redeploy"] = bool(saved.get(dag["name"], {}).get("payload"))
             dag["jobs"].sort(key=lambda j: j["id"])
             by_id = {job["id"]: job for job in dag["jobs"]}
             for job in dag["jobs"]:
@@ -329,14 +335,16 @@ class DagCatalog:
         return result
 
     def metadata(self, job_id):
-        value = self._saved_manifest().get(job_id, {})
-        return dict(value) if isinstance(value, dict) else {}
+        for run in self._saved_runs().values():
+            value = run.get("jobs", {}).get(job_id)
+            if isinstance(value, dict):
+                return dict(value)
+        return {}
 
     def runs_for(self, name):
-        saved = self._saved_manifest()
-        runs = saved.get(f"__runs__{name}", [])
-        return sorted([run for run in runs if isinstance(run, dict) and isinstance(run.get("jobs"), dict)
-                       and isinstance(run.get("run_ts"), int)], key=lambda run: run["run_ts"], reverse=True)
+        return [{"run_ts": int(run["run_ts"]), "jobs": run["jobs"]}
+                for run in journal_runs_for(self.manifest_path, name)
+                if isinstance(run.get("run_ts"), int) and isinstance(run.get("jobs"), dict)]
 
     def historical_snapshot(self, name, run_ts):
         run = next((item for item in self.runs_for(name) if item["run_ts"] == run_ts), None)

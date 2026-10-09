@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT / "perm_files"))
 sys.path.insert(0, str(ROOT))
 
 from titan_sdk.titan_sdk import TitanClient, TitanJob, OP_KV_SET, OP_SUBMIT_DAG
+from titan_sdk.dag_journal import latest_run
 from titan_sdk.hitl_gate import run
 from dag_viewer.routes import create_blueprint
 from dag_viewer.submission import redeploy
@@ -53,11 +54,11 @@ class HitlTest(unittest.TestCase):
             self.assertEqual(["preprocess"], child.parents)  # User objects are reusable.
             self.assertEqual((OP_KV_SET, "titan:hitl:status:DAG-hitl-gate-preprocess|CLEARED"), calls[0])
             self.assertEqual(OP_SUBMIT_DAG, calls[1][0])
-            saved = json.loads(manifest.read_text())
+            saved = latest_run(manifest, "review")["jobs"]
             self.assertEqual(["DAG-hitl-gate-preprocess"], saved["DAG-train"]["deps"])
             self.assertEqual(["DAG-preprocess"], saved["DAG-hitl-gate-preprocess"]["deps"])
             self.assertEqual("Review data", saved["DAG-hitl-gate-preprocess"]["spec"]["hitl_message"])
-            self.assertEqual(3, len(saved["__runs__review"][0]["jobs"]))
+            self.assertEqual(3, len(saved))
             self.assertIn("DAG-hitl-gate-preprocess 90 " + base64.b64encode(b"Review data").decode(),
                           calls[1][1])
 

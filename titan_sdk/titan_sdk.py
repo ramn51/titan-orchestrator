@@ -24,6 +24,8 @@ from contextlib import contextmanager
 from pathlib import Path
 import json as _json
 
+from .dag_journal import write_run as _write_dag_run
+
 # --- CONFIGURATION ---
 TITAN_HOST = "127.0.0.1"
 TITAN_PORT = 9090
@@ -229,8 +231,8 @@ class TitanClient:
             offsets[f"DAG-{job.id}"] = os.path.getsize(path) if os.path.isfile(path) else 0
         result = self._send_request(OP_SUBMIT_DAG, dag_payload)
         if result == "DAG_ACCEPTED":
-            self._write_dag_manifest(name, jobs, submitted_at, dag_payload, offsets)
-            self._append_dag_run_history(name, jobs, submitted_at)
+            recorded_at = self._write_dag_manifest(name, jobs, submitted_at, dag_payload, offsets)
+            self._append_dag_run_history(name, jobs, recorded_at or submitted_at)
         return result
 
     def _append_dag_run_history(self, dag_name, jobs, run_ts):
@@ -257,28 +259,19 @@ class TitanClient:
         manifest_path = os.path.abspath(os.environ.get("TITAN_DAG_MANIFEST", ".titan_dag_manifest.json"))
         try:
             with _manifest_lock(manifest_path):
-                self._write_dag_manifest_unlocked(manifest_path, dag_name, jobs, run_ts, dag_payload, offsets)
+                return self._write_dag_manifest_unlocked(
+                    manifest_path, dag_name, jobs, run_ts, dag_payload, offsets)
         except (OSError, TimeoutError, ValueError) as exc:
-            print(f"[SDK][WARN] Could not update DAG manifest: {exc}")
+            print(f"[SDK][WARN] Could not update DAG journal: {exc}")
 
     def _write_dag_manifest_unlocked(self, manifest_path, dag_name, jobs, run_ts,
                                      dag_payload=None, offsets=None):
-        import tempfile
-
-        temp_path = None
         try:
-            existing = {}
-            if os.path.exists(manifest_path):
-                with open(manifest_path, encoding="utf-8") as f:
-                    existing = _json.load(f)
-            for key, value in list(existing.items()):
-                if isinstance(value, dict) and value.get("dag") == dag_name:
-                    del existing[key]
             run_jobs = {}
             for job in jobs:
                 full_id = f"DAG-{job.id}"
                 full_deps = [f"DAG-{p}" for p in job.parents]
-                existing[full_id] = {"dag": dag_name, "deps": full_deps, "run_ts": run_ts,
+                run_jobs[full_id] = {"dag": dag_name, "deps": full_deps, "run_ts": run_ts,
                                      "log_offset": (offsets or {}).get(full_id, 0),
                                      "spec": {"script": os.path.basename(job.filename),
                                               "sha256": hashlib.sha256(base64.b64decode(job.payload_b64)).hexdigest()
@@ -291,35 +284,9 @@ class TitanClient:
                                               "expected_outputs": job.expected_outputs,
                                               "hitl_message": getattr(job, "hitl_prompt", None),
                                               "hitl_source": getattr(job, "hitl_source", None)}}
-                run_jobs[full_id] = existing[full_id]
-            runs = existing.setdefault(f"__runs__{dag_name}", [])
-            runs.append({"run_ts": run_ts, "jobs": run_jobs})
-            existing[f"__runs__{dag_name}"] = runs[-30:]
-            if dag_payload is not None:
-                existing[f"__payload__{dag_name}"] = {"dag": dag_name, "dag_payload": dag_payload,
-                                                       "run_ts": run_ts}
-            with tempfile.NamedTemporaryFile(
-                mode="w", encoding="utf-8", dir=os.path.dirname(manifest_path),
-                prefix=".titan_dag_manifest.", suffix=".tmp", delete=False
-            ) as f:
-                temp_path = f.name
-                _json.dump(existing, f, indent=2)
-                f.flush()
-                os.fsync(f.fileno())
-            for attempt in range(6):
-                try:
-                    os.replace(temp_path, manifest_path)
-                    temp_path = None
-                    break
-                except PermissionError:
-                    if attempt == 5:
-                        raise
-                    time.sleep(0.01 * (2 ** attempt))
+            return _write_dag_run(manifest_path, dag_name, run_ts, run_jobs, dag_payload)["run_ts"]
         except (OSError, ValueError) as exc:
-            print(f"[SDK][WARN] Could not update DAG manifest: {exc}")
-        finally:
-            if temp_path and os.path.exists(temp_path):
-                os.unlink(temp_path)
+            print(f"[SDK][WARN] Could not update DAG journal: {exc}")
 
     def submit_job(self, job):
         return self.submit_dag(job.id, [job])

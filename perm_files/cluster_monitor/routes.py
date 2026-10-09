@@ -8,6 +8,7 @@ from pathlib import Path
 
 from flask import Blueprint, jsonify, render_template, request
 from dag_viewer.submission import GraphError, normalize, payload_for, submit
+from titan_sdk.dag_journal import run_summaries
 from .demos import PRESETS, build, recover_latest
 
 OP_STATS_JSON = 0x09
@@ -195,8 +196,8 @@ def create_blueprint(communicate, manifest_path):
             spans.sort(key=lambda span: span.get("started_at", 0))
         runs = []
         if mode == "analytics":
-            # Preserve old runs during migration, but cache the large legacy parse.
-            runs = _cached_legacy_runs(manifest_path, since)
+            # The journal includes imported legacy runs and newly appended runs.
+            runs = run_summaries(manifest_path, since, MAX_RUNS)
             runs.extend(_compact_runs(manifest_path, since))
             unique_runs = {}
             for run in runs:

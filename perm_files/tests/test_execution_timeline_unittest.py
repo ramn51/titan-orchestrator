@@ -18,6 +18,7 @@ from dag_viewer.routes import create_blueprint
 from flask import Flask
 
 from titan_sdk.titan_sdk import TitanClient, TitanJob
+from titan_sdk.dag_journal import latest_run, runs_for as journal_runs_for
 
 
 class ExecutionTimelineTests(unittest.TestCase):
@@ -157,12 +158,12 @@ class ExecutionTimelineTests(unittest.TestCase):
                 job = TitanJob("SDK_A", str(script), input_versions={"dataset": "v3"},
                                expected_outputs=["report.csv"])
                 self.assertEqual("DAG_ACCEPTED", sdk.submit_dag("SDK_PIPE", [job]))
-            saved = json.loads(manifest.read_text(encoding="utf-8"))
-            self.assertEqual(calls[0][1], saved["__payload__SDK_PIPE"]["dag_payload"])
-            self.assertEqual(1, len(saved["__runs__SDK_PIPE"]))
-            self.assertEqual(len(b"previous run\n"), saved["DAG-SDK_A"]["log_offset"])
-            self.assertEqual({"dataset": "v3"}, saved["DAG-SDK_A"]["spec"]["input_versions"])
-            self.assertEqual(["report.csv"], saved["DAG-SDK_A"]["spec"]["expected_outputs"])
+            saved = latest_run(manifest, "SDK_PIPE")
+            self.assertEqual(calls[0][1], saved["payload"])
+            self.assertEqual(1, len(journal_runs_for(manifest, "SDK_PIPE")))
+            self.assertEqual(len(b"previous run\n"), saved["jobs"]["DAG-SDK_A"]["log_offset"])
+            self.assertEqual({"dataset": "v3"}, saved["jobs"]["DAG-SDK_A"]["spec"]["input_versions"])
+            self.assertEqual(["report.csv"], saved["jobs"]["DAG-SDK_A"]["spec"]["expected_outputs"])
             self.assertTrue(DagCatalog(manifest, root).snapshot({"workers": []})[0]["can_redeploy"])
             def communicate(opcode, payload):
                 if opcode == 9:
@@ -174,15 +175,13 @@ class ExecutionTimelineTests(unittest.TestCase):
             app.register_blueprint(create_blueprint(communicate, 9, 22, manifest, root))
             with app.test_client() as client:
                 self.assertIn(b'id="redeploy"', client.get("/dags/DAG-SDK_PIPE").data)
-                saved["DAG-SDK_A"]["spec"].pop("expected_outputs")
-                manifest.write_text(json.dumps(saved), encoding="utf-8")
                 log.write_bytes(b"previous run\nfirst run\n")
                 self.assertEqual(200, client.get("/dags/DAG-SDK_PIPE").status_code)
                 self.assertEqual(200, client.post("/api/dag/redeploy/DAG-SDK_PIPE").status_code)
             self.assertEqual(calls[0][1], calls[-1][1])
-            redeployed = json.loads(manifest.read_text())
-            self.assertEqual(2, len(redeployed["__runs__SDK_PIPE"]))
-            self.assertEqual(len(b"previous run\nfirst run\n"), redeployed["DAG-SDK_A"]["log_offset"])
+            redeployed = latest_run(manifest, "SDK_PIPE")
+            self.assertEqual(2, len(journal_runs_for(manifest, "SDK_PIPE")))
+            self.assertEqual(len(b"previous run\nfirst run\n"), redeployed["jobs"]["DAG-SDK_A"]["log_offset"])
 
     def test_sdk_deploy_script_stages_encoded_file(self):
         with tempfile.TemporaryDirectory() as directory:

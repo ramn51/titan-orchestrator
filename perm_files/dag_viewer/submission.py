@@ -11,6 +11,8 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
+from titan_sdk.dag_journal import latest_run, write_run
+
 NAME = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 ACCEPTED = "DAG_ACCEPTED"
 _manifest_locks_guard = threading.Lock()
@@ -220,12 +222,8 @@ def log_offsets(path, jobs):
 
 def record_run(path, name, jobs, payload, submitted_at, offsets=None):
     with manifest_lock(path):
-        data = read_manifest(path)
         run_jobs = {}
         offsets = offsets or {}
-        for key, value in list(data.items()):
-            if isinstance(value, dict) and value.get("dag") == name:
-                del data[key]
         for job in jobs:
             record = {
                 "dag": name, "deps": [f"DAG-{p}" for p in job["depends_on"]],
@@ -238,14 +236,8 @@ def record_run(path, name, jobs, payload, submitted_at, offsets=None):
                          "input_versions": job.get("input_versions") or {},
                          "expected_outputs": job.get("expected_outputs") or []},
             }
-            data[f"DAG-{job['id']}"] = record
             run_jobs[f"DAG-{job['id']}"] = record
-        runs = data.setdefault(f"__runs__{name}", [])
-        runs.append({"run_ts": submitted_at, "jobs": run_jobs})
-        data[f"__runs__{name}"] = runs[-30:]
-        data[f"__payload__{name}"] = {"dag": name, "dag_payload": payload,
-                                      "run_ts": submitted_at}
-        write_manifest(path, data)
+        return write_run(path, name, submitted_at, run_jobs, payload)["run_ts"]
 
 
 def submit(communicate, opcode, manifest_path, name, jobs, payload):
@@ -254,44 +246,39 @@ def submit(communicate, opcode, manifest_path, name, jobs, payload):
     response = communicate(opcode, payload)
     if response != ACCEPTED:
         raise GraphError(f"Master rejected DAG: {response or 'No response'}")
-    record_run(manifest_path, name, jobs, payload, submitted_at, offsets)
-    append_run_history(manifest_path, name, jobs, submitted_at)
+    recorded_at = record_run(manifest_path, name, jobs, payload, submitted_at, offsets)
+    append_run_history(manifest_path, name, jobs, recorded_at)
     return response
 
 
 def redeploy(communicate, opcode, manifest_path, name):
-    data = read_manifest(manifest_path)
-    stored = data.get(f"__payload__{name}", {})
-    payload = stored.get("dag_payload") if isinstance(stored, dict) else None
+    stored = latest_run(manifest_path, name) or {}
+    payload = stored.get("payload") if isinstance(stored, dict) else None
     if not payload:
         raise GraphError("No saved constructor payload for this DAG.")
-    for jid, info in data.items():
+    run_jobs = stored.get("jobs", {}) if isinstance(stored.get("jobs"), dict) else {}
+    for jid, info in run_jobs.items():
         if (jid.startswith("DAG-hitl-gate-") and isinstance(info, dict)
                 and info.get("dag") == name and (info.get("spec") or {}).get("hitl_message")):
             response = communicate(0x60, f"titan:hitl:status:{jid}|CLEARED")
             if response != "OK":
                 raise GraphError(f"Could not reset HITL gate {jid}: {response or 'No response'}")
     submitted_at = int(time.time() * 1000)
-    offsets = log_offsets(manifest_path, [{"id": jid[4:]} for jid, info in data.items()
-                                          if jid.startswith("DAG-") and isinstance(info, dict)
-                                          and info.get("dag") == name])
+    offsets = log_offsets(manifest_path, [{"id": jid[4:]} for jid in run_jobs
+                                          if jid.startswith("DAG-")])
     response = communicate(opcode, payload)
     if response != ACCEPTED:
         raise GraphError(f"Master rejected DAG: {response or 'No response'}")
     with manifest_lock(manifest_path):
-        # Re-read after master acknowledgement so another accepted submission
-        # cannot be overwritten by the copy read before this RPC.
-        data = read_manifest(manifest_path)
-        for jid, value in data.items():
-            if isinstance(value, dict) and value.get("dag") == name:
-                value["run_ts"] = submitted_at
-                value["log_offset"] = offsets.get(jid, 0)
-        run_jobs = {jid: dict(info) for jid, info in data.items()
-                    if jid.startswith("DAG-") and isinstance(info, dict) and info.get("dag") == name}
-        runs = data.setdefault(f"__runs__{name}", [])
-        runs.append({"run_ts": submitted_at, "jobs": run_jobs})
-        data[f"__runs__{name}"] = runs[-30:]
-        write_manifest(manifest_path, data)
+        refreshed = {}
+        for jid, info in run_jobs.items():
+            value = dict(info)
+            value["run_ts"] = submitted_at
+            value["log_offset"] = offsets.get(jid, 0)
+            refreshed[jid] = value
+        recorded = write_run(manifest_path, name, submitted_at, refreshed, payload)
+        submitted_at = recorded["run_ts"]
+        run_jobs = recorded["jobs"]
     append_run_history(manifest_path, name,
                        [{"id": jid.removeprefix("DAG-")} for jid in run_jobs], submitted_at)
     return response
