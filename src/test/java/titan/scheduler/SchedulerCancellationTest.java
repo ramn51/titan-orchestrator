@@ -3,6 +3,7 @@ package titan.scheduler;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import org.junit.jupiter.api.Test;
 import titan.storage.TitanJRedisAdapter;
@@ -70,6 +71,30 @@ class SchedulerCancellationTest {
             assertEquals(Job.Status.CANCELLED, scheduler.getJobStatus(job.getId()));
             assertFalse(((BlockingQueue<?>) field(scheduler, "taskQueue")).contains(job));
             assertTrue(scheduler.getSystemStatsJSON().contains("\"DAG-cancel-running\":{\"status\":\"CANCELLED\""));
+        } finally {
+            scheduler.stop();
+        }
+    }
+
+    @Test void largeCascadeUsesDependencyIndexAndCancelsEveryNode() throws Exception {
+        Scheduler scheduler = new Scheduler(0);
+        try {
+            offline(scheduler);
+            int count = 2_000;
+            List<Job> jobs = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                String id = "indexed-cancel-" + i;
+                List<String> parents = i == 0 ? List.of() : List.of("indexed-cancel-" + (i - 1));
+                jobs.add(new Job(id, "GENERAL|noop", 1, 60_000, parents));
+            }
+            scheduler.submitDag(jobs);
+            long started = System.nanoTime();
+            assertEquals("CANCELLED:" + count, scheduler.cancelJob(jobs.get(0).getId()));
+            long elapsedMs = java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+            assertTrue(elapsedMs < 5_000, "indexed cancellation took " + elapsedMs + "ms");
+            assertTrue(jobs.stream().allMatch(job -> job.getStatus() == Job.Status.CANCELLED));
+            Map<String, java.util.Set<String>> index = field(scheduler, "childrenByParent");
+            assertEquals(java.util.Set.of("indexed-cancel-1"), index.get("indexed-cancel-0"));
         } finally {
             scheduler.stop();
         }

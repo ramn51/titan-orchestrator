@@ -15,6 +15,7 @@
 
 package titan.network;
 
+import titan.TitanConfig;
 import titan.scheduler.Job;
 import titan.scheduler.Scheduler;
 
@@ -43,6 +44,8 @@ import titan.network.TitanProtocol.TitanPacket;
  * ensuring responsiveness and scalability.
  */
     public class SchedulerServer {
+    private static final boolean LOG_WORKER_REGISTRATION = Boolean.parseBoolean(
+            TitanConfig.get("titan.logging.worker.registration", "true"));
     private final int port;
     private boolean isRunning = true;
     private final ExecutorService threadPool;
@@ -115,7 +118,8 @@ import titan.network.TitanProtocol.TitanPacket;
                 isPerm = Boolean.parseBoolean(parts[2]);
             }
 
-            System.out.println("Registering Worker: " + host + " with " + capability);
+            if (LOG_WORKER_REGISTRATION)
+                System.out.println("Registering Worker: " + host + " with " + capability);
             scheduler.registerWorker(host, workerPort, capability, isPerm);
 //            main.java.titan.scheduler.getWorkerRegistry().addWorker(host, workerPort, capability);
             return ("REGISTERED");

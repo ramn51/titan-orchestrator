@@ -96,4 +96,24 @@ class ObservabilityTest {
             dispatcher.join(2000);
         }
     }
+
+    @Test void queueBoardSamplesReadyAndBlockedLanesIndependently() {
+        Scheduler scheduler = new Scheduler(0, new ServiceReadinessMonitor());
+        try {
+            List<Job> jobs = new ArrayList<>();
+            for (int index = 0; index < 20; index++)
+                jobs.add(new Job("queue-root-" + index, "GENERAL|noop", 1, 0, List.of()));
+            for (int index = 0; index < 20; index++)
+                jobs.add(new Job("queue-child-" + index, "GENERAL|noop", 1, 0,
+                        List.of("queue-root-" + index)));
+            scheduler.submitDag(jobs);
+
+            String board = scheduler.queueBoardJSON(10);
+            assertTrue(board.contains("\"lane\":\"ready\""), board);
+            assertTrue(board.contains("\"lane\":\"blocked\""), board);
+            assertTrue(board.contains("\"dependencies\":20"), board);
+        } finally {
+            scheduler.stop();
+        }
+    }
 }

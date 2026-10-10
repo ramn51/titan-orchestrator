@@ -145,6 +145,7 @@ import java.util.stream.Collectors;
  */
     public List<Worker> getWorkersByCapability(String requiredSkill){
         return getWorkers().stream()
+                .filter(Worker::isSchedulable)
                 .filter(k -> k.capabilities().contains(requiredSkill))
                 .collect(Collectors.toList());
     }

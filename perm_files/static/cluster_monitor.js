@@ -133,11 +133,13 @@ function renderQueue(m) {
   $('#queue-lanes').innerHTML=names.map(([key,title,hint])=>{
     const matching=jobs.filter(j=>j.lane===key).sort((a,b)=>(b.priority||0)-(a.priority||0));
     const count=key==='blocked'?counts.dependencies:key==='parked'?counts.capability:counts[key];
+    const shown=Math.min(8,matching.length), total=count??matching.length;
     return '<article class="lane '+key+'"><div class="lane-head"><h3>'+title+'</h3><strong>'+esc(count??matching.length)+'</strong></div>'+
       '<p>'+hint+'</p>'+matching.slice(0,8).map(j=>'<div class="job-chip"><b>'+esc(j.job_id)+'</b>'+
       '<small>priority '+esc(j.priority)+' · '+esc(j.capability)+' · '+esc(j.reason)+'</small></div>').join('')+
-      (!matching.length?'<div class="more">No jobs in this lane</div>':'')+
-      (matching.length>8?'<div class="more">+'+(matching.length-8)+' more</div>':'')+'</article>';
+      (!matching.length&&total===0?'<div class="more">No jobs in this lane</div>':'')+
+      (!matching.length&&total>0?'<div class="more">Job samples unavailable</div>':'')+
+      (total>shown?'<div class="more">+'+(total-shown)+' more</div>':'')+'</article>';
   }).join('');
 }
 

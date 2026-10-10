@@ -58,6 +58,39 @@ class SchedulerCapacitySignalTest {
         assertFalse(worker.tryReserveSlot());
     }
 
+    @Test void drainingWorkerCannotReceiveNewReservations() {
+        WorkerRegistry registry = new WorkerRegistry();
+        registry.addWorker("127.0.0.1", 8080, "GENERAL", false);
+        Worker worker = registry.getWorkers().iterator().next();
+        assertTrue(worker.tryReserveSlot());
+        assertTrue(worker.beginDraining());
+        assertFalse(worker.tryReserveSlot());
+        assertTrue(registry.getWorkersByCapability("GENERAL").isEmpty());
+
+        // A periodic refresh must preserve reservations and must not reactivate
+        // a worker that is intentionally draining.
+        registry.addWorker("127.0.0.1", 8080, "GENERAL", false);
+        assertSame(worker, registry.getWorkers().iterator().next());
+        assertEquals(1, worker.getCurrentLoad());
+        assertEquals(Worker.LifecycleState.DRAINING, worker.lifecycleState());
+    }
+
+    @Test void routineRegistrationRefreshDoesNotWakeDispatchOrClearScalingState() throws Exception {
+        Scheduler scheduler = new Scheduler(0, new ServiceReadinessMonitor());
+        try {
+            scheduler.registerWorker("127.0.0.1", 18081, "GENERAL", false);
+            BlockingQueue<?> signal = field(scheduler, "capacitySignal");
+            signal.poll(); // first registration legitimately wakes the dispatcher
+            Field scaling = Scheduler.class.getDeclaredField("scalingInProgress");
+            scaling.setAccessible(true);
+            scaling.setBoolean(scheduler, true);
+
+            scheduler.registerWorker("127.0.0.1", 18081, "GENERAL", false);
+            assertTrue(signal.isEmpty(), "a liveness refresh must not create dispatch churn");
+            assertTrue(scaling.getBoolean(scheduler), "a refresh must not complete a scale-up");
+        } finally { scheduler.stop(); }
+    }
+
     @Test void releaseWakesSaturatedDispatcherAndSignalsCoalesce() throws Exception {
         try (ServerSocket workerSocket = new ServerSocket(0)) {
             CountDownLatch received = new CountDownLatch(1);

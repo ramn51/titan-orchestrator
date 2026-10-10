@@ -70,6 +70,10 @@ import java.util.List;
  * dynamically provisioned worker. Permanent workers might have different lifecycle management.
  */
     private boolean isPermanent;
+    /** Lifecycle is separate from heartbeat liveness so a draining worker can
+     * remain visible without receiving new jobs. */
+    public enum LifecycleState { ACTIVE, DRAINING, STOPPING, DEAD }
+    private volatile LifecycleState lifecycleState = LifecycleState.ACTIVE;
     private volatile double hostCpuPercent = -1;
     private volatile long hostMemoryUsedBytes = -1;
     private volatile long hostMemoryTotalBytes = -1;
@@ -132,6 +136,24 @@ import java.util.List;
     public boolean isPermanent() {
         return isPermanent;
     }
+
+    public LifecycleState lifecycleState() { return lifecycleState; }
+
+    public boolean isSchedulable() { return lifecycleState == LifecycleState.ACTIVE; }
+
+    /** Idempotently remove this worker from scheduling while its current work drains. */
+    public synchronized boolean beginDraining() {
+        if (lifecycleState == LifecycleState.DEAD || lifecycleState == LifecycleState.STOPPING)
+            return false;
+        lifecycleState = LifecycleState.DRAINING;
+        return true;
+    }
+
+    public synchronized void markStopping() {
+        if (lifecycleState != LifecycleState.DEAD) lifecycleState = LifecycleState.STOPPING;
+    }
+
+    public synchronized void markDead() { lifecycleState = LifecycleState.DEAD; }
 
     /**
  * Sets the current load of the worker.
@@ -205,6 +227,7 @@ import java.util.List;
 
     /** Atomically checks capacity and reserves one scheduler slot. */
     public synchronized boolean tryReserveSlot() {
+        if (!isSchedulable()) return false;
         if (Math.max(currentLoad, reportedLoad) >= maxCap) return false;
         currentLoad++;
         updateIdleState();

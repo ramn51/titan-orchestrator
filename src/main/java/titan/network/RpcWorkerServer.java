@@ -48,6 +48,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * </p>
  */
 public class RpcWorkerServer {
+    private static final boolean LOG_JOB_EVENTS = Boolean.parseBoolean(
+            TitanConfig.get("titan.logging.job.events", "true"));
 
     // The port number on which this worker server listens for incoming connections.
     private int port;
@@ -566,7 +568,7 @@ public class RpcWorkerServer {
             String callbackStatus;
             String callbackResult;
             try {
-                System.out.println("[ASYNC] Starting job "+ jobId + ": " + taskData);
+                if (LOG_JOB_EVENTS) System.out.println("[ASYNC] Starting job "+ jobId + ": " + taskData);
                 TaskHandler handler = taskHanlderMap.get("RUN_SCRIPT");
 
                 // RE-INJECT ID for the Handler
@@ -580,7 +582,7 @@ public class RpcWorkerServer {
 //                String result = processCommand(taskData);
 
                 callbackStatus = ScriptOutcome.callbackStatus(callbackResult);
-                System.out.println("[ASYNC] Finished " + jobId + " with " + callbackStatus);
+                if (LOG_JOB_EVENTS) System.out.println("[ASYNC] Finished " + jobId + " with " + callbackStatus);
             } catch(Exception e){
                 System.err.println("[ASYNC] Failed " + jobId + ": " + e.getMessage());
                 callbackStatus = "FAILED";

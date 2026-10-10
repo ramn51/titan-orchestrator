@@ -14,6 +14,7 @@
 
 package titan.network;
 
+import titan.TitanConfig;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
@@ -24,6 +25,9 @@ import java.nio.charset.StandardCharsets;
  * This class provides static utility methods for sending and receiving protocol-compliant messages.
  */
     public class TitanProtocol {
+
+    private static final boolean LOG_PROTOCOL = Boolean.parseBoolean(
+            TitanConfig.get("titan.logging.protocol", "true"));
 
     // Constants for the Protocol Header
     /**
@@ -197,7 +201,7 @@ import java.nio.charset.StandardCharsets;
         out.write(payloadBytes);
         out.flush();
 
-        System.out.println("[TitanProto] Sent Op:" + opCode + " Len:" + len);
+        if (LOG_PROTOCOL) System.out.println("[TitanProto] Sent Op:" + opCode + " Len:" + len);
     }
 
     /**

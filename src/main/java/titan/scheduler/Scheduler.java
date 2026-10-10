@@ -81,7 +81,14 @@ import titan.storage.TitanJRedisAdapter;
     private final Map<String, Job> runningJobs = new ConcurrentHashMap<>();
     private final Map<String, Integer> heartbeatMisses = new ConcurrentHashMap<>();
     private final Map<String, Job> knownJobs = new ConcurrentHashMap<>();
+    /** Direct dependency index used by completion, failure and cancellation paths. */
+    private final Map<String, Set<String>> childrenByParent = new ConcurrentHashMap<>();
     private final Map<String, Job> dagWaitingRoom;
+
+    private static final boolean LOG_JOB_EVENTS = Boolean.parseBoolean(
+            TitanConfig.get("titan.logging.job.events", "true"));
+    private static final boolean LOG_WORKER_REGISTRATION = Boolean.parseBoolean(
+            TitanConfig.get("titan.logging.worker.registration", "true"));
 
     // AutoScaling declarations
     private final int maxWorkers = Math.max(1, TitanConfig.getInt("titan.scheduler.max.workers", 5));
@@ -536,25 +543,31 @@ import titan.storage.TitanJRedisAdapter;
  */
     public synchronized void registerWorker(String host, int port, String capability, boolean isPermanent) {
         String workerKey = workerRegistry.getWorkerKey(host, port);
-        boolean firstRegistration = !workerRegistry.getWorkerMap().containsKey(workerKey);
+        Worker existing = workerRegistry.getWorkerMap().get(workerKey);
+        boolean firstRegistration = existing == null;
+        boolean capabilityChanged = firstRegistration || !existing.capabilities().contains(capability);
         this.workerRegistry.addWorker(host, port, capability, isPermanent);
-        for (Job parked : new ArrayList<>(capabilityWaiting.values())) {
-            if (workerRegistry.getWorkersByCapability(extractSkillRequirement(parked)).isEmpty()) continue;
-            if (capabilityWaiting.remove(parked.getId(), parked) && parked.getStatus() == Job.Status.PENDING) {
-                waitingReasons.remove(parked.getId());
-                taskQueue.add(parked);
+        if (capabilityChanged) {
+            for (Job parked : new ArrayList<>(capabilityWaiting.values())) {
+                if (workerRegistry.getWorkersByCapability(extractSkillRequirement(parked)).isEmpty()) continue;
+                if (capabilityWaiting.remove(parked.getId(), parked) && parked.getStatus() == Job.Status.PENDING) {
+                    waitingReasons.remove(parked.getId());
+                    taskQueue.add(parked);
+                }
             }
         }
         // Workers re-register periodically for recovery. Recording each refresh
         // would evict actual scale and failure events from the bounded journal.
         if (firstRegistration)
             telemetry.event("WORKER_REGISTERED", host + ":" + port + " " + capability);
-        signalCapacityAvailable();
-        this.scalingInProgress = false;
-        this.portBlacklist.remove(port);
+        if (firstRegistration || capabilityChanged) signalCapacityAvailable();
+        if (firstRegistration) {
+            this.scalingInProgress = false;
+            this.portBlacklist.remove(port);
+        }
 
 //        System.out.println("[DEBUG] Attempting promotion for incoming worker at " + host + ":" + port);
-        if (firstRegistration)
+        if (firstRegistration && LOG_WORKER_REGISTRATION)
             System.out.println("[INFO] New Worker Registered: " + host + ":" + port +
                     (isPermanent ? " [PERMANENT]" : " [EPHEMERAL]"));
 
@@ -579,8 +592,10 @@ import titan.storage.TitanJRedisAdapter;
                 throw new IllegalArgumentException("Invalid or duplicate DAG job ID");
             }
         }
-        for (Job job : jobs) knownJobs.put(job.getId(), job);
-        for (Job job : jobs) submitJob(job);
+        // Register every node and edge before admission so children can safely
+        // arrive before parents and callbacks can release indexed children.
+        for (Job job : jobs) registerKnownJob(job);
+        for (Job job : jobs) submitJob(job, true);
     }
 
     /**
@@ -591,6 +606,10 @@ import titan.storage.TitanJRedisAdapter;
  * @param job The {@link Job} object to be submitted.
  */
     public synchronized void submitJob(Job job){
+        submitJob(job, false);
+    }
+
+    private void submitJob(Job job, boolean alreadyRegistered){
         if (!safeJobId(job.getId())) throw new IllegalArgumentException("Invalid job ID");
         String payload = job.getPayload();
         if (payload != null && (payload.contains("DEPLOY_PAYLOAD|")
@@ -599,7 +618,7 @@ import titan.storage.TitanJRedisAdapter;
                 || stoppingServices.contains(job.getId()))) {
             throw new IllegalArgumentException("Deployment Rejected: Service ID already in use: " + job.getId());
         }
-        knownJobs.put(job.getId(), job);
+        if (!alreadyRegistered) registerKnownJob(job);
         liveLogBuffer.remove(job.getId());
         // Persist to Redis to act as WAL
         // This will be the basis for recovery
@@ -623,6 +642,23 @@ import titan.storage.TitanJRedisAdapter;
         enqueueReadyJob(job);
     }
 
+    private void registerKnownJob(Job job) {
+        Job previous = knownJobs.put(job.getId(), job);
+        if (previous != null) {
+            for (String parentId : previous.getDependenciesIds()) {
+                Set<String> children = childrenByParent.get(parentId);
+                if (children != null) {
+                    children.remove(job.getId());
+                    if (children.isEmpty()) childrenByParent.remove(parentId, children);
+                }
+            }
+        }
+        for (String parentId : job.getDependenciesIds()) {
+            childrenByParent.computeIfAbsent(parentId, ignored -> ConcurrentHashMap.newKeySet())
+                    .add(job.getId());
+        }
+    }
+
     private void resolveCompletedParents(Job job) {
         for (String parentId : job.getDependenciesIds()) {
             Job parent = knownJobs.get(parentId);
@@ -636,13 +672,17 @@ import titan.storage.TitanJRedisAdapter;
         long delay = job.getScheduledTime() - System.currentTimeMillis();
         if(delay <=0){
             // Run the job now (Add to the queue, dispatcher will do the polling and execution)
-            System.out.println(" ** Queueing Job: " + job.getId());
+            jobEvent(" ** Queueing Job: " + job.getId());
             readySince.put(job.getId(), System.currentTimeMillis());
             taskQueue.add(job);
         } else{
-            System.out.println("[INFO] Job Delayed: " + job.getId() + " for " + delay + "ms");
+            jobEvent("[INFO] Job Delayed: " + job.getId() + " for " + delay + "ms");
             waitingRoom.add(new ScheduledJob(job));
         }
+    }
+
+    private static void jobEvent(String message) {
+        if (LOG_JOB_EVENTS) System.out.println(message);
     }
 
     /**
@@ -960,7 +1000,7 @@ import titan.storage.TitanJRedisAdapter;
                 } else {
                     System.out.println("[INFO][RECOVERY] Restoring Job " + jobId + " (Was " + status + ")");
                     // We bypass submitJob() to avoid writing to Redis again needlessly but we need the queue logic.
-                    knownJobs.put(jobId, job);
+                    registerKnownJob(job);
                     for (String parentId : parentIds) {
                         if ("COMPLETED".equals(redis.get("job:" + parentId + ":status")))
                             job.resolveDependencies(parentId);
@@ -1012,13 +1052,13 @@ import titan.storage.TitanJRedisAdapter;
                     if (job.getStatus() == Job.Status.CANCELLED) continue;
                     job.setStatus(Job.Status.RUNNING);
                 }
-                System.out.println("DEBUG: Processing Job ID: " + job.getId());
+                jobEvent("DEBUG: Processing Job ID: " + job.getId());
 //                history.put(job.getId(), job.getStatus());
-                System.out.println(" Job Processing: " + job);
+                jobEvent(" Job Processing: " + job);
 
                 String reqTaskSkill = extractSkillRequirement(job);
 
-                System.out.println("[DISPATCH] Job " + job.getId() + " requires: [" + reqTaskSkill + "]");
+                jobEvent("[DISPATCH] Job " + job.getId() + " requires: [" + reqTaskSkill + "]");
 
                 List<Worker> availableWorkers = workerRegistry.getWorkersByCapability(reqTaskSkill);
                 long routedAt = System.nanoTime();
@@ -1045,7 +1085,7 @@ import titan.storage.TitanJRedisAdapter;
                 long selectedAt = System.nanoTime();
 
                 if (selectedWorker == null) {
-                    System.out.println("All workers SATURATED or unavailable. Re-queueing job.");
+                    jobEvent("All workers SATURATED or unavailable. Re-queueing job.");
                     synchronized (this) {
                         if (job.getStatus() != Job.Status.CANCELLED) {
                             job.setStatus(Job.Status.PENDING);
@@ -1082,7 +1122,7 @@ import titan.storage.TitanJRedisAdapter;
                 }
 
 //                Worker selectedWorker = availableWorkers.get(ThreadLocalRandom.current().nextInt(availableWorkers.size()));
-                System.out.println("[INFO] Dispatching " + job.getId() + " to Worker " + selectedWorker.port());
+                jobEvent("[INFO] Dispatching " + job.getId() + " to Worker " + selectedWorker.port());
                 try{
                         synchronized (this) {
                             if (job.getStatus() == Job.Status.CANCELLED) continue;
@@ -1095,18 +1135,19 @@ import titan.storage.TitanJRedisAdapter;
                         telemetry.dispatchPhase(routedAt - cycleStarted, selectedAt - routedAt,
                                 recordedAt - selectedAt, storedAt - recordedAt,
                                 System.nanoTime() - storedAt);
-                        System.out.println("[OK] Job Finished: " + response);
+                        jobEvent("[OK] Job Finished: " + response);
 
                         if("JOB_ACCEPTED".equals(response)){
-                            System.out.println("[ASYNC] Job " + job.getId() + " accepted by worker. Waiting for callback.");
+                            jobEvent("[ASYNC] Job " + job.getId() + " accepted by worker. Waiting for callback.");
                         }else {
-                            System.out.println("[SYNC] Task finished immediately: " + response);
+                            jobEvent("[SYNC] Task finished immediately: " + response);
                             synchronized (this) {
                                 if (job.getStatus() != Job.Status.CANCELLED) {
                                     runningJobs.remove(job.getId());
-                                    completeJob(job, response, record);
+                                    selectedWorker.currentJobId = null;
                                     selectedWorker.decrementCurrentLoad();
                                     signalCapacityAvailable();
+                                    completeJob(job, response, record);
                                 }
                             }
                         }
@@ -1248,20 +1289,22 @@ import titan.storage.TitanJRedisAdapter;
         if (job != null && job.getStatus() == Job.Status.CANCELLED) return;
 
         if(record != null && job != null){
-            // Clear "Active Job" flag on Worker (Stop Pulse (for dash))
+            // Release scheduler capacity before publishing the terminal status or
+            // unlocking dependants. Otherwise a newly-ready child can observe its
+            // parent's worker as saturated and bounce through rejection/requeue.
+            // It also keeps COMPLETED/FAILED visibility consistent with the slot
+            // already being available for another job.
             if (record.assignedWorker != null) {
                 record.assignedWorker.currentJobId = null;
+                record.assignedWorker.decrementCurrentLoad();
+                signalCapacityAvailable();
             }
 
             if(statusStr.equals("COMPLETED")){
 //                if(record.assignedWorker != null){
-                    System.out.println("[ASYNC] Callback: Job " + jobId + " Finished.");
+                    jobEvent("[ASYNC] Callback: Job " + jobId + " Finished.");
                     completeJob(job, result, record);
 
-                    if (record.assignedWorker != null) {
-                        record.assignedWorker.decrementCurrentLoad();
-                        signalCapacityAvailable();
-                    }
 //                    if(job != null) job.setStatus(Job.Status.COMPLETED);
 //                }
             } else {
@@ -1271,10 +1314,6 @@ import titan.storage.TitanJRedisAdapter;
                 executionTimeline.finish(jobId, "FAILED", result);
                 handleJobFailure(job);
                 recordWorkerHistory(job, record);
-                if (record.assignedWorker != null) {
-                    record.assignedWorker.decrementCurrentLoad();
-                    signalCapacityAvailable();
-                }
             }
         } else {
             System.err.println("[WARN] Received callback for unknown or inactive Job ID: " + jobId);
@@ -1812,6 +1851,16 @@ import titan.storage.TitanJRedisAdapter;
             return "ERROR: Cannot auto-shutdown PERMANENT worker " + targetHost + ":" + targetPort;
         }
 
+        // Stop new reservations before waiting for existing assignments. The
+        // autoscaler calls this method again after the worker drains.
+        if (!targetWorker.beginDraining()) {
+            return "ERROR: Worker " + targetHost + ":" + targetPort + " is already stopping.";
+        }
+        if (targetWorker.getCurrentLoad() > 0) {
+            return "DRAINING: Worker " + targetHost + ":" + targetPort + " has " +
+                    targetWorker.getCurrentLoad() + " active jobs.";
+        }
+
         System.out.println("[INFO] Initiating Graceful Shutdown for Worker " + targetPort);
         List<String> servicesToStop = new java.util.ArrayList<>();
 
@@ -1843,12 +1892,14 @@ import titan.storage.TitanJRedisAdapter;
             return match;
         });
         // Send the Kill Command to the Worker
+        targetWorker.markStopping();
         try {
             schedulerClient.sendRequest(targetWorker.host(), targetWorker.port(), TitanProtocol.OP_KILL_WORKER, "NOW");
         } catch (Exception e) {
             System.err.println("[WARN] Worker might have died before receiving ACK: " + e.getMessage());
         }
         workerRegistry.getWorkerMap().remove(targetWorker.host() + ":" + targetWorker.port());
+        targetWorker.markDead();
         schedulerClient.evict(targetWorker.host(), targetWorker.port());
         return "SUCCESS: Worker " + targetPort + " and " + servicesToStop.size() + " services shut down.";
     }
@@ -1861,15 +1912,19 @@ import titan.storage.TitanJRedisAdapter;
  * @param parentId The ID of the parent job that has just completed.
  */
     private synchronized void unlockChildren(String parentId){
-        for(Job waitingJob: dagWaitingRoom.values()){
-            if(waitingJob.getDependenciesIds()!=null && waitingJob.getDependenciesIds().contains(parentId)){
-                waitingJob.resolveDependencies(parentId);
-
-                if(waitingJob.isReady()){
-                    System.out.println("[INFO] DAG: All dependencies met for " + waitingJob.getId() + ". Moving to Active Queue.");
-                    if (dagWaitingRoom.remove(waitingJob.getId(), waitingJob)) {
-                        enqueueReadyJob(waitingJob);
-                    }
+        /* Previous implementation scanned every waiting job for each parent:
+         * for (Job waitingJob : dagWaitingRoom.values()) { ... }
+         * Keep this note as a regression reference; the indexed path is O(children).
+         */
+        for (String childId : childrenByParent.getOrDefault(parentId, Collections.emptySet())) {
+            Job waitingJob = dagWaitingRoom.get(childId);
+            if (waitingJob == null) continue;
+            waitingJob.resolveDependencies(parentId);
+            if (waitingJob.isReady()) {
+                jobEvent("[INFO] DAG: All dependencies met for " + waitingJob.getId() +
+                        ". Moving to Active Queue.");
+                if (dagWaitingRoom.remove(waitingJob.getId(), waitingJob)) {
+                    enqueueReadyJob(waitingJob);
                 }
             }
         }
@@ -1883,8 +1938,8 @@ import titan.storage.TitanJRedisAdapter;
  * @param failedParentId The ID of the parent job that failed.
  */
     public void cancelChildren(String failedParentId){
-        for (Job job : new ArrayList<>(knownJobs.values())) {
-            if (job.getDependenciesIds().contains(failedParentId)) cancelJob(job.getId());
+        for (String childId : childrenByParent.getOrDefault(failedParentId, Collections.emptySet())) {
+            cancelJob(childId);
         }
     }
 
@@ -1973,21 +2028,28 @@ import titan.storage.TitanJRedisAdapter;
         List<Job> boardJobs = new ArrayList<>(knownJobs.values());
         boardJobs.sort(Comparator.comparingInt(Job::getPriority).reversed()
                 .thenComparing(job -> readySince.getOrDefault(job.getId(), Long.MAX_VALUE)));
+        Set<String> delayedIds = waitingRoom.stream()
+                .map(delayed -> delayed.getJob().getId())
+                .collect(java.util.stream.Collectors.toSet());
+        int laneLimit = Math.max(1, bounded / 5);
+        Map<String, Integer> sampledByLane = new HashMap<>();
         for (Job job : boardJobs) {
             if (count >= bounded) break;
             if (job.getStatus() != Job.Status.PENDING && job.getStatus() != Job.Status.RUNNING) continue;
+            String lane = dagWaitingRoom.containsKey(job.getId()) ? "blocked"
+                    : capabilityWaiting.containsKey(job.getId()) ? "parked"
+                    : delayedIds.contains(job.getId()) ? "delayed"
+                    : runningJobs.containsKey(job.getId()) ? "running" : "ready";
+            if (sampledByLane.getOrDefault(lane, 0) >= laneLimit) continue;
+            sampledByLane.merge(lane, 1, Integer::sum);
             if (count++ > 0) json.append(',');
             String reason = waitingReasons.get(job.getId());
             if (reason == null) {
                 if (dagWaitingRoom.containsKey(job.getId())) reason = "Waiting for parents";
-                else if (waitingRoom.stream().anyMatch(delayed -> delayed.getJob() == job)) reason = "Scheduled for later";
+                else if (delayedIds.contains(job.getId())) reason = "Scheduled for later";
                 else if (runningJobs.containsKey(job.getId())) reason = "Executing";
                 else reason = "Ready for dispatch";
             }
-            String lane = dagWaitingRoom.containsKey(job.getId()) ? "blocked"
-                    : capabilityWaiting.containsKey(job.getId()) ? "parked"
-                    : waitingRoom.stream().anyMatch(delayed -> delayed.getJob() == job) ? "delayed"
-                    : runningJobs.containsKey(job.getId()) ? "running" : "ready";
             json.append("{\"job_id\":").append(ExecutionTimeline.quoted(job.getId()))
                     .append(",\"status\":").append(ExecutionTimeline.quoted(job.getStatus().name()))
                     .append(",\"lane\":").append(ExecutionTimeline.quoted(lane))
@@ -2041,9 +2103,11 @@ import titan.storage.TitanJRedisAdapter;
             while (!pending.isEmpty()) {
                 String id = pending.remove();
                 if (!visited.add(id)) continue;
-                for (Job child : knownJobs.values()) {
-                    if (child.getDependenciesIds().contains(id)) pending.add(child.getId());
-                }
+                /* Previous implementation (correct, but O(V^2) for a cascade):
+                 * for (Job child : knownJobs.values())
+                 *     if (child.getDependenciesIds().contains(id)) pending.add(child.getId());
+                 */
+                pending.addAll(childrenByParent.getOrDefault(id, Collections.emptySet()));
                 Job job = knownJobs.get(id);
                 if (job == null || isTerminal(job.getStatus())) continue;
                 job.setStatus(Job.Status.CANCELLED);

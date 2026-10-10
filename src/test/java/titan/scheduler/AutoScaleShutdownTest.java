@@ -14,6 +14,25 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AutoScaleShutdownTest {
+    @Test void busyWorkerDrainsBeforeAnyShutdownCommand() {
+        Scheduler scheduler = new Scheduler(0, new ServiceReadinessMonitor());
+        try {
+            scheduler.registerWorker("127.0.0.1", 18082, "GENERAL", false);
+            Worker worker = scheduler.getWorkerRegistry().getWorkers().iterator().next();
+            worker.incrementCurrentLoad();
+
+            String result = scheduler.shutdownWorkerNode("127.0.0.1", 18082);
+            assertTrue(result.startsWith("DRAINING:"), result);
+            assertEquals(Worker.LifecycleState.DRAINING, worker.lifecycleState());
+            assertTrue(scheduler.getWorkerRegistry().getWorkersByCapability("GENERAL").isEmpty(),
+                    "a draining worker must disappear from scheduling immediately");
+            assertTrue(scheduler.getWorkerRegistry().getWorkerMap().containsKey("127.0.0.1:18082"),
+                    "the worker remains registered until its active work exits");
+        } finally {
+            scheduler.stop();
+        }
+    }
+
     @Test void autoscaledWorkerIsIntentionallyStoppedBeforeKill() throws Exception {
         try (ServerSocket parentSocket = new ServerSocket(0);
              ServerSocket childSocket = new ServerSocket(0)) {
