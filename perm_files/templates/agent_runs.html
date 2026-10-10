@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Titan · Agent Runs</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='section_nav.css', v='3') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='agent_runs.css', v='2') }}">
+  <script src="{{ url_for('static', filename='agent_runs.js', v='1') }}" defer></script>
+</head>
+<body data-agent-id="{{ selected.id if selected else '' }}">
+  {% with active_section='agents', nav_status='Master online' if online else 'Master offline' %}{% include 'section_nav.html' %}{% endwith %}
+  <div class="agent-layout">
+    <aside class="agent-sidebar" aria-label="Agent runs">
+      <p class="eyebrow">AGENT WORKSPACE</p>
+      <h2>Agent runs <span>{{ runs|length }}</span></h2>
+      <label class="agent-search"><span class="sr-only">Search agent runs</span><input id="agent-search" type="search" placeholder="Search runs or stages…"></label>
+      <p class="sidebar-label">LATEST ACTIVITY</p>
+      <div id="agent-list">
+        {% for run in runs %}
+        <a class="agent-link {{ 'selected' if selected and selected.id == run.id else '' }}" href="{{ url_for('dag_viewer.agent_runs_page', run_id=run.id) }}" data-search="{{ run.name }} {{ run.id }} {{ run.stages|map(attribute='label')|join(' ') }}">
+          <strong><span class="status-dot" data-status="{{ run.status }}"></span>{{ run.name }}</strong>
+          <span><b data-status="{{ run.status }}">{{ run.status }}</b>{{ run.completed_stages }}/{{ run.total_stages }} stages</span>
+        </a>
+        {% else %}<p class="empty">Submit DAG stages with an <code>agent_run_id</code> to see an agent lifecycle here.</p>{% endfor %}
+      </div>
+    </aside>
+    <main>
+      {% if selected %}
+      <section class="agent-heading">
+        <div><p class="crumb">Agent runs <span>›</span> Stage lifecycle</p><h1>{{ selected.name }}</h1><p class="muted"><code>{{ selected.id }}</code> · started <time data-timestamp="{{ selected.submitted }}">{{ selected.submitted }}</time></p></div>
+        <div class="heading-status"><span class="state" data-status="{{ selected.status }}">{{ selected.status }}</span><span id="poll-state">Live status</span></div>
+      </section>
+      <section class="agent-summary" aria-label="Agent run summary">
+        <div><b id="stage-total">{{ selected.total_stages }}</b><small>Stages</small></div>
+        <div><b id="stage-complete">{{ selected.completed_stages }}</b><small>Completed</small></div>
+        <div><b id="job-total">{{ selected.total_jobs }}</b><small>Jobs created</small></div>
+        <div><b id="job-complete">{{ selected.completed_jobs }}</b><small>Jobs completed</small></div>
+      </section>
+      <section class="stage-panel">
+        <header><div><p class="eyebrow">RUNTIME PLAN</p><h2>Agent stage graph</h2></div><div class="graph-controls"><span>Click a stage to inspect its DAG</span><button id="zoom-out" type="button" aria-label="Zoom out">−</button><output id="zoom-value">100%</output><button id="zoom-in" type="button" aria-label="Zoom in">+</button><button id="zoom-reset" type="button">Reset</button></div></header>
+        <div id="stage-scroll" class="stage-scroll" tabindex="0"><svg id="stage-graph" role="img" aria-label="Agent stages"></svg></div>
+        <footer class="legend"><span><i data-status="COMPLETED"></i>Completed</span><span><i data-status="RUNNING"></i>Running</span><span><i data-status="FAILED"></i>Failed</span><span><i data-status="WAITING"></i>Waiting</span><span><i data-status="CANCELLED"></i>Cancelled</span></footer>
+      </section>
+      <section class="stage-index"><header><div><p class="eyebrow">STAGE INDEX</p><h2>Submitted DAG stages</h2></div><p>Every stage is a normal Titan DAG. Open one for its jobs, logs, files, and execution details.</p></header><div id="stage-cards"></div></section>
+      <script id="agent-run-data" type="application/json">{{ selected|tojson }}</script>
+      {% else %}<section class="agent-empty"><span>◎</span><h1>No agent runs yet</h1><p>Group runtime-generated DAG stages by passing the same <code>agent_run_id</code> to each SDK submission.</p><pre>client.submit_dag("research_plan", jobs,
+    agent_run_id=run_id, agent_stage="PLAN", agent_stage_order=0)</pre></section>{% endif %}
+    </main>
+  </div>
+</body>
+</html>

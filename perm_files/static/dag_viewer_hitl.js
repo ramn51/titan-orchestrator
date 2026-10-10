@@ -4,6 +4,16 @@
   const historical = document.body.dataset.historical === 'true';
   const panel = document.getElementById('hitl-gates');
   if (!dagId || !panel || historical) return;
+  let selectedStatus = document.body.dataset.selectedStatus;
+  let timer = null;
+  let refreshing = false;
+
+  const terminal = status => ['COMPLETED', 'FAILED', 'DEAD', 'CANCELLED'].includes(status);
+  const delay = () => document.hidden ? 60000 : terminal(selectedStatus) ? 30000 : 3000;
+  const schedule = () => {
+    clearTimeout(timer);
+    timer = setTimeout(refresh, delay());
+  };
 
   async function decide(gateId, decision, button) {
     button.disabled = true;
@@ -25,6 +35,8 @@
   }
 
   async function refresh() {
+    if (refreshing) return;
+    refreshing = true;
     try {
       const response = await fetch(`/api/dag/hitl/${encodeURIComponent(dagId)}`, {cache: 'no-store'});
       if (!response.ok) return;
@@ -50,8 +62,17 @@
       panel.hidden = !panel.children.length;
     } catch {
       // The main dashboard connection indicator reports master availability.
+    } finally {
+      refreshing = false;
+      schedule();
     }
   }
+  document.addEventListener('titan:dag-status', event => {
+    selectedStatus = event.detail?.status || selectedStatus;
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refresh();
+    else schedule();
+  });
   refresh();
-  setInterval(refresh, 3000);
 })();

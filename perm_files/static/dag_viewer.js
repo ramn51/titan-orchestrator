@@ -43,6 +43,17 @@ document.querySelectorAll('.detail-tabs [role="tab"]').forEach(button => {
       tab.setAttribute('aria-selected', String(active));
       document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
     });
+    const pane = button.getAttribute('aria-controls');
+    if (pane === 'pane-files' && filePanel?.dataset.loaded !== 'true') {
+      filePanel.dataset.loaded = 'true';
+      refreshFileList(filePanel,
+        `/api/dag/files/${encodeURIComponent(filePanel.dataset.dagId)}/${encodeURIComponent(filePanel.dataset.jobId)}`,
+        'No log or job-scoped artifact for this run yet.');
+    }
+    if (pane === 'pane-shared' && sharedPanel?.dataset.loaded !== 'true') {
+      sharedPanel.dataset.loaded = 'true';
+      refreshFileList(sharedPanel, '/api/dag/shared_files', 'No unassigned shared files.');
+    }
   });
 });
 async function refreshFileList(panel, url, emptyMessage) {
@@ -74,15 +85,6 @@ async function refreshFileList(panel, url, emptyMessage) {
     panel.textContent = 'Workspace files are unavailable.';
   }
 }
-function refreshFiles() {
-  const jobs = filePanel ? refreshFileList(filePanel,
-    `/api/dag/files/${encodeURIComponent(filePanel.dataset.dagId)}/${encodeURIComponent(filePanel.dataset.jobId)}`,
-    'No log or job-scoped artifact for this run yet.') : Promise.resolve();
-  const shared = sharedPanel ? refreshFileList(sharedPanel, '/api/dag/shared_files',
-    'No unassigned shared files.') : Promise.resolve();
-  return Promise.allSettled([jobs, shared]);
-}
-if (!historical) refreshFiles();
 const state = (node, status) => {
   if (!node) return;
   node.textContent = status;
@@ -112,6 +114,7 @@ async function refresh() {
       }
       if (dag.id !== selectedId) continue;
       selectedStatus = dag.status;
+      document.dispatchEvent(new CustomEvent('titan:dag-status', { detail: { status: dag.status } }));
       state(document.getElementById('dag-status'), dag.status);
       document.getElementById('status-note').hidden = dag.status !== 'UNKNOWN';
       if (cancelDagButton && !cancelDagButton.dataset.pending) {
@@ -167,7 +170,6 @@ async function refresh() {
     connection.classList.remove('online');
     connection.classList.add('offline');
   } finally {
-    refreshFiles();
     // Keep a low-rate check after completion so an SDK redeploy or recovered
     // master eventually appears without returning to the old three-second load.
     setTimeout(refresh, refreshDelay(selectedStatus));

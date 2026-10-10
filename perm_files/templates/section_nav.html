@@ -5,6 +5,7 @@
     <a href="/dags" {% if active_section == 'dags' %}class="active" aria-current="page"{% endif %}>DAG Pipelines</a>
     <a href="/timeline" {% if active_section == 'timeline' %}class="active" aria-current="page"{% endif %}>Execution Timeline</a>
     <a href="/cluster" {% if active_section == 'cluster' %}class="active" aria-current="page"{% endif %}>Cluster Monitor</a>
+    <a href="/agents" {% if active_section == 'agents' %}class="active" aria-current="page"{% endif %}>Agent Runs</a>
     <a href="/dag-constructor" {% if active_section == 'constructor' %}class="active" aria-current="page"{% endif %}>DAG Constructor</a>
   </nav>
   <span class="section-status {{ 'online' if active_section == 'dags' and data.online else 'offline' if active_section == 'dags' else '' }}"

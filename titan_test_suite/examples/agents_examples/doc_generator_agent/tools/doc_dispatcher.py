@@ -1,4 +1,5 @@
 import os
+import time
 from titan_sdk import TitanClient, TitanJob
 
 TARGET_DIRS = ["src/main/java/titan", "titan_sdk"]
@@ -48,7 +49,11 @@ def seed_and_dispatch():
                     ))
 
     if batch_jobs:
-        client.submit_dag("AUTO_DOC_ENGINE", batch_jobs)
+        agent_run_id = f"docgen-{int(time.time() * 1000)}"
+        client.submit_dag(f"AUTO_DOC_ENGINE_{agent_run_id}", batch_jobs,
+                          agent_run_id=agent_run_id,
+                          agent_run_name="Documentation Agent",
+                          agent_stage="GENERATE", agent_stage_order=0)
         print(f"Seeding complete. {len(batch_jobs)} files dispatched for documentation.")
     else:
         print("No valid files found to document.")

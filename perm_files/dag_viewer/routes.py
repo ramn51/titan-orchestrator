@@ -9,6 +9,7 @@ from pathlib import Path
 from flask import Blueprint, abort, jsonify, render_template, request, send_file, url_for
 from werkzeug.utils import secure_filename
 
+from .agent_runs import AgentRunCatalog
 from .catalog import DagCatalog
 from .graph import PREVIEW_LIMIT, dot_graph, preview_dag, render_graph
 from .timeline import merge_persisted_spans, timeline_for
@@ -19,6 +20,7 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
                      submit_opcode=0x04, scripts_root=None, cancel_opcode=0x56):
     viewer = Blueprint("dag_viewer", __name__)
     catalog = DagCatalog(Path(manifest_path), Path(yaml_root))
+    agent_catalog = AgentRunCatalog(Path(manifest_path))
     scripts = Path(scripts_root or Path(__file__).resolve().parents[1] / "dag_samples")
     workspace = Path(os.environ.get("TITAN_DAG_WORKSPACE_DIR", Path(manifest_path).parent / "titan_workspace"))
     draft_path = Path(manifest_path).parent / ".dag_constructor_states.json"
@@ -126,57 +128,117 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
             return jsonify({"error": "Some jobs could not be cancelled.", "responses": responses}), 502
         return jsonify({"status": "ok", "responses": responses})
 
-    def workspace_files(dag_id, job_id):
+    def local_shared_roots():
+        """Return bounded local worker workspaces visible to this dashboard.
+
+        An autoscaled Worker.jar is launched from the primary workspace. Its
+        relative ``titan_workspace`` therefore resolves one level below the
+        root worker's workspace. Keep discovery bounded to those two known
+        layouts rather than recursively scanning arbitrary directories.
+        """
+        roots = []
+        worker_root = workspace
+        for _ in range(2):
+            shared = worker_root / "shared"
+            try:
+                if shared.is_dir() and not shared.is_symlink():
+                    roots.append(shared.resolve())
+            except OSError:
+                pass
+            worker_root = worker_root / "titan_workspace"
+        return roots
+
+    def workspace_file_records(dag_id, job_id):
         dag = next((item for item in snapshot()["dags"] if item["id"] == dag_id), None)
         if not dag or not any(job["id"] == job_id for job in dag["jobs"]):
             abort(404)
-        shared = (workspace / "shared").resolve()
         run_started = int(dag.get("submitted") or 0)
-        if not shared.is_dir():
-            return []
-        files = []
-        log = shared / f"{job_id}.log"
         metadata = catalog.metadata(job_id)
         log_offset = metadata.get("log_offset", 0) if isinstance(metadata, dict) else 0
-        artifact_root = shared / "artifacts" / job_id
-        candidates = [log]
-        if artifact_root.is_dir() and not artifact_root.is_symlink() and artifact_root.resolve().is_relative_to(shared):
-            candidates.extend(sorted(artifact_root.rglob("*")))
-        for path in candidates:
-            if len(files) >= 200:
+        primary_shared = (workspace / "shared").resolve()
+        files_by_name = {}
+        for shared in local_shared_roots():
+            log = shared / f"{job_id}.log"
+            artifact_root = shared / "artifacts" / job_id
+            candidates = [log]
+            try:
+                if (artifact_root.is_dir() and not artifact_root.is_symlink()
+                        and artifact_root.resolve().is_relative_to(shared)):
+                    candidates.extend(sorted(artifact_root.rglob("*")))
+            except OSError:
+                continue
+            for path in candidates:
+                try:
+                    resolved = path.resolve()
+                    is_log = path == log
+                    if not resolved.is_file() or not resolved.is_relative_to(shared):
+                        continue
+                    if not is_log and not resolved.is_relative_to(artifact_root.resolve()):
+                        continue
+                    stat = resolved.stat()
+                    if run_started and stat.st_mtime_ns // 1_000_000 < run_started:
+                        continue
+                    relative = resolved.relative_to(shared).as_posix()
+                    # The SDK's offset is captured from the primary workspace.
+                    # A child worker's nested log is a separate file and starts
+                    # at byte zero even when a primary log with this ID exists.
+                    offset = log_offset if is_log and shared == primary_shared else 0
+                    size = max(0, stat.st_size - offset) if is_log else stat.st_size
+                    record = {"name": relative, "size": size,
+                              "kind": "Job log" if is_log else "Job artifact",
+                              "url": url_for("dag_viewer.download_file", dag_id=dag_id,
+                                             job_id=job_id, filename=relative),
+                              "_path": resolved, "_offset": offset,
+                              "_modified": stat.st_mtime_ns}
+                    previous = files_by_name.get(relative)
+                    if previous is None or record["_modified"] > previous["_modified"]:
+                        files_by_name[relative] = record
+                except OSError:
+                    continue
+        return sorted(files_by_name.values(), key=lambda item: (
+            item["kind"] != "Job log", item["name"]))[:200]
+
+    def workspace_files(dag_id, job_id):
+        return [{key: value for key, value in item.items() if not key.startswith("_")}
+                for item in workspace_file_records(dag_id, job_id)]
+
+    def shared_file_records():
+        files_by_name = {}
+        # The workspace can contain tens of thousands of per-job logs. Avoid
+        # materializing and sorting the entire tree merely to discard those logs.
+        for shared in local_shared_roots():
+            for root, directories, names in os.walk(shared):
+                directories[:] = [name for name in directories if name != "artifacts"]
+                for filename in names:
+                    if filename.endswith(".log"):
+                        continue
+                    path = Path(root) / filename
+                    try:
+                        resolved = path.resolve()
+                        if not resolved.is_file() or not resolved.is_relative_to(shared):
+                            continue
+                        stat = resolved.stat()
+                        name = resolved.relative_to(shared).as_posix()
+                        record = {"name": name, "size": stat.st_size,
+                                  "kind": "Unassigned shared file",
+                                  "url": url_for("dag_viewer.download_shared_file", filename=name),
+                                  "_path": resolved, "_modified": stat.st_mtime_ns}
+                        previous = files_by_name.get(name)
+                        if previous is None or record["_modified"] > previous["_modified"]:
+                            files_by_name[name] = record
+                    except OSError:
+                        continue
+                    if len(files_by_name) >= 200:
+                        break
+                if len(files_by_name) >= 200:
+                    break
+            if len(files_by_name) >= 200:
                 break
-            if not path.is_file() or not path.resolve().is_relative_to(shared):
-                continue
-            if path != log and not path.resolve().is_relative_to(artifact_root.resolve()):
-                continue
-            if run_started and path.stat().st_mtime_ns // 1_000_000 < run_started:
-                continue
-            relative = path.relative_to(shared).as_posix()
-            size = max(0, path.stat().st_size - log_offset) if path == log and isinstance(log_offset, int) else path.stat().st_size
-            files.append({"name": relative, "size": size,
-                          "kind": "Job log" if path == log else "Job artifact",
-                          "url": url_for("dag_viewer.download_file", dag_id=dag_id,
-                                         job_id=job_id, filename=relative)})
-        return files
+        return sorted(files_by_name.values(), key=lambda item: item["name"])
 
     def shared_files():
-        shared = (workspace / "shared").resolve()
-        if not shared.is_dir():
-            return []
-        files = []
-        for path in sorted(shared.rglob("*")):
-            if len(files) >= 200:
-                break
-            if not path.is_file() or not path.resolve().is_relative_to(shared):
-                continue
-            relative = path.relative_to(shared)
-            if path.suffix == ".log" or relative.parts[0] == "artifacts":
-                continue
-            name = relative.as_posix()
-            files.append({"name": name, "size": path.stat().st_size,
-                          "kind": "Unassigned shared file",
-                          "url": url_for("dag_viewer.download_shared_file", filename=name)})
-        return files
+        return [{key: value for key, value in item.items() if not key.startswith("_")}
+                for item in shared_file_records()]
 
     @viewer.get("/api/dag/files/<path:dag_id>/<path:job_id>")
     def list_files(dag_id, job_id):
@@ -188,22 +250,27 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
 
     @viewer.get("/api/dag/files/<path:dag_id>/<path:job_id>/<path:filename>")
     def download_file(dag_id, job_id, filename):
-        if filename not in {item["name"] for item in workspace_files(dag_id, job_id)}:
+        item = next((entry for entry in workspace_file_records(dag_id, job_id)
+                     if entry["name"] == filename), None)
+        if item is None:
             abort(404)
-        if filename == f"{job_id}.log":
-            metadata = catalog.metadata(job_id)
-            offset = metadata.get("log_offset") if isinstance(metadata, dict) else None
-            if isinstance(offset, int) and offset >= 0:
-                content = (workspace / "shared" / filename).read_bytes()
-                return send_file(io.BytesIO(content[min(offset, len(content)):]),
-                                 as_attachment=True, download_name=filename, mimetype="text/plain")
-        return send_file((workspace / "shared" / filename).resolve(), as_attachment=True)
+        if item["kind"] == "Job log":
+            content = item["_path"].read_bytes()
+            offset = item["_offset"]
+            return send_file(io.BytesIO(content[min(offset, len(content)):]),
+                             as_attachment=True, download_name=Path(filename).name,
+                             mimetype="text/plain")
+        return send_file(item["_path"], as_attachment=True,
+                         download_name=Path(filename).name)
 
     @viewer.get("/api/dag/shared_file/<path:filename>")
     def download_shared_file(filename):
-        if filename not in {item["name"] for item in shared_files()}:
+        item = next((entry for entry in shared_file_records()
+                     if entry["name"] == filename), None)
+        if item is None:
             abort(404)
-        return send_file((workspace / "shared" / filename).resolve(), as_attachment=True)
+        return send_file(item["_path"], as_attachment=True,
+                         download_name=Path(filename).name)
 
     @viewer.get("/api/dag_status")
     def status():
@@ -277,6 +344,28 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
             if selected is None:
                 abort(404)
         return render_template("execution_timeline.html", dags=dags, selected=selected, runs=runs)
+
+    def agent_snapshot():
+        data = snapshot()
+        return data["online"], agent_catalog.snapshot(
+            data["dags"], catalog.submission_records())
+
+    @viewer.get("/api/agents/<path:run_id>")
+    def agent_run_status(run_id):
+        online, runs = agent_snapshot()
+        selected = next((item for item in runs if item["id"] == run_id), None)
+        if selected is None:
+            return jsonify({"error": "Agent run not found."}), 404
+        return jsonify(selected), (200 if online else 502)
+
+    @viewer.get("/agents")
+    @viewer.get("/agents/<path:run_id>")
+    def agent_runs_page(run_id=None):
+        online, runs = agent_snapshot()
+        selected = next((item for item in runs if item["id"] == run_id), None)
+        if selected is None and runs:
+            selected = runs[0]
+        return render_template("agent_runs.html", online=online, runs=runs, selected=selected)
 
     @viewer.get("/dag-constructor")
     def constructor():

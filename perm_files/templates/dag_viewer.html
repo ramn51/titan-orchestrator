@@ -7,9 +7,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='dag_viewer.css', v='12') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='dag_viewer_typography.css', v='2') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='section_nav.css', v='2') }}">
-  <script src="{{ url_for('static', filename='dag_viewer.js', v='11') }}" defer></script>
+  <script src="{{ url_for('static', filename='dag_viewer.js', v='12') }}" defer></script>
   <script src="{{ url_for('static', filename='dag_viewer_zoom.js', v='1') }}" defer></script>
-  <script src="{{ url_for('static', filename='dag_viewer_hitl.js', v='1') }}" defer></script>
+  <script src="{{ url_for('static', filename='dag_viewer_hitl.js', v='2') }}" defer></script>
 </head>
 <body data-selected-dag="{{ selected.id if selected else '' }}" data-selected-job="{{ job.id if job else '' }}" data-selected-status="{{ selected.status if selected else '' }}" data-historical="{{ 'true' if historical else 'false' }}" data-page="{{ page_number }}" data-query="{{ query }}">
   {% with active_section='dags', nav_status='Master online' if data.online else 'Master offline' %}{% include 'section_nav.html' %}{% endwith %}

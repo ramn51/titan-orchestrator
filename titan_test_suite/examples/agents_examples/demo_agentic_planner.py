@@ -99,6 +99,7 @@ def run_titan_agent(user_goal):
     titan = TitanClient()
     history = []
     iteration = 0
+    agent_run_id = f"planner-{int(time.time() * 1000)}"
     
     print(f"\n🚀 STARTING AGENT\n🎯 GOAL: \"{user_goal}\"\n")
 
@@ -134,8 +135,12 @@ def run_titan_agent(user_goal):
             track_ids.append(safe_id)
 
         # 3. EXECUTE
-        batch_name = f"Agent_Iter_{iteration}"
-        titan.submit_dag(batch_name, sdk_jobs)
+        batch_name = f"Agent_{agent_run_id}_Iter_{iteration}"
+        titan.submit_dag(batch_name, sdk_jobs,
+                         agent_run_id=agent_run_id,
+                         agent_run_name="Agentic Planner",
+                         agent_stage=f"ITERATION_{iteration}",
+                         agent_stage_order=iteration - 1)
         
         # 4. OBSERVE
         print("⏳ Waiting for Cluster execution...")

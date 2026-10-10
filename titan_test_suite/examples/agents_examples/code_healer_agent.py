@@ -63,6 +63,7 @@ def ask_doctor(history, user_goal):
 def run_healer(target_file):
     titan = TitanClient()
     history = []
+    agent_run_id = f"healer-{int(time.time() * 1000)}"
     
     print(f"🚑 HEALER DISPATCHED for: {target_file}")
     
@@ -89,7 +90,10 @@ def run_healer(target_file):
             )
             jobs.append(job)
 
-        titan.submit_dag(f"Healer_Cycle_{i}", jobs)
+        titan.submit_dag(f"Healer_{agent_run_id}_Cycle_{i}", jobs,
+                         agent_run_id=agent_run_id,
+                         agent_run_name=f"Code Healer · {os.path.basename(target_file)}",
+                         agent_stage=f"CYCLE_{i + 1}", agent_stage_order=i)
         
         # 3. Read the Chart (Logs)
         time.sleep(4) # Wait for execution

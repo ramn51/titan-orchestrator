@@ -209,8 +209,29 @@ class TitanClient:
                 print(f"[SDK] HITL gate injected: {job.id} -> {gate_id}")
         return expanded, gated
 
-    def submit_dag(self, name, jobs):
-        """Submits a list of TitanJobs as a DAG"""
+    def submit_dag(self, name, jobs, agent_run_id=None, agent_stage=None,
+                   agent_stage_order=None, agent_run_name=None):
+        """Submit jobs as a DAG, optionally grouping it as one agent stage.
+
+        Agent metadata is dashboard-only: it does not alter scheduler behavior,
+        job identifiers, dependencies, or the wire payload sent to the master.
+        """
+        agent_metadata = None
+        if agent_run_id is not None:
+            if not isinstance(agent_run_id, str) or not re.fullmatch(r"[A-Za-z0-9_.:-]{1,128}", agent_run_id):
+                raise ValueError("agent_run_id must use 1-128 letters, numbers, '.', '_', ':', or '-'")
+            stage = agent_stage or name
+            if not isinstance(stage, str) or not re.fullmatch(r"[A-Za-z0-9_.:-]{1,64}", stage):
+                raise ValueError("agent_stage must use 1-64 letters, numbers, '.', '_', ':', or '-'")
+            if agent_stage_order is not None and (isinstance(agent_stage_order, bool)
+                                                   or not isinstance(agent_stage_order, int)
+                                                   or not 0 <= agent_stage_order <= 10000):
+                raise ValueError("agent_stage_order must be an integer from 0 to 10000")
+            display_name = agent_run_name or agent_run_id
+            if not isinstance(display_name, str) or not 1 <= len(display_name) <= 160:
+                raise ValueError("agent_run_name must contain 1-160 characters")
+            agent_metadata = {"agent_run_id": agent_run_id, "agent_run_name": display_name,
+                              "agent_stage": stage, "agent_stage_order": agent_stage_order}
         jobs, gates = self._inject_hitl_gates(jobs)
         for gate_id in gates.values():
             full_id = "DAG-" + gate_id
@@ -231,11 +252,13 @@ class TitanClient:
             offsets[f"DAG-{job.id}"] = os.path.getsize(path) if os.path.isfile(path) else 0
         result = self._send_request(OP_SUBMIT_DAG, dag_payload)
         if result == "DAG_ACCEPTED":
-            recorded_at = self._write_dag_manifest(name, jobs, submitted_at, dag_payload, offsets)
-            self._append_dag_run_history(name, jobs, recorded_at or submitted_at)
+            recorded_at = self._write_dag_manifest(
+                name, jobs, submitted_at, dag_payload, offsets, agent_metadata)
+            self._append_dag_run_history(
+                name, jobs, recorded_at or submitted_at, agent_metadata)
         return result
 
-    def _append_dag_run_history(self, dag_name, jobs, run_ts):
+    def _append_dag_run_history(self, dag_name, jobs, run_ts, agent_metadata=None):
         """Append the compact fields needed by historical dashboard charts."""
         manifest_path = os.path.abspath(os.environ.get(
             "TITAN_DAG_MANIFEST", ".titan_dag_manifest.json"))
@@ -244,6 +267,8 @@ class TitanClient:
             os.path.join(os.path.dirname(manifest_path), ".titan_dag_run_history.jsonl")))
         record = {"name": dag_name, "run_ts": run_ts,
                   "jobs": [f"DAG-{job.id}" for job in jobs]}
+        if agent_metadata:
+            record.update(agent_metadata)
         try:
             encoded = (_json.dumps(record, separators=(",", ":")) + "\n").encode("utf-8")
             descriptor = os.open(history_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
@@ -254,18 +279,20 @@ class TitanClient:
         except OSError as exc:
             print(f"[SDK][WARN] Could not append DAG run history: {exc}")
 
-    def _write_dag_manifest(self, dag_name, jobs, run_ts, dag_payload=None, offsets=None):
+    def _write_dag_manifest(self, dag_name, jobs, run_ts, dag_payload=None, offsets=None,
+                            agent_metadata=None):
         """Record a successful submission for dashboard discovery, atomically."""
         manifest_path = os.path.abspath(os.environ.get("TITAN_DAG_MANIFEST", ".titan_dag_manifest.json"))
         try:
             with _manifest_lock(manifest_path):
                 return self._write_dag_manifest_unlocked(
-                    manifest_path, dag_name, jobs, run_ts, dag_payload, offsets)
+                    manifest_path, dag_name, jobs, run_ts, dag_payload, offsets,
+                    agent_metadata)
         except (OSError, TimeoutError, ValueError) as exc:
             print(f"[SDK][WARN] Could not update DAG journal: {exc}")
 
     def _write_dag_manifest_unlocked(self, manifest_path, dag_name, jobs, run_ts,
-                                     dag_payload=None, offsets=None):
+                                     dag_payload=None, offsets=None, agent_metadata=None):
         try:
             run_jobs = {}
             for job in jobs:
@@ -284,6 +311,8 @@ class TitanClient:
                                               "expected_outputs": job.expected_outputs,
                                               "hitl_message": getattr(job, "hitl_prompt", None),
                                               "hitl_source": getattr(job, "hitl_source", None)}}
+                if agent_metadata:
+                    run_jobs[full_id].update(agent_metadata)
             return _write_dag_run(manifest_path, dag_name, run_ts, run_jobs, dag_payload)["run_ts"]
         except (OSError, ValueError) as exc:
             print(f"[SDK][WARN] Could not update DAG journal: {exc}")

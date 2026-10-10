@@ -346,6 +346,11 @@ class DagCatalog:
                 for run in journal_runs_for(self.manifest_path, name)
                 if isinstance(run.get("run_ts"), int) and isinstance(run.get("jobs"), dict)]
 
+    def submission_records(self):
+        """Return cached latest-run metadata for read-only dashboard projections."""
+        with self._cache_lock:
+            return self._saved_runs()
+
     def historical_snapshot(self, name, run_ts):
         run = next((item for item in self.runs_for(name) if item["run_ts"] == run_ts), None)
         if run is None:

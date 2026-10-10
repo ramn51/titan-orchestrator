@@ -211,6 +211,34 @@ def test_workspace_files_and_download_are_scoped_to_selected_job(tmp_path):
         assert client.get("/api/dag/shared_file/../DAG-FIRST.log").status_code == 404
 
 
+def test_workspace_files_include_local_autoscaled_worker_root(tmp_path):
+    manifest = tmp_path / ".titan_dag_manifest.json"
+    run_started = int(time.time() * 1000) - 1000
+    manifest.write_text(json.dumps({
+        "DAG-NESTED": {"dag": "autoscaled", "deps": [], "run_ts": run_started}
+    }))
+    shared = tmp_path / "titan_workspace" / "titan_workspace" / "shared"
+    artifact = shared / "artifacts" / "DAG-NESTED"
+    artifact.mkdir(parents=True)
+    (shared / "DAG-NESTED.log").write_text("child worker output", encoding="utf-8")
+    (artifact / "result.json").write_text('{"worker": "child"}', encoding="utf-8")
+    (shared / "child-summary.txt").write_text("nested workspace", encoding="utf-8")
+
+    app = Flask(__name__)
+    app.register_blueprint(create_blueprint(lambda *_: json.dumps({"workers": []}), 9, 22,
+                                             manifest, tmp_path))
+    with app.test_client() as client:
+        response = client.get("/api/dag/files/DAG-autoscaled/DAG-NESTED")
+        assert response.status_code == 200
+        files = {entry["name"]: entry for entry in response.json["files"]}
+        assert set(files) == {"DAG-NESTED.log", "artifacts/DAG-NESTED/result.json"}
+        assert client.get(files["DAG-NESTED.log"]["url"]).data == b"child worker output"
+        assert client.get(files["artifacts/DAG-NESTED/result.json"]["url"]).data == b'{"worker": "child"}'
+        shared_files = {entry["name"]: entry
+                        for entry in client.get("/api/dag/shared_files").json["files"]}
+        assert client.get(shared_files["child-summary.txt"]["url"]).data == b"nested workspace"
+
+
 def test_cancel_routes_target_only_jobs_in_selected_pipeline(tmp_path):
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps({
