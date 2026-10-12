@@ -123,7 +123,7 @@ import titan.network.LogBatcher;
 //        System.out.println("GIVEN PAYLOAD TO SCRIPT EXECUTOR " + payload);
 //
 //        String jobId = filename;
-        if (parts.length >= 2 && (parts[1].endsWith(".py") || parts[1].endsWith(".sh"))) {
+        if (parts.length >= 2 && RuntimeCommandResolver.isSupportedScript(parts[1])) {
             // It is likely NEW format: JOB-123 | script.py | args
             jobId = parts[0];
             filename = parts[1];
@@ -184,18 +184,7 @@ import titan.network.LogBatcher;
                 if (!executionDir.exists()) executionDir.mkdirs();
             }
 
-            List<String> command = new ArrayList<>();
-
-            if(filename.endsWith(".py")){
-                command.add("python");
-                command.add("-u");
-                command.add(scriptFile.getAbsolutePath());
-            } else if(filename.endsWith(".sh")){
-                command.add("/bin/bash");
-                command.add(scriptFile.getAbsolutePath());
-            } else {
-                command.add(scriptFile.getAbsolutePath()); // This is the case for Executable binary file
-            }
+            List<String> command = new ArrayList<>(RuntimeCommandResolver.commandFor(scriptFile));
 
             if(!args.isEmpty()){
                 String [] argList = args.split(" ");

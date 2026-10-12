@@ -18,6 +18,7 @@ import titan.network.LogBatcher;
 import titan.network.RpcWorkerServer;
 
 import java.io.*;
+import java.util.List;
 
 /**
  * {@code ServiceHandler} is an implementation of {@link TaskHandler} responsible for managing the lifecycle
@@ -119,23 +120,44 @@ public class ServiceHandler implements TaskHandler {
             return "ERROR: File not found at " + scriptFile.getAbsolutePath();
         }
 
-        boolean isWorkerJar = fileName.equalsIgnoreCase("Worker.jar");
+        boolean isWorkerJar = scriptFile.getName().equalsIgnoreCase("Worker.jar");
 
         if (isWorkerJar) {
             String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
             if (System.getProperty("os.name").toLowerCase().contains("win")) javaBin += ".exe";
-            return launchManagedProcess(serviceId, new File(WORKSPACE_DIR),
-                    javaBin, "-jar", scriptFile.getAbsolutePath(), port);
+            List<String> command = workerCommand(javaBin, scriptFile, port,
+                    parentServer.getSchedulerHost(), parentServer.getSchedulerPort());
+            return launchManagedProcess(serviceId, workerLaunchDirectory(scriptFile),
+                    command.toArray(new String[0]));
         } else{
-            if (fileName.endsWith(".py")) {
-                return launchManagedProcess(serviceId, scriptFile.getParentFile(), "python", scriptFile.getAbsolutePath());
-            } else {
-                return launchManagedProcess(serviceId, scriptFile.getParentFile(), scriptFile.getAbsolutePath());
-            }
+            List<String> command = RuntimeCommandResolver.commandFor(scriptFile);
+            return launchManagedProcess(serviceId, scriptFile.getParentFile(),
+                    command.toArray(new String[0]));
         }
 
     }
 
+    /** Keeps every autoscaled generation anchored to the directory that owns Titan's config. */
+    static File workerLaunchDirectory(File workerJar) {
+        File jarDirectory = workerJar.getAbsoluteFile().getParentFile();
+        for (File candidate = jarDirectory; candidate != null; candidate = candidate.getParentFile()) {
+            if (new File(candidate, "config.properties").isFile()
+                    || new File(candidate, "titan.properties").isFile()) {
+                return candidate;
+            }
+        }
+        return jarDirectory;
+    }
+
+    /** Builds the child-worker command with the same Master endpoint as its parent worker. */
+    static List<String> workerCommand(String javaBin, File workerJar, String workerPort,
+                                      String schedulerHost, int schedulerPort) {
+        if (schedulerHost == null || schedulerHost.isBlank()) {
+            throw new IllegalArgumentException("Scheduler host is required for child workers");
+        }
+        return List.of(javaBin, "-jar", workerJar.getAbsolutePath(), workerPort,
+                schedulerHost, String.valueOf(schedulerPort), "GENERAL", "false");
+    }
     /**
      * Launches a managed process and streams its output.
      * @param serviceId A unique identifier for the service.

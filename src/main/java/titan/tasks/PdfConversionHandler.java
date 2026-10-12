@@ -14,7 +14,7 @@
 
 package titan.tasks;
 
-import titan.tasks.TaskHandler;
+import java.nio.file.Path;
 
 public class PdfConversionHandler implements TaskHandler {
     @Override
@@ -23,6 +23,8 @@ public class PdfConversionHandler implements TaskHandler {
         // Simulating heavy work
         try { Thread.sleep(3000); } catch (InterruptedException e) {}
 
-        return "PDF_GENERATED_AT_/tmp/" + payload + ".pdf";
+        String safeName = Path.of(payload).getFileName().toString();
+        Path output = Path.of(System.getProperty("java.io.tmpdir"), safeName + ".pdf");
+        return "PDF_GENERATED_AT_" + output.toAbsolutePath().normalize();
     }
 }
