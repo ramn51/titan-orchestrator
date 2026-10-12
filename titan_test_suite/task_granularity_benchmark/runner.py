@@ -426,8 +426,9 @@ def main() -> None:
                                   "efficiency": result["efficiency"], "valid": result["valid"]}), flush=True)
     if "patterns" in suites:
         for pattern in ("bag", "chain", "fanout", "fanin", "diamond", "layered", "stencil"):
-            specs = make_graph(pattern, args.pattern_tasks, args.pattern_duration_ms, "p")
-            results.append(runner.run("patterns", pattern, pattern, specs, 1))
+            for pass_index in range(1, args.passes + 1):
+                specs = make_graph(pattern, args.pattern_tasks, args.pattern_duration_ms, "p")
+                results.append(runner.run("patterns", pattern, pattern, specs, pass_index))
     if "scale" in suites:
         for count in scale_tasks:
             specs = make_graph("bag", count, args.pattern_duration_ms, "s")

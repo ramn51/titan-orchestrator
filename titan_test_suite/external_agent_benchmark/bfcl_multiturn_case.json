@@ -1,0 +1,415 @@
+{
+  "schema": "titan-bfcl-multiturn-case-v1",
+  "source": {
+    "benchmark": "Berkeley Function Calling Leaderboard V4",
+    "repository": "https://github.com/ShishirPatil/gorilla",
+    "case_path": "berkeley-function-call-leaderboard/bfcl_eval/data/BFCL_v4_multi_turn_base.json",
+    "answer_path": "berkeley-function-call-leaderboard/bfcl_eval/data/possible_answer/BFCL_v4_multi_turn_base.json",
+    "case_sha256": "3c93cd2bd81713c9f9028a37d4b0a1f1a269606d757eb065280b4a9fa8557f6f",
+    "answer_sha256": "037ed361bcc435c258123920b1d5bab04e2ccaf6b8a9a9949c01f4ded57902b1"
+  },
+  "case": {
+    "id": "multi_turn_base_97",
+    "turns": [
+      "I've heard a friend of mine in Rivermist recently visited Stonebrook, and she mentioned the journey felt quite extensive. I'm curious, do you happen to have an idea about the actual distance between the two places?",
+      "Covering the distance from Rivermist to Stonebrook sure seems like a long trip. I'm a bit worried if my vehicle can endure the journey with the current fuel level. I'm not entirely sure how far my car can travel on the remaining fuel. What do you think?",
+      "Thanks a lot! Before I embark on this journey, it makes sense to ensure I won't be left stranded due to an empty tank. Just add to the tank fully.",
+      "Great, with my tank now full, let's embark on this journey. Once I'm set to go, I'd appreciate it if you could start the car for me.",
+      "By the way, as I travel, there are some updates I need to communicate to my friend Michael. Would you be able to send message 'I am on my way.'?",
+      "Lastly, while I'm on the road, I want to make sure I have informed everyone that should be aware. Could you display what messages I've send thus far?"
+    ],
+    "initial_config": {
+      "VehicleControlAPI": {
+        "fuelLevel": 5.0,
+        "batteryVoltage": 12.6,
+        "engineState": "stopped",
+        "doorStatus": {
+          "driver": "unlocked",
+          "passenger": "unlocked",
+          "rear_left": "unlocked",
+          "rear_right": "unlocked"
+        },
+        "acTemperature": 25.0,
+        "fanSpeed": 50,
+        "acMode": "auto",
+        "humidityLevel": 50.0,
+        "headLightStatus": "off",
+        "parkingBrakeStatus": "released",
+        "parkingBrakeForce": 0.0,
+        "slopeAngle": 0.0,
+        "distanceToNextVehicle": 50.0,
+        "cruiseStatus": "inactive",
+        "destination": "Stonebrook",
+        "frontLeftTirePressure": 32.0,
+        "frontRightTirePressure": 32.0,
+        "rearLeftTirePressure": 30.0,
+        "rearRightTirePressure": 30.0
+      },
+      "MessageAPI": {
+        "user_count": 4,
+        "user_map": {
+          "Michael": "BD732D1888B94DAA",
+          "Sarah": "USR002",
+          "David": "USR003",
+          "Emma": "USR004"
+        },
+        "inbox": [
+          {
+            "USR002": "Safe travels!"
+          }
+        ],
+        "message_count": 1,
+        "current_user": "USR003"
+      }
+    },
+    "tools": [
+      {
+        "name": "estimate_distance",
+        "description": "This tool belongs to the vehicle control system, which allows users to control various aspects of the car such as engine, doors, climate control, lights, and more. Tool description: Estimates the distance between two cities.",
+        "parameters": {
+          "type": "dict",
+          "properties": {
+            "cityA": {
+              "type": "string",
+              "description": "The zipcode of the first city."
+            },
+            "cityB": {
+              "type": "string",
+              "description": "The zipcode of the second city."
+            }
+          },
+          "required": [
+            "cityA",
+            "cityB"
+          ]
+        },
+        "response": {
+          "type": "dict",
+          "properties": {
+            "distance": {
+              "type": "float",
+              "description": "The distance between the two cities in km."
+            },
+            "intermediaryCities": {
+              "type": "array",
+              "description": "[Optional] The list of intermediary cities between the two cities.",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "estimate_drive_feasibility_by_mileage",
+        "description": "This tool belongs to the vehicle control system, which allows users to control various aspects of the car such as engine, doors, climate control, lights, and more. Tool description: Estimates the milage of the vehicle given the distance needed to drive.",
+        "parameters": {
+          "type": "dict",
+          "properties": {
+            "distance": {
+              "type": "float",
+              "description": "The distance to travel in miles."
+            }
+          },
+          "required": [
+            "distance"
+          ]
+        },
+        "response": {
+          "type": "dict",
+          "properties": {
+            "canDrive": {
+              "type": "boolean",
+              "description": "True if the vehicle can drive the distance, False otherwise."
+            }
+          }
+        }
+      },
+      {
+        "name": "fillFuelTank",
+        "description": "This tool belongs to the vehicle control system, which allows users to control various aspects of the car such as engine, doors, climate control, lights, and more. Tool description: Fills the fuel tank of the vehicle. The fuel tank can hold up to 50 gallons.",
+        "parameters": {
+          "type": "dict",
+          "properties": {
+            "fuelAmount": {
+              "type": "float",
+              "description": "The amount of fuel to fill in gallons; this is the additional fuel to add to the tank."
+            }
+          },
+          "required": [
+            "fuelAmount"
+          ]
+        },
+        "response": {
+          "type": "dict",
+          "properties": {
+            "fuelLevel": {
+              "type": "float",
+              "description": "The fuel level of the vehicle in gallons."
+            }
+          }
+        }
+      },
+      {
+        "name": "get_zipcode_based_on_city",
+        "description": "This tool belongs to the vehicle control system, which allows users to control various aspects of the car such as engine, doors, climate control, lights, and more. Tool description: Gets the zipcode based on the city.",
+        "parameters": {
+          "type": "dict",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "The name of the city."
+            }
+          },
+          "required": [
+            "city"
+          ]
+        },
+        "response": {
+          "type": "dict",
+          "properties": {
+            "zipcode": {
+              "type": "string",
+              "description": "The zipcode of the city."
+            }
+          }
+        }
+      },
+      {
+        "name": "lockDoors",
+        "description": "This tool belongs to the vehicle control system, which allows users to control various aspects of the car such as engine, doors, climate control, lights, and more. Tool description: Locks the doors of the vehicle.",
+        "parameters": {
+          "type": "dict",
+          "properties": {
+            "unlock": {
+              "type": "boolean",
+              "description": "True if the doors are to be unlocked, False otherwise."
+            },
+            "door": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The list of doors to lock or unlock. [Enum]: [\"driver\", \"passenger\", \"rear_left\", \"rear_right\"]"
+            }
+          },
+          "required": [
+            "unlock",
+            "door"
+          ]
+        },
+        "response": {
+          "type": "dict",
+          "properties": {
+            "lockStatus": {
+              "type": "string",
+              "description": "The status of the lock. [Enum]: [\"locked\", \"unlocked\"]"
+            },
+            "remainingUnlockedDoors": {
+              "type": "integer",
+              "description": "The number of remaining unlocked doors."
+            }
+          }
+        }
+      },
+      {
+        "name": "pressBrakePedal",
+        "description": "This tool belongs to the vehicle control system, which allows users to control various aspects of the car such as engine, doors, climate control, lights, and more. Tool description: Presses the brake pedal based on pedal position. The brake pedal will be kept pressed until released.",
+        "parameters": {
+          "type": "dict",
+          "properties": {
+            "pedalPosition": {
+              "type": "float",
+              "description": "Position of the brake pedal, between 0 (not pressed) and 1 (fully pressed)."
+            }
+          },
+          "required": [
+            "pedalPosition"
+          ]
+        },
+        "response": {
+          "type": "dict",
+          "properties": {
+            "brakePedalStatus": {
+              "type": "string",
+              "description": "The status of the brake pedal. [Enum]: [\"pressed\", \"released\"]"
+            },
+            "brakePedalForce": {
+              "type": "float",
+              "description": "The force applied to the brake pedal in Newtons."
+            }
+          }
+        }
+      },
+      {
+        "name": "send_message",
+        "description": "This tool belongs to the Message API, which is used to manage user interactions in a workspace. Tool description: Send a message to a user.",
+        "parameters": {
+          "type": "dict",
+          "properties": {
+            "receiver_id": {
+              "type": "string",
+              "description": "User ID of the user to send the message to."
+            },
+            "message": {
+              "type": "string",
+              "description": "Message to be sent."
+            }
+          },
+          "required": [
+            "receiver_id",
+            "message"
+          ]
+        },
+        "response": {
+          "type": "dict",
+          "properties": {
+            "sent_status": {
+              "type": "boolean",
+              "description": "True if the message was sent successfully, False otherwise."
+            },
+            "message_id": {
+              "type": "integer",
+              "description": "ID of the sent message."
+            },
+            "message": {
+              "type": "string",
+              "description": "A message describing the result of the send attempt."
+            }
+          }
+        }
+      },
+      {
+        "name": "startEngine",
+        "description": "This tool belongs to the vehicle control system, which allows users to control various aspects of the car such as engine, doors, climate control, lights, and more. Tool description: Starts the engine of the vehicle.",
+        "parameters": {
+          "type": "dict",
+          "properties": {
+            "ignitionMode": {
+              "type": "string",
+              "description": "The ignition mode of the vehicle. [Enum]: [\"START\", \"STOP\"]"
+            }
+          },
+          "required": [
+            "ignitionMode"
+          ]
+        },
+        "response": {
+          "type": "dict",
+          "properties": {
+            "engineState": {
+              "type": "string",
+              "description": "The state of the engine. [Enum]: [\"running\", \"stopped\"]"
+            },
+            "fuelLevel": {
+              "type": "float",
+              "description": "The fuel level of the vehicle in gallons."
+            },
+            "batteryVoltage": {
+              "type": "float",
+              "description": "The battery voltage of the vehicle in volts."
+            }
+          }
+        }
+      },
+      {
+        "name": "view_messages_sent",
+        "description": "This tool belongs to the Message API, which is used to manage user interactions in a workspace. Tool description: View all historical messages sent by the current user.",
+        "parameters": {
+          "type": "dict",
+          "properties": {},
+          "required": []
+        },
+        "response": {
+          "type": "dict",
+          "properties": {
+            "messages": {
+              "type": "dict",
+              "description": "Dictionary of messages grouped by receiver An example of the messages dictionary is {\"USR001\":[\"Hello\"],\"USR002\":[\"World\"]}."
+            }
+          }
+        }
+      }
+    ],
+    "ground_truth": [
+      [
+        {
+          "name": "get_zipcode_based_on_city",
+          "arguments": {
+            "city": "Rivermist"
+          }
+        },
+        {
+          "name": "get_zipcode_based_on_city",
+          "arguments": {
+            "city": "Stonebrook"
+          }
+        },
+        {
+          "name": "estimate_distance",
+          "arguments": {
+            "cityA": "83214",
+            "cityB": "74532"
+          }
+        }
+      ],
+      [
+        {
+          "name": "estimate_drive_feasibility_by_mileage",
+          "arguments": {
+            "distance": 750.0
+          }
+        }
+      ],
+      [
+        {
+          "name": "fillFuelTank",
+          "arguments": {
+            "fuelAmount": 45.0
+          }
+        }
+      ],
+      [
+        {
+          "name": "lockDoors",
+          "arguments": {
+            "unlock": false,
+            "door": [
+              "driver",
+              "passenger",
+              "rear_left",
+              "rear_right"
+            ]
+          }
+        },
+        {
+          "name": "pressBrakePedal",
+          "arguments": {
+            "pedalPosition": 1.0
+          }
+        },
+        {
+          "name": "startEngine",
+          "arguments": {
+            "ignitionMode": "START"
+          }
+        }
+      ],
+      [
+        {
+          "name": "send_message",
+          "arguments": {
+            "receiver_id": "BD732D1888B94DAA",
+            "message": "I am on my way."
+          }
+        }
+      ],
+      [
+        {
+          "name": "view_messages_sent",
+          "arguments": {}
+        }
+      ]
+    ]
+  }
+}

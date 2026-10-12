@@ -1,0 +1,60 @@
+{
+  "source": {
+    "benchmark": "LLMCompiler ParallelQA",
+    "repository": "https://github.com/SqueezeAILab/LLMCompiler",
+    "dataset_path": "datasets/parallelqa_dataset.json",
+    "license_note": "Task text and label copied from the upstream benchmark for adapter verification."
+  },
+  "cases": [
+    {
+      "id": "1",
+      "question": "If Mariana Trench was 20% shallower and the Puerto Rico Trench was 20% deeper, which one would be shallower?",
+      "answer": "Mariana Trench",
+      "branch": 2,
+      "selection": "min",
+      "entities": [
+        {"name": "Mariana Trench", "measurement": 10984.0, "unit": "metres", "factor": 0.8},
+        {"name": "Puerto Rico Trench", "measurement": 8376.0, "unit": "metres", "factor": 1.2}
+      ]
+    },
+    {
+      "id": "22",
+      "question": "If the depth of the Mariana Trench were 15% shallower, the depth of the Puerto Rico Trench were 25% deeper, and the depth of the Sunda Trench increased by 20%, which trench would be the deepest?",
+      "answer": "Puerto Rico Trench",
+      "branch": 3,
+      "selection": "max",
+      "entities": [
+        {"name": "Mariana Trench", "measurement": 10984.0, "unit": "metres", "factor": 0.85},
+        {"name": "Puerto Rico Trench", "measurement": 8376.0, "unit": "metres", "factor": 1.25},
+        {"name": "Sunda Trench", "measurement": 7250.0, "unit": "metres", "factor": 1.2}
+      ]
+    },
+    {
+      "id": "53",
+      "question": "Assuming the Mariana Trench's depth was reduced by 25%, the Puerto Rico Trench deepened by 15%, the Sunda Trench shortened by 10%, and the South Sandwich Trench expanded by 20% in depth, which trench would surpass the others in depth?",
+      "answer": "South Sandwich Trench",
+      "branch": 4,
+      "selection": "max",
+      "entities": [
+        {"name": "Mariana Trench", "measurement": 10984.0, "unit": "metres", "factor": 0.75},
+        {"name": "Puerto Rico Trench", "measurement": 8376.0, "unit": "metres", "factor": 1.15},
+        {"name": "Sunda Trench", "measurement": 7250.0, "unit": "metres", "factor": 0.9},
+        {"name": "South Sandwich Trench", "measurement": 8266.0, "unit": "metres", "factor": 1.2}
+      ]
+    },
+    {
+      "id": "84",
+      "question": "Given that the Peru-Chile Trench deepens by 10%, the Mariana Trench becomes 20% shallower, the South Sandwich Trench is reduced by 25%, the Puerto Rico Trench gets 30% deeper, and the Sunda Trench extends by 15%, which trench would have the least depth?",
+      "answer": "South Sandwich Trench",
+      "branch": 5,
+      "selection": "min",
+      "entities": [
+        {"name": "Peru-Chile Trench", "measurement": 8065.0, "unit": "metres", "factor": 1.1},
+        {"name": "Mariana Trench", "measurement": 10984.0, "unit": "metres", "factor": 0.8},
+        {"name": "South Sandwich Trench", "measurement": 8266.0, "unit": "metres", "factor": 0.75},
+        {"name": "Puerto Rico Trench", "measurement": 8376.0, "unit": "metres", "factor": 1.3},
+        {"name": "Sunda Trench", "measurement": 7250.0, "unit": "metres", "factor": 1.15}
+      ]
+    }
+  ]
+}

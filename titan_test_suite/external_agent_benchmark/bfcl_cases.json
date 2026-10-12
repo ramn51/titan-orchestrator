@@ -1,0 +1,67 @@
+{
+  "source": {
+    "benchmark": "Berkeley Function Calling Leaderboard V4",
+    "repository": "https://github.com/ShishirPatil/gorilla",
+    "category": "parallel",
+    "task_dataset_sha256": "19f51a82eff42e5d62541aa500115a056eb78f437c2ba1f10415fd7c8e5dda84",
+    "answer_dataset_sha256": "8a6aa19c1adddc6a5a2f7e40f9dbf30cc7e95815e7b830c90589ab318229e0f0"
+  },
+  "cases": [
+    {
+      "id": "parallel_0",
+      "question": "Play songs from the artists Taylor Swift and Maroon 5, with a play time of 20 minutes and 15 minutes respectively, on Spotify.",
+      "functions": [
+        {
+          "name": "spotify.play",
+          "description": "Play specific tracks from a given artist for a specific time duration.",
+          "parameters": {
+            "artist": "string",
+            "duration": "integer"
+          }
+        }
+      ],
+      "ground_truth": [
+        {"name": "spotify.play", "arguments": {"artist": "Taylor Swift", "duration": 20}},
+        {"name": "spotify.play", "arguments": {"artist": "Maroon 5", "duration": 15}}
+      ]
+    },
+    {
+      "id": "parallel_1",
+      "question": "Calculate the induced electromagnetic force for a magnetic field of 5, area of 2, and time intervals of 4 and 10.",
+      "functions": [
+        {
+          "name": "calculate_em_force",
+          "description": "Calculate induced electromagnetic force from magnetic field, area, and change interval.",
+          "parameters": {
+            "b_field": "integer",
+            "area": "integer",
+            "d_time": "integer"
+          }
+        }
+      ],
+      "ground_truth": [
+        {"name": "calculate_em_force", "arguments": {"b_field": 5, "area": 2, "d_time": 4}},
+        {"name": "calculate_em_force", "arguments": {"b_field": 5, "area": 2, "d_time": 10}}
+      ]
+    },
+    {
+      "id": "parallel_2",
+      "question": "Calculate resistance for a wire of length 5 and area 0.01 using copper and aluminum resistivity.",
+      "functions": [
+        {
+          "name": "calculate_resistance",
+          "description": "Calculate electrical resistance from length, cross-sectional area, and material resistivity.",
+          "parameters": {
+            "length": "integer",
+            "area": "float",
+            "resistivity": "string"
+          }
+        }
+      ],
+      "ground_truth": [
+        {"name": "calculate_resistance", "arguments": {"length": 5, "area": 0.01, "resistivity": "copper"}},
+        {"name": "calculate_resistance", "arguments": {"length": 5, "area": 0.01, "resistivity": "aluminum"}}
+      ]
+    }
+  ]
+}
