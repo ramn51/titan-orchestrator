@@ -81,6 +81,8 @@ Assert-File $jar
 Assert-File $storeJar
 Assert-File (Join-Path $cloudFiles "start_master.sh")
 Assert-File (Join-Path $cloudFiles "start_worker.sh")
+Assert-File (Join-Path $cloudFiles "start_master.ps1")
+Assert-File (Join-Path $cloudFiles "start_worker.ps1")
 
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 if (Test-Path -LiteralPath $stage) {
@@ -110,6 +112,7 @@ foreach ($directory in @("dag_viewer", "cluster_monitor", "templates", "static",
 Copy-Directory (Join-Path $root "titan_sdk") $master
 Copy-Item -LiteralPath (Join-Path $root "setup.py") -Destination $master
 Copy-Item -LiteralPath (Join-Path $cloudFiles "start_master.sh") -Destination $master
+Copy-Item -LiteralPath (Join-Path $cloudFiles "start_master.ps1") -Destination $master
 Copy-Item -LiteralPath (Join-Path $cloudFiles "config.master.properties") -Destination (Join-Path $master "config.properties")
 
 # Worker engine and SDK. The worker startup script prepends its virtual environment
@@ -118,6 +121,7 @@ Copy-Item -LiteralPath $jar -Destination (Join-Path $worker "Worker.jar")
 Copy-Directory (Join-Path $root "titan_sdk") $worker
 Copy-Item -LiteralPath (Join-Path $root "setup.py") -Destination $worker
 Copy-Item -LiteralPath (Join-Path $cloudFiles "start_worker.sh") -Destination $worker
+Copy-Item -LiteralPath (Join-Path $cloudFiles "start_worker.ps1") -Destination $worker
 Copy-Item -LiteralPath (Join-Path $cloudFiles "config.worker.properties") -Destination (Join-Path $worker "config.properties")
 
 Get-ChildItem -LiteralPath $stage -Directory -Recurse -Filter __pycache__ | Remove-Item -Recurse -Force

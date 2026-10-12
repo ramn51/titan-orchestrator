@@ -313,5 +313,7 @@ app.register_blueprint(create_cluster_blueprint(
 ))
 
 if __name__ == '__main__':
-    print(f"Starting Dashboard on http://127.0.0.1:5000")
-    app.run(host='127.0.0.1', port=5000)
+    dashboard_host = os.environ.get("TITAN_DASHBOARD_HOST", "127.0.0.1")
+    dashboard_port = int(os.environ.get("TITAN_DASHBOARD_PORT", "5000"))
+    print(f"Starting Dashboard on http://{dashboard_host}:{dashboard_port}")
+    app.run(host=dashboard_host, port=dashboard_port)
