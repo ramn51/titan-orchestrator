@@ -21,17 +21,35 @@ Titan separates recovery into four concerns:
 | Recover | Redispatch, callback retry, worker re-registration, Store reconnect | Resume eligible work without violating DAG dependencies |
 | Reconcile | Persisted status and service-discovery cleanup | Make durable and visible state agree with the execution outcome |
 
+Each diagram uses the same visual language: **red marks the injected fault**, amber marks detection or containment, green marks recovery, and blue marks the invariant checked by the verifier.
+
 ```mermaid
-flowchart LR
-    H[Healthy execution] --> F[Failure detected]
-    F --> C[Contain affected work]
-    C --> D{Can the work continue?}
-    D -->|Yes| R[Retry or redispatch]
-    D -->|No| T[FAILED or CANCELLED]
-    R --> V[Verify terminal state and dependencies]
-    T --> V
-    V --> P[Persist and expose final state]
+%%{init: {"flowchart": {"curve": "linear", "nodeSpacing": 32, "rankSpacing": 44}}}%%
+flowchart TB
+    C[Client] --> M[Master and scheduler]
+    M --> W[Worker JVM]
+    W --> P[Task process tree]
+    P --> E[Service endpoint]
+    M --> S[(TitanStore)]
+    F1[FAULT<br/>stop Master or interrupt callback] -.-> M
+    F2[FAULT<br/>stop Store before terminal write] -.-> S
+    F3[FAULT<br/>kill worker JVM] -.-> W
+    F4[FAULT<br/>cancel task or kill descendant] -.-> P
+    F5[FAULT<br/>endpoint never becomes ready] -.-> E
+    classDef fault fill:#5b1e2d,stroke:#ff6b81,color:#fff,stroke-width:3px;
+    classDef detect fill:#453816,stroke:#f6c85f,color:#fff,stroke-width:2px;
+    classDef recover fill:#123c32,stroke:#54e6a8,color:#fff,stroke-width:2px;
+    classDef verify fill:#16344a,stroke:#72c7ff,color:#fff,stroke-width:2px;
+    class F1,F2,F3,F4,F5 fault;
 ```
+
+| Injection point | Exact injected action | Primary verification |
+| --- | --- | --- |
+| Master / callback ingress | Stop the Master, interrupt a callback, or replay a duplicate or late callback | One terminal transition and at most one child release |
+| TitanStore | Stop the Store before the task's terminal-state write | Reconnection and agreement between persisted status and the completed span |
+| Worker JVM | Kill the worker while a root task is `RUNNING` | Redispatch, dependent completion, released capacity, and dependency order |
+| Task process tree | Cancel after a child process exists | Parent and descendant processes removed on every worker |
+| Service endpoint | Launch a process that never binds the declared port | Bounded failure, dependent cancellation, empty discovery, and released slot |
 
 A fault case counts as a pass only when **all stated invariants** hold. A job eventually completing is insufficient if it also leaves stale discovery state, duplicates a dependent, or loses its durable terminal status.
 
@@ -40,19 +58,26 @@ A fault case counts as a pass only when **all stated invariants** hold. A job ev
 The scheduler owns the job state machine. A completion, cancellation, or failure callback is accepted only when it is valid for the current state. Terminal jobs are not reopened by duplicate or late messages.
 
 ```mermaid
-stateDiagram-v2
-    [*] --> BLOCKED: parents unresolved
-    [*] --> PENDING: ready at admission
-    BLOCKED --> PENDING: final parent completes
-    PENDING --> RUNNING: worker reserves capacity
-    RUNNING --> COMPLETED: success callback
-    RUNNING --> PENDING: recoverable worker loss
-    RUNNING --> FAILED: retry limit or terminal failure
-    BLOCKED --> CANCELLED: ancestor cancelled or failed
-    PENDING --> CANCELLED: operator cancellation
-    RUNNING --> CANCELLED: cancel and stop process tree
-    COMPLETED --> COMPLETED: duplicate callback ignored
-    CANCELLED --> CANCELLED: late callback ignored
+%%{init: {"flowchart": {"curve": "linear", "nodeSpacing": 28, "rankSpacing": 42}}}%%
+flowchart TB
+    B[BLOCKED<br/>parents unresolved] -->|final parent completes| P[PENDING<br/>eligible for placement]
+    P -->|capacity reserved| R[RUNNING]
+    R -->|success callback| C[COMPLETED]
+    R -->|retryable worker loss| P
+    R -->|retry exhausted| X[FAILED]
+    B -->|ancestor cancelled or failed| K[CANCELLED]
+    P -->|operator cancellation| K
+    R -->|cancel and stop process tree| K
+    F[FAULT INJECTED HERE<br/>duplicate or late callback] -.-> G{Terminal-state guard}
+    C --> G
+    K --> G
+    G -->|stale event ignored| V[VERIFY<br/>state unchanged; children released at most once]
+    classDef fault fill:#5b1e2d,stroke:#ff6b81,color:#fff,stroke-width:3px;
+    classDef guard fill:#453816,stroke:#f6c85f,color:#fff,stroke-width:2px;
+    classDef verify fill:#16344a,stroke:#72c7ff,color:#fff,stroke-width:2px;
+    class F fault;
+    class G guard;
+    class V verify;
 ```
 
 ### Dependency release
@@ -70,20 +95,23 @@ Titan recovery is **at least once**. A worker or Master interruption can cause a
 Workers register with the Master and send periodic heartbeats. When a worker is declared unavailable, Titan removes it from scheduling, releases its recorded capacity, and makes recoverable in-flight work eligible for redispatch.
 
 ```mermaid
-sequenceDiagram
-    participant M as Master
-    participant A as Worker A
-    participant B as Worker B
-    participant S as TitanStore
-
-    M->>A: Dispatch task attempt 1
-    A--xM: Heartbeats stop
-    M->>M: Mark A unavailable
-    M->>S: Record recovery transition
-    M->>B: Redispatch task attempt 2
-    B-->>M: Completion callback
-    M->>S: Persist terminal state
-    M->>M: Release dependent tasks once
+%%{init: {"flowchart": {"curve": "linear", "nodeSpacing": 28, "rankSpacing": 38}}}%%
+flowchart TB
+    H[HEALTHY<br/>Master dispatches attempt 1 to Worker A]
+    F[FAULT INJECTED HERE<br/>kill Worker A JVM while root task is RUNNING]
+    D[DETECT<br/>heartbeats stop; Master marks Worker A unavailable]
+    C[CONTAIN<br/>release dead worker capacity and requeue attempt]
+    R[RECOVER<br/>dispatch attempt 2 to Worker B]
+    V[VERIFY<br/>root and dependent complete;<br/>zero dependency-order violations]
+    H --> F --> D --> C --> R --> V
+    classDef fault fill:#5b1e2d,stroke:#ff6b81,color:#fff,stroke-width:3px;
+    classDef detect fill:#453816,stroke:#f6c85f,color:#fff,stroke-width:2px;
+    classDef recover fill:#123c32,stroke:#54e6a8,color:#fff,stroke-width:2px;
+    classDef verify fill:#16344a,stroke:#72c7ff,color:#fff,stroke-width:2px;
+    class F fault;
+    class D,C detect;
+    class R recover;
+    class V verify;
 ```
 
 In the three VM campaign, killing a worker during a 60-second root stage produced:
@@ -102,14 +130,29 @@ Workers retry completion callbacks when the Master connection fails. A failed re
 The receiver must still be idempotent because network retry cannot prove whether the earlier message was processed.
 
 ```mermaid
-flowchart TD
-    A[Worker sends completion] --> B{Callback acknowledged?}
-    B -->|Yes| C[Apply terminal transition once]
-    B -->|No| D[Retry after backoff / fresh connection]
-    D --> C
-    C --> E{Job already terminal?}
-    E -->|Same or stale event| F[Acknowledge without changing state]
-    E -->|Valid transition| G[Persist state and release children once]
+%%{init: {"flowchart": {"curve": "linear", "nodeSpacing": 28, "rankSpacing": 38}}}%%
+flowchart TB
+    H[HEALTHY<br/>worker sends completion callback]
+    F[FAULT INJECTED HERE<br/>interrupt transport, replay duplicate,<br/>or deliver callback after cancellation]
+    D{DETECT<br/>acknowledgement received?}
+    R[RECOVER<br/>evict reused socket and retry once<br/>on a fresh connection]
+    G{CONTAIN<br/>is the job already terminal?}
+    A[Ignore stale event and acknowledge]
+    P[Persist valid transition and release children once]
+    V[VERIFY<br/>one terminal state; no duplicate child release]
+    H --> F --> D
+    D -->|No| R --> G
+    D -->|Yes| G
+    G -->|Yes| A --> V
+    G -->|No| P --> V
+    classDef fault fill:#5b1e2d,stroke:#ff6b81,color:#fff,stroke-width:3px;
+    classDef detect fill:#453816,stroke:#f6c85f,color:#fff,stroke-width:2px;
+    classDef recover fill:#123c32,stroke:#54e6a8,color:#fff,stroke-width:2px;
+    classDef verify fill:#16344a,stroke:#72c7ff,color:#fff,stroke-width:2px;
+    class F fault;
+    class D,G detect;
+    class R,A,P recover;
+    class V verify;
 ```
 
 Measured distributed results:
@@ -126,14 +169,23 @@ Cancellation propagates to dependent jobs and instructs the worker to terminate 
 Long-running services become discoverable only after their readiness condition succeeds. A failed readiness probe marks the service failed, cancels dependent work, removes discovery state, and releases worker capacity.
 
 ```mermaid
-flowchart LR
-    A[Spawn service process] --> B[Readiness probes]
-    B -->|Ready| C[Publish endpoint]
-    C --> D[Dependents may run]
-    B -->|Probe limit reached| E[Mark service FAILED]
-    E --> F[Cancel dependents]
-    F --> G[Remove discovery entry]
-    G --> H[Release capacity and process tree]
+%%{init: {"flowchart": {"curve": "linear", "nodeSpacing": 28, "rankSpacing": 38}}}%%
+flowchart TB
+    H[HEALTHY<br/>worker spawns service process]
+    F[FAULT INJECTED HERE<br/>service never binds its declared port]
+    D[DETECT<br/>10 readiness probes at 2-second intervals]
+    C[CONTAIN<br/>mark service FAILED and cancel dependents]
+    R[RECOVER<br/>remove discovery entry; release slot;<br/>terminate process tree]
+    V[VERIFY<br/>dependent CANCELLED, discovery empty,<br/>worker occupancy returns to zero]
+    H --> F --> D --> C --> R --> V
+    classDef fault fill:#5b1e2d,stroke:#ff6b81,color:#fff,stroke-width:3px;
+    classDef detect fill:#453816,stroke:#f6c85f,color:#fff,stroke-width:2px;
+    classDef recover fill:#123c32,stroke:#54e6a8,color:#fff,stroke-width:2px;
+    classDef verify fill:#16344a,stroke:#72c7ff,color:#fff,stroke-width:2px;
+    class F fault;
+    class D,C detect;
+    class R recover;
+    class V verify;
 ```
 
 The distributed readiness-failure test used ten probes at two-second intervals. The service failed in 18.365 s, its dependent was cancelled, discovery was empty, and both workers returned to zero occupied slots.
@@ -149,14 +201,27 @@ TitanStore persists state through its append-only file and clients can reconnect
 The fault campaign exposed a narrower gap: when a terminal status write occurred while the Store was unavailable, fresh operations worked after restart but the missed write was not replayed. The execution span showed `COMPLETED` and capacity was released, while persisted job status remained `RUNNING` for the 120-second observation window.
 
 ```mermaid
-flowchart LR
-    A[Task finishes] --> B[Terminal update]
-    B --> C{Store available?}
-    C -->|Yes| D[Persist COMPLETED]
-    C -->|No| E[Write missed during outage]
-    E --> F[Store restarts and reconnects]
-    F --> G[Fresh commands succeed]
-    G --> H[Current gap: missed terminal write needs reconciliation]
+%%{init: {"flowchart": {"curve": "linear", "nodeSpacing": 28, "rankSpacing": 38}}}%%
+flowchart TB
+    H[HEALTHY<br/>task runs and Store accepts commands]
+    F[FAULT INJECTED HERE<br/>kill TitanStore before terminal-state write]
+    D[DETECT<br/>terminal update cannot be persisted]
+    R[RECOVER<br/>restart Store and reconnect clients]
+    V1[VERIFY PASS<br/>fresh commands succeed; capacity released]
+    V2[VERIFY FINDING<br/>persisted job remains RUNNING although span is COMPLETED]
+    H --> F --> D --> R
+    R --> V1
+    R --> V2
+    classDef fault fill:#5b1e2d,stroke:#ff6b81,color:#fff,stroke-width:3px;
+    classDef detect fill:#453816,stroke:#f6c85f,color:#fff,stroke-width:2px;
+    classDef recover fill:#123c32,stroke:#54e6a8,color:#fff,stroke-width:2px;
+    classDef verify fill:#16344a,stroke:#72c7ff,color:#fff,stroke-width:2px;
+    classDef finding fill:#4d261c,stroke:#ff9f6e,color:#fff,stroke-width:3px;
+    class F fault;
+    class D detect;
+    class R recover;
+    class V1 verify;
+    class V2 finding;
 ```
 
 This means Store restart and Store state reconciliation are different properties. Reconnection is measured as working; replay of a missed terminal transition remains an open item.
