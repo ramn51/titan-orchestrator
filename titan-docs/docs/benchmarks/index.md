@@ -14,6 +14,9 @@ The report is the evidence source. This page explains why the measurements matte
 !!! note "Report snapshot"
     The linked portfolio contains benchmark evidence recorded through October 11, 2026. Newer MCP verification is documented separately in the [MCP Control Plane](../integrations/mcp.md).
 
+!!! info "Living evidence portfolio"
+    The report evolves as Titan is tested on additional workflows, topologies and failure cases. Headline totals can increase or be refined when new runs are verified; every published snapshot states its evidence cutoff so its numbers remain interpretable.
+
 ## Evidence at a glance
 
 | Evidence | Recorded result | What it establishes |
@@ -141,17 +144,8 @@ This matters because dependency correctness alone does not prove that downstream
 - Cancellation, approval, service lifecycle and several failure paths work end to end.
 - Fault injection exposed concrete recovery gaps instead of hiding them.
 
-## What remains
-
-- Same-hardware baselines against another runtime in both native-function and external-process modes
-- A complete task-duration sweep with five measured passes and latency percentiles
-- Real scientific binaries and datasets, beginning with Montage
-- Store read latency and saturation throughput
-- Recovery-time separation into detection, redispatch and convergence
-- Resolution and rerun of the two distributed recovery findings
-- Broader model-backed agent workloads with frozen prompts and models
-
-These items strengthen performance, comparability and realism. The existing portfolio already provides substantial correctness and distributed-execution evidence.
+!!! warning "Evidence limits"
+    The portfolio does not yet support claims of complete runtime comparison, production high availability, or performance for the original scientific binaries. The interactive report records the exact limitations beside each result.
 
 ## Reading the full report
 

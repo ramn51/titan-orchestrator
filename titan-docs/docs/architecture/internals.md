@@ -25,7 +25,7 @@ This header adds exactly 8 bytes of overhead per message, achieving very low lat
 
 ## 2. TitanStore Architecture (Powered by JKRedis)
 
-To eliminate the Master as a Single Point of Failure (SPOF) and provide a distributed data bus, Titan integrates **TitanStore** (built on JKRedis). It is a multi-threaded, persistent Redis clone built from scratch in Java using standard I/O (`ServerSocket`), requiring no external frameworks like Netty.
+To preserve runtime state and provide a distributed data bus, Titan integrates **TitanStore** (built on JKRedis). It is a multi-threaded, persistent Redis-compatible store built from scratch in Java using standard I/O (`ServerSocket`), requiring no external frameworks like Netty. TitanStore persistence does not remove the singleton Master as a control-plane SPOF.
 
 
 
@@ -37,10 +37,12 @@ To eliminate the Master as a Single Point of Failure (SPOF) and provide a distri
 
 ### Advanced Systems Features
 
-* **Persistence (AOF):** Implements **Append-Only File** logging. Every DAG state transition is flushed to disk. If the Master crashes, data survives and is replayed on startup for zero-loss Crash Recovery.
+* **Persistence (AOF):** Implements **Append-Only File** logging. Acknowledged persisted transitions survive process restart and can be replayed. A transition attempted while the Store is unavailable may require later reconciliation.
 * **Real-Time Pub/Sub:** Implements the Publish/Subscribe messaging pattern using a fan-out architecture with `CopyOnWriteArrayList` to safely manage concurrent subscribers without blocking publishers.
 * **Expiry & Eviction (TTL):** Supports millisecond-precision expiration using both Lazy Eviction (checked on access) and Active Eviction (a background probabilistic thread cleans up keys every 100ms).
 * **Master-Replica Replication:** Supports full PSYNC handshakes and real-time command propagation for distributed high availability.
+
+The Store's replication and the scheduler's availability are separate concerns. Titan currently has no Master leader election or consensus protocol. See [Fault Tolerance & Recovery](fault-tolerance.md) for the measured recovery contract and open consistency findings.
 
 ---
 
