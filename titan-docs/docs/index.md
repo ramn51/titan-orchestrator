@@ -14,6 +14,9 @@ It allows you to deploy standalone services, execute individual batch jobs, or d
 !!! tip "Ready to dive in?" 
     Skip the reading and jump straight into the code. Follow our **[5-Minute Quickstart](getting-started.md)** to run your first distributed task, or view the **[Python SDK Reference](reference/sdk.md)**.
 
+!!! info "MCP control plane"
+    Titan can be operated by MCP-compatible agents through an optional, dependency-free sidecar. See the **[MCP Control Plane](integrations/mcp.md)** for its 30 tools, safety model, verification status and agentic use cases.
+
 ![Titan Dashboard](screenshots/UI_Screenshot.png)
 
 ---

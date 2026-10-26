@@ -48,6 +48,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - attr_list
   - md_in_html
   - pymdownx.blocks.caption
@@ -67,6 +69,7 @@ nav:
       - Agentic Workflows (Python): examples/agentic.md
       - Human Approval Gates: examples/hitl.md
       - Dagster Integration: examples/dagster.md
+  - 🤖 MCP Control Plane: integrations/mcp.md
   - 📚 API and SDK Reference: 
       - Titan SDK: reference/sdk.md
       - Java Engine API: javadocs/docs/index.html
