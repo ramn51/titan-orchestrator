@@ -20,7 +20,9 @@ import math
 import os
 from pathlib import Path
 import random
+import socket
 import statistics
+import struct
 import sys
 import time
 from typing import Iterable
@@ -30,6 +32,7 @@ sys.path.insert(0, str(REPO))
 from titan_sdk.titan_sdk import TitanClient, TitanJob  # noqa: E402
 
 TERMINAL = {"COMPLETED", "FAILED", "CANCELLED"}
+OP_STATS_JSON = 0x09
 
 
 def percentile(values: Iterable[float], quantile: float) -> float | None:
@@ -45,6 +48,48 @@ def percentile(values: Iterable[float], quantile: float) -> float | None:
     if lower == upper:
         return ordered[lower]
     return ordered[lower] + (ordered[upper] - ordered[lower]) * (position - lower)
+
+
+def titan_stats_query(payload: str, host: str = "127.0.0.1", port: int = 9090) -> dict:
+    """Read one bounded projection through Titan's existing stats opcode."""
+    body = payload.encode("utf-8")
+    with socket.create_connection((host, port), timeout=5) as connection:
+        connection.sendall(struct.pack(">BBBBI", 1, OP_STATS_JSON, 0, 0, len(body)) + body)
+        header = b""
+        while len(header) < 8:
+            chunk = connection.recv(8 - len(header))
+            if not chunk: raise OSError("incomplete Titan response header")
+            header += chunk
+        _, _, _, _, length = struct.unpack(">BBBBI", header)
+        response = b""
+        while len(response) < length:
+            chunk = connection.recv(length - len(response))
+            if not chunk: raise OSError("incomplete Titan response payload")
+            response += chunk
+    return json.loads(response.decode("utf-8"))
+
+
+def phase_samples(metrics: dict, expected: set[str], started_at: int, ended_at: int) -> dict:
+    dispatch = [item for item in metrics.get("dispatch_phases") or []
+                if item.get("job_id") in expected and int(item.get("at") or 0) <= ended_at]
+    worker = [item for item in metrics.get("worker_phases") or []
+              if item.get("job_id") in expected and int(item.get("at") or 0) <= ended_at]
+    store = [item for item in metrics.get("store_operations") or []
+             if started_at <= int(item.get("at") or 0) <= ended_at]
+    result = {name + "_ms_samples": [float(item.get(field) or 0) for item in source]
+              for name, field, source in (
+                  ("dispatch_route", "route", dispatch), ("worker_selection", "select", dispatch),
+                  ("dispatch_record", "record", dispatch), ("dispatch_store", "store", dispatch),
+                  ("dispatch_rpc", "send", dispatch), ("worker_queue", "worker_queue", worker),
+                  ("preprocess", "preprocess", worker), ("process_startup", "process_startup", worker),
+                  ("script_execution", "script", worker), ("callback_transit", "callback_transit", worker),
+                  ("callback_handle", "callback_handle", worker),
+                  ("terminal_persistence", "terminal_persistence", worker))}
+    result["store_read_ms_samples"] = [float(item.get("ms") or 0) for item in store
+                                       if item.get("kind") == "read"]
+    result["store_write_ms_samples"] = [float(item.get("ms") or 0) for item in store
+                                        if item.get("kind") == "write"]
+    return result
 
 
 def bootstrap_median_ci(values: Iterable[float], confidence: float = .95,
@@ -284,6 +329,7 @@ class LiveRunner:
         expected = {"DAG-" + spec.node_id for spec in with_sink}
         offsets = telemetry_offsets(self.telemetry)
         dag_name = f"TASKBENCH_{suite.upper()}_{label.upper()}_P{pass_index}_{digest}".replace(".", "_")
+        started_at_ms = int(time.time() * 1000)
         started = time.monotonic()
         response = self.client.submit_dag(dag_name, jobs)
         if response != "DAG_ACCEPTED":
@@ -306,6 +352,9 @@ class LiveRunner:
             time.sleep(.1)
         result = summarize_case(label, suite, pattern, with_sink, sink, spans, self.capacity,
                                 wall, response, self.configured_workers, self.slots_per_worker)
+        ended_at_ms = int(time.time() * 1000)
+        metrics = titan_stats_query(f"metrics|{started_at_ms}|5000")
+        result["phase_samples"] = phase_samples(metrics, expected, started_at_ms, ended_at_ms)
         result.update({"pass": pass_index, "dag": dag_name,
                        "dag_url": f"http://127.0.0.1:5000/dags/DAG-{dag_name}"})
         return result
@@ -354,6 +403,29 @@ def median_rows(results: list[dict], suite: str, key: str) -> list[dict]:
                      "variability": {"efficiency": efficiency, "end_to_end_efficiency": end_to_end,
                                      "window_seconds": window, "throughput": throughput}})
     return rows
+
+
+def latency_breakdown(results: list[dict]) -> dict:
+    phases = ["queue_ms_samples", "dispatch_route_ms_samples", "worker_selection_ms_samples",
+              "dispatch_record_ms_samples", "dispatch_store_ms_samples", "dispatch_rpc_ms_samples",
+              "worker_queue_ms_samples", "preprocess_ms_samples", "process_startup_ms_samples",
+              "script_execution_ms_samples", "callback_transit_ms_samples",
+              "callback_handle_ms_samples", "terminal_persistence_ms_samples",
+              "store_read_ms_samples", "store_write_ms_samples"]
+    aggregated = {}
+    for phase in phases:
+        if phase == "queue_ms_samples":
+            values = [float(sample) for case in results for sample in case.get(phase, [])]
+        else:
+            values = [float(sample) for case in results
+                      for sample in (case.get("phase_samples") or {}).get(phase, [])]
+        aggregated[phase.removesuffix("_samples")] = {
+            "count": len(values), "p50": round(percentile(values, .50), 6) if values else None,
+            "p95": round(percentile(values, .95), 6) if values else None,
+            "p99": round(percentile(values, .99), 6) if values else None,
+            "mean": round(statistics.fmean(values), 6) if values else None,
+        }
+    return aggregated
 
 
 def observed_metg(rows: list[dict], threshold: float = .5) -> dict:
@@ -410,6 +482,13 @@ def render_report(summary: dict, destination: Path) -> None:
         f"<td>{row['variability']['throughput']['min']:.2f}–{row['variability']['throughput']['max']:.2f}<br>"
         f"CV {row['variability']['throughput']['coefficient_of_variation']:.1%}</td></tr>"
         for row in rows)
+    latency_rows = "".join(
+        f"<tr><td>{h(name.replace('_ms', '').replace('_', ' '))}</td><td>{values['count']}</td>"
+        f"<td>{values['mean'] if values['mean'] is not None else '—'}</td>"
+        f"<td>{values['p50'] if values['p50'] is not None else '—'}</td>"
+        f"<td>{values['p95'] if values['p95'] is not None else '—'}</td>"
+        f"<td>{values['p99'] if values['p99'] is not None else '—'}</td></tr>"
+        for name, values in summary.get("latency_breakdown", {}).items())
     def suite_table(name: str) -> str:
         cases = [r for r in summary["results"] if r["suite"] == name]
         if not cases:
@@ -426,6 +505,7 @@ def render_report(summary: dict, destination: Path) -> None:
 </style></head><body><main><div class="eyebrow">Titan · controlled scheduler microbenchmark</div><h1>Minimum effective task granularity</h1><p class="lede">A logarithmic duration sweep plus DAG shape, scale, local overlap and load-imbalance probes. Results come from Titan's persisted execution spans; every live case checks terminal status, dependency order, duplicate attempts and observed worker count.</p>
 <div class="cards"><div class="card">Observed METG(50)<strong>{h(threshold_text)}</strong><span class="muted">smallest tested duration at ≥50% scheduler-window efficiency</span></div><div class="card">Controlled capacity<strong>{summary['configuration']['configured_workers']} × {summary['configuration']['slots_per_worker']}</strong><span class="muted">workers × slots per worker</span></div><div class="card">Evidence validity<strong>{validity} / {len(summary['results'])}</strong><span class="muted">live cases passing all checks</span></div><div class="card">Source state<strong>{h(summary['source']['branch'])}</strong><span class="muted"><code>{h(summary['source']['commit'][:12])}</code></span></div></div>
 <section><h2>Logarithmic task-duration sweep</h2><p>Efficiency = ideal useful-work lower bound ÷ observed span window. One warm-up pass per duration is excluded from every number below. The table aggregates all measured task spans across five passes and reports p50 / p95 / p99 consistently. The amber line marks 50%.</p>{svg_line(rows)}<div class="table-wrap"><table><thead><tr><th>Duration</th><th>Measured passes</th><th>Window efficiency</th><th>End-to-end efficiency</th><th>Window</th><th>Tasks/s</th><th>Queue p50 / p95 / p99</th><th>Execution p50 / p95 / p99</th><th>Throughput range / CV</th></tr></thead><tbody>{granularity_table}</tbody></table></div></section>
+<section><h2>Correlated latency breakdown</h2><p class="muted">Worker phases use a monotonic clock on one worker. Callback transit compares worker and master wall clocks and therefore assumes synchronized VM clocks. Store rows include operations observed inside each measured case window.</p><div class="table-wrap"><table><thead><tr><th>Phase</th><th>Samples</th><th>Mean ms</th><th>P50 ms</th><th>P95 ms</th><th>P99 ms</th></tr></thead><tbody>{latency_rows}</tbody></table></div></section>
 <section><h2>Graph patterns</h2><p class="muted">Critical path and total work both contribute to the ideal lower bound. Bound efficiency measures proximity to the best possible schedule for that graph; slot utilization shows how much controlled capacity performed requested work.</p>{suite_table('patterns')}</section>
 <section><h2>Scale</h2>{suite_table('scale')}</section>
 <section><h2>Communication-hiding proxy</h2><p class="muted">This local test compares barriered and pipelined wait/CPU stages. It measures latency overlap on one host; it is not evidence of network communication hiding.</p>{suite_table('overlap')}</section>
@@ -544,6 +624,7 @@ def main() -> None:
                           "dashboard_visible": args.dashboard_visible,
                           "persistence": persistence},
         "metg50": observed_metg(granularity), "granularity_summary": granularity,
+        "latency_breakdown": latency_breakdown(results),
         "results": results, "warmup_results": warmup_results,
         "validity": {"valid_cases": sum(r["valid"] for r in results), "total_cases": len(results),
                      "invalid_cases": [{"label": r["label"], "errors": r["errors"]} for r in results if not r["valid"]],

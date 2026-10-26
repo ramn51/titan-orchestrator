@@ -14,6 +14,7 @@ final class SchedulerTelemetry {
     private final Deque<String> events = new ArrayDeque<>();
     private final Deque<String> dispatchPhases = new ArrayDeque<>();
     private final Deque<String> storeOperations = new ArrayDeque<>();
+    private final Deque<String> workerPhases = new ArrayDeque<>();
     private final AtomicLong dispatched = new AtomicLong(), completed = new AtomicLong(), failed = new AtomicLong();
     private final AtomicLong heartbeats = new AtomicLong(), missedHeartbeats = new AtomicLong();
     private final AtomicLong storeWriteFailures = new AtomicLong();
@@ -32,14 +33,30 @@ final class SchedulerTelemetry {
                 + ExecutionTimeline.quoted(kind) + ",\"ms\":" + durationNanos / 1_000_000.0 + "}");
         while (storeOperations.size() > limit) storeOperations.removeFirst();
     }
-    synchronized void dispatchPhase(long routeNs, long selectNs, long recordNs, long storeNs, long sendNs) {
+    synchronized void dispatchPhase(String jobId, long routeNs, long selectNs, long recordNs, long storeNs, long sendNs) {
         dispatchPhases.addLast("{\"at\":" + System.currentTimeMillis()
+                + ",\"job_id\":" + ExecutionTimeline.quoted(jobId)
                 + ",\"route\":" + routeNs / 1_000_000.0
                 + ",\"select\":" + selectNs / 1_000_000.0
                 + ",\"record\":" + recordNs / 1_000_000.0
                 + ",\"store\":" + storeNs / 1_000_000.0
                 + ",\"send\":" + sendNs / 1_000_000.0 + "}");
         while (dispatchPhases.size() > limit) dispatchPhases.removeFirst();
+    }
+
+    synchronized void workerPhase(String jobId, Map<String, Long> timing,
+                                  long callbackTransitMs, long callbackHandleNs,
+                                  long terminalPersistenceNs) {
+        workerPhases.addLast("{\"at\":" + System.currentTimeMillis()
+                + ",\"job_id\":" + ExecutionTimeline.quoted(jobId)
+                + ",\"worker_queue\":" + timing.getOrDefault("worker_queue_ns", 0L) / 1_000_000.0
+                + ",\"preprocess\":" + timing.getOrDefault("preprocess_ns", 0L) / 1_000_000.0
+                + ",\"process_startup\":" + timing.getOrDefault("process_startup_ns", 0L) / 1_000_000.0
+                + ",\"script\":" + timing.getOrDefault("script_ns", 0L) / 1_000_000.0
+                + ",\"callback_transit\":" + Math.max(0L, callbackTransitMs)
+                + ",\"callback_handle\":" + callbackHandleNs / 1_000_000.0
+                + ",\"terminal_persistence\":" + terminalPersistenceNs / 1_000_000.0 + "}");
+        while (workerPhases.size() > limit) workerPhases.removeFirst();
     }
 
     synchronized void event(String type, String details) {
@@ -108,7 +125,8 @@ final class SchedulerTelemetry {
         return "{\"resolution_seconds\":" + seconds + ",\"samples\":" + recent(resolution, since, bounded) + ",\"events\":"
                 + recent(events, since, bounded) + ",\"dispatch_phases\":"
                 + recent(dispatchPhases, since, bounded) + ",\"store_operations\":"
-                + recent(storeOperations, since, bounded) + "}";
+                + recent(storeOperations, since, bounded) + ",\"worker_phases\":"
+                + recent(workerPhases, since, bounded) + "}";
     }
     private static String recent(Deque<String> source, long since, int limit) {
         ArrayList<String> result = new ArrayList<>();

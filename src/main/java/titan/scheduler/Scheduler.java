@@ -28,6 +28,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.DelayQueue;
 import titan.TitanConfig;
 import titan.storage.TitanJRedisAdapter;
+import titan.network.ExecutionTimingEnvelope;
 
 /**
  * The main Scheduler class responsible for managing workers, dispatching jobs, and maintaining system state.
@@ -1132,7 +1133,7 @@ import titan.storage.TitanJRedisAdapter;
                             if (executionHistory.get(job.getId()) != record ||
                                     !runningJobs.containsKey(job.getId())) continue;
                         }
-                        telemetry.dispatchPhase(routedAt - cycleStarted, selectedAt - routedAt,
+                        telemetry.dispatchPhase(job.getId(), routedAt - cycleStarted, selectedAt - routedAt,
                                 recordedAt - selectedAt, storedAt - recordedAt,
                                 System.nanoTime() - storedAt);
                         jobEvent("[OK] Job Finished: " + response);
@@ -1265,6 +1266,8 @@ import titan.storage.TitanJRedisAdapter;
  * @param payload The callback string from the worker (e.g., "JOB-123|COMPLETED|Result: 5050").
  */
     public synchronized void handleJobCallback(String payload){
+        long callbackStarted = System.nanoTime();
+        long callbackReceivedAt = System.currentTimeMillis();
         // New workers identify their port so an old attempt cannot complete a retry on another worker.
         String[] parts = payload.split("\\|", 4);
         if (parts.length < 2) return;
@@ -1279,6 +1282,13 @@ import titan.storage.TitanJRedisAdapter;
             result = parts[3];
         } else if (parts.length > 3) result = parts[2] + "|" + parts[3];
 
+        Map<String, Long> workerTiming = Collections.emptyMap();
+        long callbackSentAt = callbackReceivedAt;
+        ExecutionTimingEnvelope.Parsed parsedTiming = ExecutionTimingEnvelope.parse(result);
+        result = parsedTiming.result();
+        workerTiming = parsedTiming.timings();
+        callbackSentAt = workerTiming.getOrDefault("callback_sent_at_ms", callbackReceivedAt);
+
         TaskExecution record = executionHistory.get(jobId);
         if (callbackPort != -1 && record != null && record.assignedWorker != null
                 && record.assignedWorker.port() != callbackPort) {
@@ -1288,6 +1298,7 @@ import titan.storage.TitanJRedisAdapter;
         Job job = runningJobs.remove(jobId);
         if (job != null && job.getStatus() == Job.Status.CANCELLED) return;
 
+        long terminalPersistenceNanos = 0L;
         if(record != null && job != null){
             // Release scheduler capacity before publishing the terminal status or
             // unlocking dependants. Otherwise a newly-ready child can observe its
@@ -1303,7 +1314,7 @@ import titan.storage.TitanJRedisAdapter;
             if(statusStr.equals("COMPLETED")){
 //                if(record.assignedWorker != null){
                     jobEvent("[ASYNC] Callback: Job " + jobId + " Finished.");
-                    completeJob(job, result, record);
+                    terminalPersistenceNanos = completeJob(job, result, record);
 
 //                    if(job != null) job.setStatus(Job.Status.COMPLETED);
 //                }
@@ -1314,6 +1325,12 @@ import titan.storage.TitanJRedisAdapter;
                 executionTimeline.finish(jobId, "FAILED", result);
                 handleJobFailure(job);
                 recordWorkerHistory(job, record);
+            }
+            if (!workerTiming.isEmpty()) {
+                telemetry.workerPhase(jobId, workerTiming,
+                        callbackReceivedAt - callbackSentAt,
+                        System.nanoTime() - callbackStarted,
+                        terminalPersistenceNanos);
             }
         } else {
             System.err.println("[WARN] Received callback for unknown or inactive Job ID: " + jobId);
@@ -1331,11 +1348,12 @@ import titan.storage.TitanJRedisAdapter;
  * @param result The result string returned by the worker.
  * @param record The {@link TaskExecution} record associated with this job's execution.
  */
-    private void completeJob(Job job, String result, TaskExecution record){
+    private long completeJob(Job job, String result, TaskExecution record){
         record.complete(result);
         telemetry.completed();
         executionTimeline.finish(job.getId(), "COMPLETED", "");
 
+        long persistenceStarted = System.nanoTime();
         if (job != null) {
             job.setStatus(Job.Status.COMPLETED);
             safeRedisSet("job:" + job.getId() + ":status", "COMPLETED");
@@ -1344,6 +1362,7 @@ import titan.storage.TitanJRedisAdapter;
             // Remove from active set as it is completed.
             safeRedisSrem("system:active_jobs", job.getId());
         }
+        long persistenceNanos = System.nanoTime() - persistenceStarted;
 
         if (record.assignedWorker != null) {
             String wKey = String.valueOf(record.assignedWorker.port());
@@ -1354,6 +1373,7 @@ import titan.storage.TitanJRedisAdapter;
             propagateAffinity(job.getId(), wKey);
         }
         unlockChildren(job.getId());
+        return persistenceNanos;
     }
 
     private void recordWorkerHistory(Job job, TaskExecution record) {
