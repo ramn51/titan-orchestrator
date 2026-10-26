@@ -90,6 +90,7 @@ def run(repo: Path, output: Path) -> dict:
     (workspace / "root.py").write_text("print('mcp-root')\n", encoding="utf-8")
     (workspace / "child.py").write_text("print('mcp-child')\n", encoding="utf-8")
     (workspace / "long.py").write_text("import time\nprint('started', flush=True)\ntime.sleep(30)\n", encoding="utf-8")
+    (workspace / "fail.py").write_text("print('intentional failure', flush=True)\nraise SystemExit(3)\n", encoding="utf-8")
     service_port = 19000 + int(stamp[-3:]) % 500
     (workspace / "service.py").write_text(
         f"from http.server import ThreadingHTTPServer,SimpleHTTPRequestHandler\n"
@@ -103,6 +104,8 @@ def run(repo: Path, output: Path) -> dict:
     try:
         tools = client.request("tools/list", {})["tools"]
         evidence["checks"]["tool_count"] = len(tools)
+        if len(tools) != 30:
+            raise RuntimeError(f"Expected 30 tools, received {len(tools)}")
         cluster = client.tool("titan_cluster_status")
         if cluster["active_workers"] < 1:
             raise RuntimeError("Live smoke requires at least one worker")
@@ -113,17 +116,36 @@ def run(repo: Path, output: Path) -> dict:
             {"id": "mcp_child_" + stamp, "script_path": str(workspace / "child.py"),
              "parents": ["mcp_root_" + stamp]},
         ]
+        validation = client.tool("titan_validate_dag", {"name": "mcp_chain_" + stamp, "jobs": jobs})
+        if not validation["valid"]:
+            raise RuntimeError(f"Live DAG did not pass dry-run validation: {validation}")
+        capabilities = client.tool("titan_get_capabilities")
+        if "GENERAL" not in capabilities["capabilities"]:
+            raise RuntimeError("Live worker did not advertise GENERAL capability")
+        evidence["checks"]["validation_and_capabilities"] = {
+            "validation": validation, "capabilities": capabilities,
+        }
         submitted = client.tool("titan_submit_dag", {
             "name": "mcp_chain_" + stamp, "jobs": jobs,
             "agent": {"run_id": "mcp-agent-" + stamp, "run_name": "MCP live smoke",
                       "stage": "CHAIN", "stage_order": 0},
         })
         final_id = "DAG-mcp_child_" + stamp
-        status, transitions = wait_status(client, final_id, {"COMPLETED", "FAILED", "DEAD"})
+        waited = client.tool("titan_wait_for_jobs", {"job_ids": [final_id], "timeout_seconds": 30})
+        status = waited["states"][final_id]
+        transitions = waited["transitions"][final_id]
         if status != "COMPLETED":
             raise RuntimeError(f"Chain failed with {status}")
         evidence["checks"]["chain"] = {"submission": submitted, "transitions": transitions,
                                                "logs": client.tool("titan_get_job_logs", {"job_id": final_id})}
+        dag = client.tool("titan_get_dag", {"name": "mcp_chain_" + stamp})
+        if dag["status"] != "COMPLETED" or dag["total"] != 2:
+            raise RuntimeError(f"DAG projection mismatch: {dag}")
+        runs = client.tool("titan_list_agent_runs")
+        run = client.tool("titan_get_agent_run", {"run_id": "mcp-agent-" + stamp})
+        if run["status"] != "COMPLETED" or not any(item["id"] == run["id"] for item in runs["runs"]):
+            raise RuntimeError("Agent-run projection mismatch")
+        evidence["checks"]["dag_and_agent_projection"] = {"dag": dag, "agent_run": run}
 
         client.tool("titan_kv_put", {"key": "smoke:" + stamp, "value": "roundtrip"})
         kv = client.tool("titan_kv_get", {"key": "smoke:" + stamp})["value"]
@@ -158,6 +180,14 @@ def run(repo: Path, output: Path) -> dict:
         ]})
         gate = "DAG-hitl-gate-" + review
         wait_status(client, gate, {"RUNNING"}, timeout=30)
+        approval_deadline = time.monotonic() + 15
+        while True:
+            pending = client.tool("titan_list_pending_approvals")
+            if any(item["id"] == gate for item in pending["approvals"]):
+                break
+            if time.monotonic() >= approval_deadline:
+                raise RuntimeError(f"HITL gate did not appear in pending approvals: {pending}")
+            time.sleep(0.25)
         decision_deadline = time.monotonic() + 15
         while True:
             decision = client.try_tool("titan_hitl_decide", {"gate_id": gate, "decision": "APPROVED"})
@@ -170,6 +200,15 @@ def run(repo: Path, output: Path) -> dict:
         if final != "COMPLETED":
             raise RuntimeError(f"HITL downstream ended as {final}")
         evidence["checks"]["hitl"] = "PASS"
+
+        failed_name = "mcp_failed_" + stamp
+        client.tool("titan_submit_job", {"job": {"id": failed_name,
+                    "script_path": str(workspace / "fail.py")}})
+        failed, _ = wait_status(client, "DAG-" + failed_name, {"FAILED", "DEAD"}, timeout=30)
+        failures = client.tool("titan_list_failures", {"since_ms": evidence["started_at"], "limit": 50})
+        if not any(item.get("job_id") == "DAG-" + failed_name for item in failures["failures"]):
+            raise RuntimeError(f"Intentional failure missing from failure summary: {failures}")
+        evidence["checks"]["failure_summary"] = {"terminal": failed, "summary": failures}
 
         service_name = "mcp_service_" + stamp
         service_id = "DAG-" + service_name

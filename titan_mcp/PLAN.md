@@ -47,9 +47,9 @@ Tool schemas, environment with secrets removed, exact commands, Git/JAR hashes, 
 ## Status on 2026-10-25
 
 - Implemented as new files under `titan_mcp`; no engine, Store, worker, scheduler, dashboard, wire-format or opcode changes.
-- 22 tools exposed through read-only and operator profiles.
-- 17 dependency-free contract/protocol tests pass.
+- 30 tools exposed through read-only and operator profiles.
+- 20 dependency-free contract/protocol and scale tests pass, including a 2,000-node DAG validation case.
 - Two-VM live smoke passes with one master/Store VM and one worker VM.
-- Live checks passed for dependency execution, logs, namespaced KV, artifact SHA-256, cancellation, HITL, service readiness/resolution/stop and timeline visibility.
+- Live checks passed for dry-run validation, capability discovery, dependency execution, DAG reconstruction, agent-stage grouping, pending approval discovery, bounded waiting, failure summaries, logs, namespaced KV, artifact SHA-256, cancellation, HITL, service readiness/resolution/stop and timeline visibility.
 - Post-run state was idle: empty queue, no active job and no remaining service endpoint.
 - Pending before a production claim: Inspector/two-host compatibility, 1000-task load, full disconnection/failure campaign and Windows/macOS/Linux live matrix.

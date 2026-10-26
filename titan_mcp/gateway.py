@@ -8,6 +8,7 @@ from typing import Any
 
 from titan_sdk import TitanClient, TitanJob
 from titan_sdk import titan_sdk as sdk_module
+from titan_sdk.dag_journal import current_runs
 
 from .config import McpConfig
 
@@ -43,6 +44,17 @@ class TitanGateway:
         if not isinstance(value, (dict, list)):
             raise RuntimeError("Titan stats response must be a JSON object or array")
         return value
+
+    def dag_records(self) -> dict[str, Any]:
+        """Read SDK-persisted DAG metadata without introducing an engine API."""
+        manifest = os.path.abspath(os.environ.get("TITAN_DAG_MANIFEST", ".titan_dag_manifest.json"))
+        value = current_runs(manifest)
+        if not isinstance(value, dict):
+            raise RuntimeError("Titan DAG journal returned an invalid catalog")
+        return value
+
+    def hitl_status(self, gate_id: str) -> str:
+        return self._checked(self.client.store_get("titan:hitl:status:" + gate_id))
 
     def submit_job(self, spec: dict[str, Any]) -> str:
         job = self._job(spec)

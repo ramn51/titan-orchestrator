@@ -23,10 +23,12 @@ On Windows, use semicolon-separated allowed roots. On Unix, use colon-separated 
 
 ## Tool groups
 
-- Observe: cluster status, workers, services, queue, jobs, logs, timeline, metrics and span history.
+- Observe: cluster status, workers, capabilities, services, queue, jobs, DAGs, agent runs, pending approvals, logs, timeline, metrics, span history, bounded job waits and failure summaries.
 - Execute: single jobs and DAGs, including services and agent-stage metadata.
 - Control: cancellation, service resolution, service stop and HITL decisions.
 - Data: guarded asset transfer and KV data under `user:mcp:` by default.
+
+`titan_validate_dag` performs a side-effect-free check of identifiers, files, parent references, cycles and currently available capabilities before submission.
 
 The server intentionally omits worker termination, stats deletion and unrestricted internal Store keys. Local paths are canonicalized, bounded by size and limited to `TITAN_MCP_ALLOWED_ROOTS`.
 
@@ -58,7 +60,7 @@ Run the dependency-free contract suite:
 python -m unittest discover -s titan_mcp/tests -v
 ```
 
-The two-VM live smoke gate passed on 2026-10-25. It initialized over stdio, inspected the cluster, submitted a dependency chain, verified logs, round-tripped namespaced Store data and a SHA-256 checked artifact, cancelled a running job, approved a HITL gate, deployed/resolved/stopped a service and confirmed timeline visibility. Run it with:
+The expanded two-VM live smoke gate passed on 2026-10-25. It initialized over stdio, advertised 30 tools, validated and submitted a dependency chain, reconstructed the DAG and agent run, discovered a pending HITL gate, verified capability and failure summaries, exercised bounded waiting, checked logs, round-tripped namespaced Store data and a SHA-256 checked artifact, cancelled a running job, approved the gate, deployed/resolved/stopped a service and confirmed timeline visibility. Run it with:
 
 ```bash
 TITAN_HOST=127.0.0.1 TITAN_PORT=9090 \

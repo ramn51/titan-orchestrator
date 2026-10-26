@@ -21,15 +21,33 @@ class FakeGateway:
         if view.startswith("queue"):
             return {"counts": {"ready": 1}, "jobs": [{"id": "DAG-a"}]}
         if view.startswith("timeline"):
-            return {"spans": [{"job_id": "DAG-a", "status": "COMPLETED"}]}
+            return [{"job_id": "DAG-failed", "status": "FAILED", "reason": "boom",
+                     "started_at": 10, "ended_at": 20},
+                    {"job_id": "DAG-a", "status": "COMPLETED", "started_at": 1, "ended_at": 2}]
         if view.startswith("metrics"):
             return {"samples": [{"queue_depth": 0}]}
         if view.startswith("history"):
             return {"spans": []}
         return {"active_workers": 1, "queue_size": 0,
-                "workers": [{"port": 8080, "load": "0/4", "services": ["DAG-api"]}],
-                "dag_jobs": {"DAG-a": {"status": "COMPLETED"}},
+                "workers": [{"port": 8080, "load": "1/4", "capabilities": "[GENERAL, GPU]",
+                             "services": ["DAG-api"]}],
+                "dag_jobs": {"DAG-a": {"status": "COMPLETED", "worker": "worker:8080"},
+                             "DAG-hitl-gate-a": {"status": "RUNNING"}},
                 "execution_spans": [{"job_id": "DAG-a", "status": "COMPLETED"}]}
+
+    def dag_records(self):
+        return {"agent_stage": {"name": "agent_stage", "run_ts": 100, "jobs": {
+            "DAG-a": {"dag": "agent_stage", "deps": [],
+                      "agent_run_id": "agent-1", "agent_run_name": "Agent one",
+                      "agent_stage": "PLAN", "agent_stage_order": 0,
+                      "spec": {"script": "job.py"}},
+            "DAG-hitl-gate-a": {"dag": "agent_stage", "deps": ["DAG-a"],
+                                "agent_run_id": "agent-1", "agent_run_name": "Agent one",
+                                "agent_stage": "PLAN", "agent_stage_order": 0,
+                                "spec": {"hitl_message": "Review output"}},
+        }}}
+
+    def hitl_status(self, gate_id): return "WAITING"
 
     def status(self, job_id): return "COMPLETED"
     def logs(self, job_id): return "ok\n"
@@ -81,7 +99,7 @@ class TitanMcpTests(unittest.TestCase):
         second = self.call(server, 3, "tools/list")["result"]["tools"]
         self.assertEqual(first, second)
         self.assertEqual(sorted(item["name"] for item in first), [item["name"] for item in first])
-        self.assertGreaterEqual(len(first), 21)
+        self.assertEqual(30, len(first))
 
     def test_read_only_profile_observes_but_rejects_mutation(self):
         server = self.server()
@@ -103,10 +121,83 @@ class TitanMcpTests(unittest.TestCase):
         server = self.server()
         status = self.call(server, 1, "tools/call", {"name": "titan_cluster_status", "arguments": {}})
         body = status["result"]["structuredContent"]
-        self.assertEqual({"COMPLETED": 1}, body["job_counts"])
+        self.assertEqual({"COMPLETED": 1, "RUNNING": 1}, body["job_counts"])
         self.assertEqual([{"id": "DAG-api", "worker_port": 8080}], body["services"])
         services = self.call(server, 2, "tools/call", {"name": "titan_list_services", "arguments": {}})
         self.assertEqual(1, services["result"]["structuredContent"]["count"])
+
+    def test_dag_agent_approval_and_capability_projections(self):
+        server = self.server()
+        dag = self.call(server, 1, "tools/call", {
+            "name": "titan_get_dag", "arguments": {"name": "agent_stage"}
+        })["result"]["structuredContent"]
+        self.assertEqual(2, dag["total"])
+        self.assertEqual(["DAG-a"], dag["roots"])
+        self.assertEqual(["DAG-hitl-gate-a"], dag["leaves"])
+        runs = self.call(server, 2, "tools/call", {
+            "name": "titan_list_agent_runs", "arguments": {}
+        })["result"]["structuredContent"]
+        self.assertEqual("agent-1", runs["runs"][0]["id"])
+        run = self.call(server, 3, "tools/call", {
+            "name": "titan_get_agent_run", "arguments": {"run_id": "agent-1"}
+        })["result"]["structuredContent"]
+        self.assertEqual("PLAN", run["stages"][0]["label"])
+        self.assertEqual(1, len(run["dags"]))
+        approvals = self.call(server, 4, "tools/call", {
+            "name": "titan_list_pending_approvals", "arguments": {}
+        })["result"]["structuredContent"]
+        self.assertEqual("Review output", approvals["approvals"][0]["message"])
+        capabilities = self.call(server, 5, "tools/call", {
+            "name": "titan_get_capabilities", "arguments": {}
+        })["result"]["structuredContent"]
+        self.assertEqual({"workers": 1, "slots": 4, "free_slots": 3},
+                         capabilities["capabilities"]["GPU"])
+
+    def test_validate_wait_and_failure_summary(self):
+        server = self.server()
+        valid_jobs = [
+            {"id": "root", "script_path": str(self.script)},
+            {"id": "child", "script_path": str(self.script), "parents": ["root"]},
+        ]
+        validation = self.call(server, 1, "tools/call", {
+            "name": "titan_validate_dag", "arguments": {"name": "valid", "jobs": valid_jobs}
+        })["result"]["structuredContent"]
+        self.assertTrue(validation["valid"])
+        self.assertEqual(1, validation["edges"])
+        cyclic = [
+            {"id": "a", "script_path": str(self.script), "parents": ["b"]},
+            {"id": "b", "script_path": str(self.script), "parents": ["a"]},
+        ]
+        validation = self.call(server, 2, "tools/call", {
+            "name": "titan_validate_dag", "arguments": {"name": "cycle", "jobs": cyclic}
+        })["result"]["structuredContent"]
+        self.assertFalse(validation["valid"])
+        self.assertIn("DAG contains a dependency cycle", validation["errors"])
+        waited = self.call(server, 3, "tools/call", {
+            "name": "titan_wait_for_jobs", "arguments": {"job_ids": ["DAG-a"], "timeout_seconds": 1}
+        })["result"]["structuredContent"]
+        self.assertFalse(waited["timed_out"])
+        self.assertEqual(["DAG-a"], waited["terminal"])
+
+    def test_validate_large_chain(self):
+        server = self.server()
+        jobs = []
+        for index in range(2000):
+            job = {"id": f"node-{index}", "script_path": str(self.script)}
+            if index:
+                job["parents"] = [f"node-{index - 1}"]
+            jobs.append(job)
+        validation = self.call(server, 1, "tools/call", {
+            "name": "titan_validate_dag",
+            "arguments": {"name": "large-chain", "jobs": jobs},
+        })["result"]["structuredContent"]
+        self.assertTrue(validation["valid"])
+        self.assertEqual(2000, validation["jobs"])
+        self.assertEqual(1999, validation["edges"])
+        failures = self.call(server, 4, "tools/call", {
+            "name": "titan_list_failures", "arguments": {"limit": 10}
+        })["result"]["structuredContent"]
+        self.assertEqual("DAG-failed", failures["failures"][0]["job_id"])
 
     def test_operator_submits_validated_dag(self):
         server = self.server(self.operator)
