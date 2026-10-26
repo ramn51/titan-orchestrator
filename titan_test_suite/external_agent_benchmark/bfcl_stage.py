@@ -3,8 +3,14 @@ from __future__ import annotations
 
 import base64
 import json
-from pathlib import Path
+import os
+import socket
+import struct
 import sys
+
+VERSION = 1
+OP_KV_SET = 0x60
+OP_KV_GET = 0x61
 
 
 def safe(value: str) -> str:
@@ -22,15 +28,54 @@ def canonical(call: dict) -> tuple[str, str]:
     return call["name"], json.dumps(call["arguments"], sort_keys=True, separators=(",", ":"))
 
 
+def recv_exact(stream: socket.socket, size: int) -> bytes:
+    data = bytearray()
+    while len(data) < size:
+        chunk = stream.recv(size - len(data))
+        if not chunk:
+            raise ConnectionError("master closed the connection early")
+        data.extend(chunk)
+    return bytes(data)
+
+
+def request(opcode: int, payload: str) -> str:
+    host = os.environ.get("TITAN_HOST", "127.0.0.1")
+    port = int(os.environ.get("TITAN_PORT", "9090"))
+    encoded = payload.encode("utf-8")
+    with socket.create_connection((host, port), timeout=10) as stream:
+        stream.sendall(struct.pack(">BBBBI", VERSION, opcode, 0, 0, len(encoded)) + encoded)
+        version, _, _, _, length = struct.unpack(">BBBBI", recv_exact(stream, 8))
+        if version != VERSION:
+            raise RuntimeError(f"unexpected protocol version: {version}")
+        return recv_exact(stream, length).decode("utf-8") if length else ""
+
+
+def result_key(run_id: str, node: str) -> str:
+    return f"agent:{run_id}:{safe(node)}"
+
+
+def load_result(run_id: str, node: str) -> dict:
+    value = request(OP_KV_GET, result_key(run_id, node))
+    if not value or value.startswith("ERROR"):
+        raise RuntimeError(f"missing upstream result for {node}: {value}")
+    return json.loads(value)
+
+
+def save_result(run_id: str, node: str, value: dict) -> None:
+    response = request(
+        OP_KV_SET,
+        result_key(run_id, node) + "|" + json.dumps(value, separators=(",", ":")),
+    )
+    if response != "OK":
+        raise RuntimeError("could not persist BFCL stage result: " + response)
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 4:
         print("usage: bfcl_stage.py <run-id> <operation> <node> <payload-b64>", file=sys.stderr)
         return 2
     run_id, operation, node = map(safe, argv[:3])
     payload = decode(argv[3])
-    root = Path("external_agent_benchmark") / run_id
-    root.mkdir(parents=True, exist_ok=True)
-
     if operation == "plan":
         result = {"question": payload["question"], "calls": payload["calls"],
                   "planner": payload["planner"]}
@@ -62,8 +107,7 @@ def main(argv: list[str]) -> int:
         else:
             raise ValueError(f"no benchmark mock implementation for {call['name']}")
     elif operation == "verify":
-        observed = [json.loads((root / f"{safe(name)}.json").read_text(encoding="utf-8"))["call"]
-                    for name in payload["sources"]]
+        observed = [load_result(run_id, name)["call"] for name in payload["sources"]]
         expected = payload["expected"]
         valid = sorted(map(canonical, observed)) == sorted(map(canonical, expected))
         result = {"case_id": payload["case_id"], "expected_calls": expected,
@@ -76,7 +120,7 @@ def main(argv: list[str]) -> int:
             raise RuntimeError("observed function calls do not match BFCL ground truth")
     else:
         raise ValueError(f"unsupported operation: {operation}")
-    (root / f"{node}.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    save_result(run_id, node, result)
     print("BFCL_STAGE " + json.dumps({"operation": operation, "node": node}, sort_keys=True), flush=True)
     return 0
 
