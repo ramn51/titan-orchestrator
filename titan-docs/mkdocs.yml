@@ -70,6 +70,9 @@ nav:
       - Human Approval Gates: examples/hitl.md
       - Dagster Integration: examples/dagster.md
   - 🤖 MCP Control Plane: integrations/mcp.md
+  - 📊 Benchmarking:
+      - Benchmark Overview: benchmarks/index.md
+      - Interactive Report: benchmarks/titan-benchmark-report.html
   - 📚 API and SDK Reference: 
       - Titan SDK: reference/sdk.md
       - Java Engine API: javadocs/docs/index.html

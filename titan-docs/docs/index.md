@@ -17,6 +17,9 @@ It allows you to deploy standalone services, execute individual batch jobs, or d
 !!! info "MCP control plane"
     Titan can be operated by MCP-compatible agents through an optional, dependency-free sidecar. See the **[MCP Control Plane](integrations/mcp.md)** for its 30 tools, safety model, verification status and agentic use cases.
 
+!!! info "Benchmark portfolio"
+    Titan's correctness, distributed execution, recovery and agentic evidence is summarized in **[Benchmarking Titan](benchmarks/index.md)**, with a linked interactive report containing the complete run details and visualizations.
+
 ![Titan Dashboard](screenshots/UI_Screenshot.png)
 
 ---
