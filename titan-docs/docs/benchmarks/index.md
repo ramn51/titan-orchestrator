@@ -12,7 +12,7 @@ Titan's benchmark portfolio evaluates four separate questions:
 The report is the evidence source. This page explains why the measurements matter to Titan and how to interpret them.
 
 !!! note "Report snapshot"
-    The linked portfolio contains benchmark evidence recorded through October 11, 2026. Newer MCP verification is documented separately in the [MCP Control Plane](../integrations/mcp.md).
+    The linked portfolio contains benchmark evidence recorded through October 26, 2026. MCP verification is documented separately in the [MCP Control Plane](../integrations/mcp.md).
 
 !!! info "Living evidence portfolio"
     The report evolves as Titan is tested on additional workflows, topologies and failure cases. Headline totals can increase or be refined when new runs are verified; every published snapshot states its evidence cutoff so its numbers remain interpretable.
@@ -21,7 +21,7 @@ The report is the evidence source. This page explains why the measurements matte
 
 | Evidence | Recorded result | What it establishes |
 | --- | ---: | --- |
-| Selected workflow ledger | 56,432 jobs | A conservative count of non-overlapping WfCommons evidence |
+| Selected evidence ledger | 59,504 jobs | A conservative count of non-overlapping workflow and measured microbenchmark evidence |
 | Dependency edges | 129,596 | Dependency release was exercised substantially beyond small examples |
 | Selected WfCommons DAG runs | 44 | Repeated coverage across multiple scientific graph families |
 | Workflow families | 4 | Montage, Seismology, SoyKB and 1000Genome |
@@ -84,6 +84,20 @@ This topology adds real worker-host distribution. It covers controlled WfCommons
 
 Numbers from the two topologies are not combined. A fair comparison requires the same graph, surrogate duration, runtime version, worker layout and hardware.
 
+### Controlled GCP task granularity
+
+The two distributed layouts were also tested with the same logarithmic duration sweep: 32 independent tasks at 10, 20, 50, 100, 200, 500, 1000 and 2000 ms, with one excluded warm-up and five measured passes per duration.
+
+| Result | Two VMs | Three VMs |
+| --- | ---: | ---: |
+| Valid measured DAGs | 40/40 | 40/40 |
+| Worker hosts | 1 | 2 |
+| Advertised slots | 4 | 8 |
+| METG(50) | 500 ms | 500 ms |
+| Peak median throughput | 7.75 tasks/s | 11.48 tasks/s |
+
+Adding the second worker host improved median throughput by **1.47×** across the eight durations. The gain ranged from **1.26× to 1.92×** and was strongest for the longer tasks. Every three-VM pass placed work on both worker hosts. This establishes a controlled distributed capacity benefit while showing that additional capacity does not by itself move the 50% efficiency boundary below 500 ms.
+
 ## Performance interpretation
 
 Observed throughput ranges from 5.7 to 16 tasks per second across workflow shapes and configurations.
@@ -98,6 +112,17 @@ For Titan, the current performance evidence means:
 - Extremely short tasks expose orchestration overhead more strongly than scientific tasks lasting seconds or minutes.
 
 The report keeps performance separate from correctness. A slower completed run can still be strong correctness evidence.
+
+### Task-duration protocol
+
+The current granularity sweep uses one pinned worker with four slots and 32 tasks per duration. Every logarithmic duration has one excluded warm-up followed by five measured passes. The report gives:
+
+- aggregate queue and execution p50, p95 and p99 across the measured task spans;
+- median, minimum, maximum, standard deviation and coefficient of variation across passes;
+- a deterministic bootstrap 95% confidence interval for each pass-level median;
+- correctness checks for terminal state, dependency order, duplicate attempts and worker count.
+
+On the single-machine configuration, the five-pass median METG(50) is **1000 ms**. The 500 ms point has 49.6% median scheduler-window efficiency and the 1000 ms point has 66.5%. On both controlled GCP layouts, METG(50) is **500 ms**. Python process launch remains part of every measured execution path.
 
 ## Recovery and fault injection
 
