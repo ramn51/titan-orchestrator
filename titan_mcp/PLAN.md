@@ -52,4 +52,5 @@ Tool schemas, environment with secrets removed, exact commands, Git/JAR hashes, 
 - Two-VM live smoke passes with one master/Store VM and one worker VM.
 - Live checks passed for dry-run validation, capability discovery, dependency execution, DAG reconstruction, agent-stage grouping, pending approval discovery, bounded waiting, failure summaries, logs, namespaced KV, artifact SHA-256, cancellation, HITL, service readiness/resolution/stop and timeline visibility.
 - Post-run state was idle: empty queue, no active job and no remaining service endpoint.
-- Pending before a production claim: Inspector/two-host compatibility, 1000-task load, full disconnection/failure campaign and Windows/macOS/Linux live matrix.
+- Official MCP Inspector CLI compatibility passes for initialization, all 30 advertised schemas and read-only mutation rejection.
+- Pending before a production claim: two additional independent-host compatibility checks, 1000-task load, full disconnection/failure campaign and Windows/macOS/Linux live matrix.

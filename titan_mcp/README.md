@@ -67,4 +67,4 @@ TITAN_HOST=127.0.0.1 TITAN_PORT=9090 \
 python -m titan_mcp.tests.live_smoke --repo . --output evidence.json
 ```
 
-Remaining release gates are MCP Inspector compatibility, a second independent MCP host, the full fault campaign, a 1000-task submission and cross-platform live runs.
+The official MCP Inspector CLI passed initialization, schema discovery for all 30 tools and read-only mutation rejection on 2026-10-25. Remaining release gates are two additional independent MCP hosts, the full fault campaign, a 1000-task submission and cross-platform live runs.
