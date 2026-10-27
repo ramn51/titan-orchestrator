@@ -1,6 +1,6 @@
 from titan_test_suite.task_granularity_benchmark.runner import (
-    TaskSpec, critical_path_ms, make_graph, max_concurrency, observed_metg, render_report,
-    summarize_case,
+    TaskSpec, bootstrap_median_ci, critical_path_ms, make_graph, max_concurrency,
+    median_rows, observed_metg, percentile, render_report, summarize_case,
 )
 
 
@@ -48,9 +48,35 @@ def test_metg_returns_first_fully_valid_threshold():
     assert result["previous_tested_ms"] == 10
 
 
+def test_percentiles_use_consistent_linear_interpolation():
+    values = [0, 10, 20, 30]
+    assert percentile(values, .50) == 15
+    assert round(percentile(values, .95), 6) == 28.5
+    assert round(percentile(values, .99), 6) == 29.7
+    assert bootstrap_median_ci([1, 2, 3, 4, 5]) == [1.0, 5.0]
+
+
+def test_aggregate_reports_tail_latency_and_variability():
+    cases = []
+    for pass_index, throughput in enumerate((8.0, 10.0, 12.0), 1):
+        cases.append({"suite": "granularity", "requested_duration_ms": 100,
+                      "valid": True, "efficiency": .5, "end_to_end_efficiency": .4,
+                      "execution_window_seconds": 3.2, "throughput_tasks_per_second": throughput,
+                      "queue_ms_samples": [pass_index, pass_index + 10],
+                      "execution_ms_samples": [100, 110]})
+    row = median_rows(cases, "granularity", "requested_duration_ms")[0]
+    assert row["passes"] == 3
+    assert row["queue_p50_ms"] == 7
+    assert row["queue_p99_ms"] > row["queue_p95_ms"]
+    assert row["execution_p99_ms"] == 110
+    assert row["variability"]["throughput"]["min"] == 8
+    assert row["variability"]["throughput"]["max"] == 12
+
+
 def test_report_supports_auxiliary_only_run(tmp_path):
     summary = {"granularity_summary": [], "metg50": observed_metg([]), "results": [],
-               "configuration": {"configured_workers": 1, "slots_per_worker": 4},
+               "configuration": {"configured_workers": 1, "slots_per_worker": 4,
+                                 "passes": 5, "warmup_passes": 1},
                "source": {"branch": "test", "commit": "0" * 40},
                "validity": {}, "generated_at": "now"}
     destination = tmp_path / "report.html"

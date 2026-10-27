@@ -19,7 +19,10 @@ import json
 import math
 import os
 from pathlib import Path
+import random
+import socket
 import statistics
+import struct
 import sys
 import time
 from typing import Iterable
@@ -29,6 +32,93 @@ sys.path.insert(0, str(REPO))
 from titan_sdk.titan_sdk import TitanClient, TitanJob  # noqa: E402
 
 TERMINAL = {"COMPLETED", "FAILED", "CANCELLED"}
+OP_STATS_JSON = 0x09
+
+
+def percentile(values: Iterable[float], quantile: float) -> float | None:
+    """Return an R-7/NumPy-style linearly interpolated percentile."""
+    ordered = sorted(float(value) for value in values)
+    if not ordered:
+        return None
+    if not 0 <= quantile <= 1:
+        raise ValueError("quantile must be between 0 and 1")
+    position = (len(ordered) - 1) * quantile
+    lower = math.floor(position)
+    upper = math.ceil(position)
+    if lower == upper:
+        return ordered[lower]
+    return ordered[lower] + (ordered[upper] - ordered[lower]) * (position - lower)
+
+
+def titan_stats_query(payload: str, host: str = "127.0.0.1", port: int = 9090) -> dict:
+    """Read one bounded projection through Titan's existing stats opcode."""
+    body = payload.encode("utf-8")
+    with socket.create_connection((host, port), timeout=5) as connection:
+        connection.sendall(struct.pack(">BBBBI", 1, OP_STATS_JSON, 0, 0, len(body)) + body)
+        header = b""
+        while len(header) < 8:
+            chunk = connection.recv(8 - len(header))
+            if not chunk: raise OSError("incomplete Titan response header")
+            header += chunk
+        _, _, _, _, length = struct.unpack(">BBBBI", header)
+        response = b""
+        while len(response) < length:
+            chunk = connection.recv(length - len(response))
+            if not chunk: raise OSError("incomplete Titan response payload")
+            response += chunk
+    return json.loads(response.decode("utf-8"))
+
+
+def phase_samples(metrics: dict, expected: set[str], started_at: int, ended_at: int) -> dict:
+    dispatch = [item for item in metrics.get("dispatch_phases") or []
+                if item.get("job_id") in expected and int(item.get("at") or 0) <= ended_at]
+    worker = [item for item in metrics.get("worker_phases") or []
+              if item.get("job_id") in expected and int(item.get("at") or 0) <= ended_at]
+    store = [item for item in metrics.get("store_operations") or []
+             if started_at <= int(item.get("at") or 0) <= ended_at]
+    result = {name + "_ms_samples": [float(item.get(field) or 0) for item in source]
+              for name, field, source in (
+                  ("dispatch_route", "route", dispatch), ("worker_selection", "select", dispatch),
+                  ("dispatch_record", "record", dispatch), ("dispatch_store", "store", dispatch),
+                  ("dispatch_rpc", "send", dispatch), ("worker_queue", "worker_queue", worker),
+                  ("preprocess", "preprocess", worker), ("process_startup", "process_startup", worker),
+                  ("script_execution", "script", worker), ("callback_transit", "callback_transit", worker),
+                  ("callback_handle", "callback_handle", worker),
+                  ("terminal_persistence", "terminal_persistence", worker))}
+    result["store_read_ms_samples"] = [float(item.get("ms") or 0) for item in store
+                                       if item.get("kind") == "read"]
+    result["store_write_ms_samples"] = [float(item.get("ms") or 0) for item in store
+                                        if item.get("kind") == "write"]
+    return result
+
+
+def bootstrap_median_ci(values: Iterable[float], confidence: float = .95,
+                        samples: int = 10_000, seed: int = 20261026) -> list[float] | None:
+    """Deterministic percentile-bootstrap confidence interval for a median."""
+    observed = [float(value) for value in values]
+    if not observed:
+        return None
+    rng = random.Random(seed)
+    estimates = [statistics.median(rng.choices(observed, k=len(observed)))
+                 for _ in range(samples)]
+    tail = (1 - confidence) / 2
+    return [round(percentile(estimates, tail), 6),
+            round(percentile(estimates, 1 - tail), 6)]
+
+
+def variability(values: Iterable[float]) -> dict:
+    observed = [float(value) for value in values]
+    median = statistics.median(observed)
+    mean = statistics.mean(observed)
+    standard_deviation = statistics.stdev(observed) if len(observed) > 1 else 0.0
+    return {
+        "median": round(median, 6),
+        "min": round(min(observed), 6),
+        "max": round(max(observed), 6),
+        "standard_deviation": round(standard_deviation, 6),
+        "coefficient_of_variation": round(standard_deviation / mean, 6) if mean else 0.0,
+        "median_bootstrap_95_ci": bootstrap_median_ci(observed),
+    }
 
 
 @dataclass(frozen=True)
@@ -198,9 +288,13 @@ def summarize_case(label: str, suite: str, pattern: str, specs: list[TaskSpec], 
         "end_to_end_efficiency": round(min(wall_efficiency, 1.0), 6),
         "slot_utilization": round(min(slot_utilization, 1.0), 6),
         "throughput_tasks_per_second": round(len(measured) / window_seconds, 3) if window_seconds else 0,
-        "queue_ms_p50": round(statistics.median(queue_ms), 3) if queue_ms else None,
-        "queue_ms_p95": round(sorted(queue_ms)[min(len(queue_ms) - 1, math.ceil(.95 * len(queue_ms)) - 1)], 3) if queue_ms else None,
-        "execution_ms_p50": round(statistics.median(execution_ms), 3) if execution_ms else None,
+        "queue_ms_p50": round(percentile(queue_ms, .50), 3) if queue_ms else None,
+        "queue_ms_p95": round(percentile(queue_ms, .95), 3) if queue_ms else None,
+        "queue_ms_p99": round(percentile(queue_ms, .99), 3) if queue_ms else None,
+        "execution_ms_p50": round(percentile(execution_ms, .50), 3) if execution_ms else None,
+        "execution_ms_p95": round(percentile(execution_ms, .95), 3) if execution_ms else None,
+        "execution_ms_p99": round(percentile(execution_ms, .99), 3) if execution_ms else None,
+        "queue_ms_samples": queue_ms, "execution_ms_samples": execution_ms,
         "max_concurrency": max_concurrency(all_spans), "workers": worker_ids,
         "configured_workers": configured_workers, "slots_per_worker": slots_per_worker,
         "capacity": capacity, "submission_response": response,
@@ -235,6 +329,7 @@ class LiveRunner:
         expected = {"DAG-" + spec.node_id for spec in with_sink}
         offsets = telemetry_offsets(self.telemetry)
         dag_name = f"TASKBENCH_{suite.upper()}_{label.upper()}_P{pass_index}_{digest}".replace(".", "_")
+        started_at_ms = int(time.time() * 1000)
         started = time.monotonic()
         response = self.client.submit_dag(dag_name, jobs)
         if response != "DAG_ACCEPTED":
@@ -257,6 +352,9 @@ class LiveRunner:
             time.sleep(.1)
         result = summarize_case(label, suite, pattern, with_sink, sink, spans, self.capacity,
                                 wall, response, self.configured_workers, self.slots_per_worker)
+        ended_at_ms = int(time.time() * 1000)
+        metrics = titan_stats_query(f"metrics|{started_at_ms}|5000")
+        result["phase_samples"] = phase_samples(metrics, expected, started_at_ms, ended_at_ms)
         result.update({"pass": pass_index, "dag": dag_name,
                        "dag_url": f"http://127.0.0.1:5000/dags/DAG-{dag_name}"})
         return result
@@ -285,14 +383,49 @@ def median_rows(results: list[dict], suite: str, key: str) -> list[dict]:
             groups[result[key]].append(result)
     rows = []
     for value, cases in sorted(groups.items(), key=lambda item: float(item[0]) if str(item[0]).replace('.', '', 1).isdigit() else str(item[0])):
+        queue_samples = [sample for case in cases for sample in case.get("queue_ms_samples", [])]
+        execution_samples = [sample for case in cases for sample in case.get("execution_ms_samples", [])]
+        efficiency = variability(c["efficiency"] for c in cases)
+        end_to_end = variability(c["end_to_end_efficiency"] for c in cases)
+        window = variability(c["execution_window_seconds"] for c in cases)
+        throughput = variability(c["throughput_tasks_per_second"] for c in cases)
         rows.append({key: value, "passes": len(cases), "valid_passes": sum(c["valid"] for c in cases),
-                     "efficiency": statistics.median(c["efficiency"] for c in cases),
-                     "end_to_end_efficiency": statistics.median(c["end_to_end_efficiency"] for c in cases),
-                     "window_seconds": statistics.median(c["execution_window_seconds"] for c in cases),
-                     "throughput": statistics.median(c["throughput_tasks_per_second"] for c in cases),
-                     "queue_p50_ms": statistics.median(c["queue_ms_p50"] for c in cases if c["queue_ms_p50"] is not None),
-                     "execution_p50_ms": statistics.median(c["execution_ms_p50"] for c in cases if c["execution_ms_p50"] is not None)})
+                     "efficiency": efficiency["median"],
+                     "end_to_end_efficiency": end_to_end["median"],
+                     "window_seconds": window["median"],
+                     "throughput": throughput["median"],
+                     "queue_p50_ms": round(percentile(queue_samples, .50), 3) if queue_samples else None,
+                     "queue_p95_ms": round(percentile(queue_samples, .95), 3) if queue_samples else None,
+                     "queue_p99_ms": round(percentile(queue_samples, .99), 3) if queue_samples else None,
+                     "execution_p50_ms": round(percentile(execution_samples, .50), 3) if execution_samples else None,
+                     "execution_p95_ms": round(percentile(execution_samples, .95), 3) if execution_samples else None,
+                     "execution_p99_ms": round(percentile(execution_samples, .99), 3) if execution_samples else None,
+                     "variability": {"efficiency": efficiency, "end_to_end_efficiency": end_to_end,
+                                     "window_seconds": window, "throughput": throughput}})
     return rows
+
+
+def latency_breakdown(results: list[dict]) -> dict:
+    phases = ["queue_ms_samples", "dispatch_route_ms_samples", "worker_selection_ms_samples",
+              "dispatch_record_ms_samples", "dispatch_store_ms_samples", "dispatch_rpc_ms_samples",
+              "worker_queue_ms_samples", "preprocess_ms_samples", "process_startup_ms_samples",
+              "script_execution_ms_samples", "callback_transit_ms_samples",
+              "callback_handle_ms_samples", "terminal_persistence_ms_samples",
+              "store_read_ms_samples", "store_write_ms_samples"]
+    aggregated = {}
+    for phase in phases:
+        if phase == "queue_ms_samples":
+            values = [float(sample) for case in results for sample in case.get(phase, [])]
+        else:
+            values = [float(sample) for case in results
+                      for sample in (case.get("phase_samples") or {}).get(phase, [])]
+        aggregated[phase.removesuffix("_samples")] = {
+            "count": len(values), "p50": round(percentile(values, .50), 6) if values else None,
+            "p95": round(percentile(values, .95), 6) if values else None,
+            "p99": round(percentile(values, .99), 6) if values else None,
+            "mean": round(statistics.fmean(values), 6) if values else None,
+        }
+    return aggregated
 
 
 def observed_metg(rows: list[dict], threshold: float = .5) -> dict:
@@ -344,8 +477,18 @@ def render_report(summary: dict, destination: Path) -> None:
         f"<tr><td>{row['requested_duration_ms']:g} ms</td><td>{row['passes']}</td>"
         f"<td>{row['efficiency']:.1%}</td><td>{row['end_to_end_efficiency']:.1%}</td>"
         f"<td>{row['window_seconds']:.2f} s</td><td>{row['throughput']:.2f}</td>"
-        f"<td>{row['queue_p50_ms']:.1f} ms</td><td>{row['execution_p50_ms']:.1f} ms</td></tr>"
+        f"<td>{row['queue_p50_ms']:.1f} / {row['queue_p95_ms']:.1f} / {row['queue_p99_ms']:.1f} ms</td>"
+        f"<td>{row['execution_p50_ms']:.1f} / {row['execution_p95_ms']:.1f} / {row['execution_p99_ms']:.1f} ms</td>"
+        f"<td>{row['variability']['throughput']['min']:.2f}–{row['variability']['throughput']['max']:.2f}<br>"
+        f"CV {row['variability']['throughput']['coefficient_of_variation']:.1%}</td></tr>"
         for row in rows)
+    latency_rows = "".join(
+        f"<tr><td>{h(name.replace('_ms', '').replace('_', ' '))}</td><td>{values['count']}</td>"
+        f"<td>{values['mean'] if values['mean'] is not None else '—'}</td>"
+        f"<td>{values['p50'] if values['p50'] is not None else '—'}</td>"
+        f"<td>{values['p95'] if values['p95'] is not None else '—'}</td>"
+        f"<td>{values['p99'] if values['p99'] is not None else '—'}</td></tr>"
+        for name, values in summary.get("latency_breakdown", {}).items())
     def suite_table(name: str) -> str:
         cases = [r for r in summary["results"] if r["suite"] == name]
         if not cases:
@@ -361,13 +504,14 @@ def render_report(summary: dict, destination: Path) -> None:
 :root{{--bg:#081014;--panel:#101b20;--line:#264048;--text:#e9f2f2;--muted:#94aeb2;--green:#54e6a8;--amber:#f6c85f;--red:#ff7085;--blue:#72c7ff}}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,Segoe UI,Arial,sans-serif}}main{{max-width:1180px;margin:auto;padding:30px 24px 70px}}h1{{font-size:32px;margin:.2rem 0}}h2{{font-size:20px;margin:0 0 14px}}h3{{font-size:15px}}p{{max-width:900px}}.eyebrow{{color:var(--green);text-transform:uppercase;letter-spacing:.14em;font-weight:700;font-size:11px}}.lede,.muted{{color:var(--muted)}}.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:22px 0}}.card,section{{background:var(--panel);border:1px solid var(--line);border-radius:10px}}.card{{padding:16px}}.card strong{{display:block;font-size:24px;margin-top:5px}}section{{padding:20px;margin:14px 0}}.table-wrap{{overflow:auto}}table{{border-collapse:collapse;width:100%;min-width:760px}}th,td{{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}}th{{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}}.chart{{width:100%;max-height:360px;background:#0b1519;border:1px solid var(--line);border-radius:8px}}.grid line{{stroke:#1d3239}}.grid text,.marks text,.axis-title{{fill:var(--muted);font-size:11px}}.threshold{{stroke:var(--amber);stroke-dasharray:6 5}}.series{{fill:none;stroke:var(--green);stroke-width:3}}.marks circle{{fill:var(--bg);stroke:var(--green);stroke-width:3}}code{{color:#b8e6ff}}.pill{{padding:3px 8px;border-radius:20px;font-weight:700;font-size:11px}}.pill.pass{{background:#143f33;color:var(--green)}}.pill.fail{{background:#4a2029;color:var(--red)}}details{{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}}summary{{cursor:pointer;font-weight:700}}a{{color:var(--blue)}}
 </style></head><body><main><div class="eyebrow">Titan · controlled scheduler microbenchmark</div><h1>Minimum effective task granularity</h1><p class="lede">A logarithmic duration sweep plus DAG shape, scale, local overlap and load-imbalance probes. Results come from Titan's persisted execution spans; every live case checks terminal status, dependency order, duplicate attempts and observed worker count.</p>
 <div class="cards"><div class="card">Observed METG(50)<strong>{h(threshold_text)}</strong><span class="muted">smallest tested duration at ≥50% scheduler-window efficiency</span></div><div class="card">Controlled capacity<strong>{summary['configuration']['configured_workers']} × {summary['configuration']['slots_per_worker']}</strong><span class="muted">workers × slots per worker</span></div><div class="card">Evidence validity<strong>{validity} / {len(summary['results'])}</strong><span class="muted">live cases passing all checks</span></div><div class="card">Source state<strong>{h(summary['source']['branch'])}</strong><span class="muted"><code>{h(summary['source']['commit'][:12])}</code></span></div></div>
-<section><h2>Logarithmic task-duration sweep</h2><p>Efficiency = ideal useful-work lower bound ÷ observed span window. For the independent-task sweep the lower bound is total requested work ÷ controlled slot capacity. The amber line marks 50%.</p>{svg_line(rows)}<div class="table-wrap"><table><thead><tr><th>Duration</th><th>Passes</th><th>Window efficiency</th><th>End-to-end efficiency</th><th>Window</th><th>Tasks/s</th><th>Queue p50</th><th>Execution p50</th></tr></thead><tbody>{granularity_table}</tbody></table></div></section>
+<section><h2>Logarithmic task-duration sweep</h2><p>Efficiency = ideal useful-work lower bound ÷ observed span window. One warm-up pass per duration is excluded from every number below. The table aggregates all measured task spans across five passes and reports p50 / p95 / p99 consistently. The amber line marks 50%.</p>{svg_line(rows)}<div class="table-wrap"><table><thead><tr><th>Duration</th><th>Measured passes</th><th>Window efficiency</th><th>End-to-end efficiency</th><th>Window</th><th>Tasks/s</th><th>Queue p50 / p95 / p99</th><th>Execution p50 / p95 / p99</th><th>Throughput range / CV</th></tr></thead><tbody>{granularity_table}</tbody></table></div></section>
+<section><h2>Correlated latency breakdown</h2><p class="muted">Worker phases use a monotonic clock on one worker. Callback transit compares worker and master wall clocks and therefore assumes synchronized VM clocks. Store rows include operations observed inside each measured case window.</p><div class="table-wrap"><table><thead><tr><th>Phase</th><th>Samples</th><th>Mean ms</th><th>P50 ms</th><th>P95 ms</th><th>P99 ms</th></tr></thead><tbody>{latency_rows}</tbody></table></div></section>
 <section><h2>Graph patterns</h2><p class="muted">Critical path and total work both contribute to the ideal lower bound. Bound efficiency measures proximity to the best possible schedule for that graph; slot utilization shows how much controlled capacity performed requested work.</p>{suite_table('patterns')}</section>
 <section><h2>Scale</h2>{suite_table('scale')}</section>
 <section><h2>Communication-hiding proxy</h2><p class="muted">This local test compares barriered and pipelined wait/CPU stages. It measures latency overlap on one host; it is not evidence of network communication hiding.</p>{suite_table('overlap')}</section>
 <section><h2>Load imbalance</h2>{suite_table('imbalance')}</section>
 <section><h2>Interpretation</h2><ul><li><strong>Below METG:</strong> process launch, RPC, queueing and callback overhead dominate useful work.</li><li><strong>At or above METG:</strong> at least half of the ideal controlled-capacity window is useful task time.</li><li><strong>Pattern sensitivity:</strong> compare chain and fan-in against bag tasks to expose dependency-release costs.</li><li><strong>Scale sensitivity:</strong> throughput should stabilize as task count grows if fixed startup costs are being amortized.</li><li><strong>Imbalance:</strong> a falling lower-bound efficiency identifies tail loss from uneven task lengths.</li></ul><div class="muted">METG is configuration specific. It must be remeasured for a different worker count, slot count, executor, hardware or network.</div></section>
-<section><h2>Method and evidence</h2><details open><summary>Configuration</summary><pre>{h(json.dumps(summary['configuration'], indent=2))}</pre></details><details><summary>Validity and raw-result notes</summary><pre>{h(json.dumps(summary['validity'], indent=2))}</pre></details><details><summary>Definition</summary><p>This report adopts the Task Bench METG(50%) convention and makes Titan's efficiency denominator explicit. The original Task Bench definition is the smallest average task granularity at which an application reaches at least 50% of the machine's peak application performance.</p></details></section>
+<section><h2>Method and evidence</h2><details open><summary>Warm-up and measured-pass protocol</summary><p>Each duration runs {summary['configuration'].get('warmup_passes', 0)} warm-up pass before {summary['configuration']['passes']} measured passes. Warm-up results are retained in <code>summary.json</code> for audit but excluded from percentiles, METG, confidence intervals and all headline values.</p><p>Latency percentiles use linear interpolation over all measured task spans. Each pass-level median reports min–max, standard deviation, coefficient of variation and a deterministic 10,000-resample percentile-bootstrap 95% confidence interval.</p></details><details><summary>Configuration</summary><pre>{h(json.dumps(summary['configuration'], indent=2))}</pre></details><details><summary>Validity and raw-result notes</summary><pre>{h(json.dumps(summary['validity'], indent=2))}</pre></details><details><summary>Definition</summary><p>This report adopts the Task Bench METG(50%) convention and makes Titan's efficiency denominator explicit. The original Task Bench definition is the smallest average task granularity at which an application reaches at least 50% of the machine's peak application performance.</p></details></section>
 <p class="muted">Generated {h(summary['generated_at'])}. Self-contained HTML; no external JavaScript or CSS.</p></main></body></html>"""
     destination.write_text(document, encoding="utf-8")
 
@@ -388,7 +532,9 @@ def main() -> None:
     parser.add_argument("--tasks", type=int, default=32)
     parser.add_argument("--pattern-tasks", type=int, default=24)
     parser.add_argument("--pattern-duration-ms", type=float, default=250)
-    parser.add_argument("--passes", type=int, default=3)
+    parser.add_argument("--passes", type=int, default=5)
+    parser.add_argument("--warmup-passes", type=int, default=1,
+                        help="unmeasured warm-up passes per granularity duration")
     parser.add_argument("--configured-workers", type=int, default=1)
     parser.add_argument("--slots-per-worker", type=int, default=4)
     parser.add_argument("--scale-tasks", default="32,128,512")
@@ -399,7 +545,7 @@ def main() -> None:
     args = parser.parse_args()
     if not args.live:
         parser.error("--live is required; offline estimates are not reported as Titan measurements")
-    if not 2 <= args.tasks <= 5000 or not 1 <= args.passes <= 10:
+    if not 2 <= args.tasks <= 5000 or not 1 <= args.passes <= 10 or not 0 <= args.warmup_passes <= 3:
         parser.error("tasks must be 2-5000 and passes 1-10")
     suites = {item.strip() for item in args.suites.split(",") if item.strip()}
     unknown = suites - {"granularity", "patterns", "scale", "overlap", "imbalance"}
@@ -416,19 +562,37 @@ def main() -> None:
     runner = LiveRunner(output, args.telemetry, args.configured_workers,
                         args.slots_per_worker, args.timeout)
     results: list[dict] = []
+    warmup_results: list[dict] = []
     if "granularity" in suites:
         for duration in durations:
+            for warmup_index in range(1, args.warmup_passes + 1):
+                specs = make_graph("bag", args.tasks, duration, "g")
+                warmup = runner.run("granularity", f"{duration:g}ms", "bag", specs, -warmup_index)
+                warmup.update({"measurement_phase": "warmup", "warmup_pass": warmup_index})
+                warmup_results.append(warmup)
+                print(json.dumps({"case": warmup["label"], "warmup": warmup_index,
+                                  "efficiency": warmup["efficiency"], "valid": warmup["valid"]}), flush=True)
             for pass_index in range(1, args.passes + 1):
                 specs = make_graph("bag", args.tasks, duration, "g")
                 result = runner.run("granularity", f"{duration:g}ms", "bag", specs, pass_index)
+                result["measurement_phase"] = "measured"
                 results.append(result)
                 print(json.dumps({"case": result["label"], "pass": pass_index,
                                   "efficiency": result["efficiency"], "valid": result["valid"]}), flush=True)
     if "patterns" in suites:
         for pattern in ("bag", "chain", "fanout", "fanin", "diamond", "layered", "stencil"):
+            for warmup_index in range(1, args.warmup_passes + 1):
+                specs = make_graph(pattern, args.pattern_tasks, args.pattern_duration_ms, "p")
+                warmup = runner.run("patterns", pattern, pattern, specs, -warmup_index)
+                warmup.update({"measurement_phase": "warmup", "warmup_pass": warmup_index})
+                warmup_results.append(warmup)
+                print(json.dumps({"case": pattern, "warmup": warmup_index,
+                                  "valid": warmup["valid"]}), flush=True)
             for pass_index in range(1, args.passes + 1):
                 specs = make_graph(pattern, args.pattern_tasks, args.pattern_duration_ms, "p")
-                results.append(runner.run("patterns", pattern, pattern, specs, pass_index))
+                result = runner.run("patterns", pattern, pattern, specs, pass_index)
+                result["measurement_phase"] = "measured"
+                results.append(result)
     if "scale" in suites:
         for count in scale_tasks:
             specs = make_graph("bag", count, args.pattern_duration_ms, "s")
@@ -461,6 +625,7 @@ def main() -> None:
         "configuration": {"configured_workers": args.configured_workers,
                           "slots_per_worker": args.slots_per_worker,
                           "capacity": runner.capacity, "passes": args.passes,
+                          "warmup_passes": args.warmup_passes,
                           "durations_ms": durations, "tasks": args.tasks,
                           "pattern_tasks": args.pattern_tasks,
                           "pattern_duration_ms": args.pattern_duration_ms,
@@ -468,10 +633,11 @@ def main() -> None:
                           "dashboard_visible": args.dashboard_visible,
                           "persistence": persistence},
         "metg50": observed_metg(granularity), "granularity_summary": granularity,
-        "results": results,
+        "latency_breakdown": latency_breakdown(results),
+        "results": results, "warmup_results": warmup_results,
         "validity": {"valid_cases": sum(r["valid"] for r in results), "total_cases": len(results),
                      "invalid_cases": [{"label": r["label"], "errors": r["errors"]} for r in results if not r["valid"]],
-                     "limitations": ["single-host run; no network communication-hiding claim",
+                     "limitations": ["worker-host topology must be reported separately; no network communication-hiding claim",
                                      "Python process launch is part of measured Titan execution overhead",
                                      "METG is specific to this worker/slot/hardware configuration"]},
     }

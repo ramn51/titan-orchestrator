@@ -155,11 +155,14 @@ def analyze_telemetry(telemetry: dict | None, start: int, end: int) -> dict:
               if start <= int(phase.get("at") or 0) <= end]
     stores = [operation for operation in metrics.get("store_operations") or []
               if start <= int(operation.get("at") or 0) <= end]
+    worker_phases = [phase for phase in metrics.get("worker_phases") or []
+                     if start <= int(phase.get("at") or 0) <= end]
     events = [event for event in metrics.get("events") or []
               if start <= int(event.get("at") or 0) <= end]
     if not samples:
         return {"available": False, "samples": 0, "dispatch_samples": len(phases),
-                "store_samples": len(stores), "events": events}
+                "store_samples": len(stores), "worker_phase_samples": len(worker_phases),
+                "events": events}
     workers = [worker for sample in samples for worker in sample.get("workers") or []]
     capacities = [sum(int(worker.get("capacity") or 0) for worker in sample.get("workers") or [])
                   for sample in samples]
@@ -172,6 +175,10 @@ def analyze_telemetry(telemetry: dict | None, start: int, end: int) -> dict:
         store_summary[kind + "_ms"] = _distribution(
             [float(item.get("ms") or 0) for item in stores if item.get("kind") == kind]
         )
+    worker_summary = {name + "_ms": _distribution(
+        [float(item.get(name) or 0) for item in worker_phases]
+    ) for name in ("worker_queue", "preprocess", "process_startup", "script",
+                   "callback_transit", "callback_handle", "terminal_persistence")}
     return {
         "available": True,
         "samples": len(samples),
@@ -203,6 +210,7 @@ def analyze_telemetry(telemetry: dict | None, start: int, end: int) -> dict:
         "store_unhealthy_samples": sum(not bool(item.get("store_healthy")) for item in samples),
         "dispatch_samples": len(phases), "dispatch_phases": phase_summary,
         "store_samples": len(stores), "store_operations": store_summary,
+        "worker_phase_samples": len(worker_phases), "worker_phases": worker_summary,
         "events": events,
     }
 
@@ -642,6 +650,13 @@ def render_html(report: dict) -> str:
         )
         store_table = (f'<table class="mini"><thead><tr><th>Operation</th><th>Count</th><th>Mean ms</th><th>P50 ms</th><th>P95 ms</th><th>Max ms</th></tr></thead><tbody>{store_rows}</tbody></table>'
                        if store_rows else '<div class="empty compact">No store latency samples retained for this run.</div>')
+        worker_phases = telemetry.get("worker_phases") or {}
+        worker_rows = "".join(
+            f'<tr><td>{name.removesuffix("_ms")}</td><td>{values.get("count")}</td><td>{values.get("mean")}</td><td>{values.get("p50")}</td><td>{values.get("p95")}</td><td>{values.get("max")}</td></tr>'
+            for name, values in worker_phases.items() if values.get("count")
+        )
+        worker_table = (f'<p>{telemetry.get("worker_phase_samples", 0)} correlated worker callbacks.</p><table class="mini"><thead><tr><th>Phase</th><th>Count</th><th>Mean ms</th><th>P50 ms</th><th>P95 ms</th><th>Max ms</th></tr></thead><tbody>{worker_rows}</tbody></table>'
+                        if worker_rows else '<div class="empty compact">No worker-side phase samples retained for this run.</div>')
         latency = case["latency"]
         latency_table = (f'<table class="mini"><thead><tr><th>Measured interval</th><th>Mean</th><th>P50</th><th>P95</th><th>Max</th></tr></thead><tbody>'
                          f'<tr><td>Eligible → scheduler dispatch</td><td>{latency["ready_queue_ms"]["mean"]} ms</td><td>{latency["ready_queue_ms"]["p50"]} ms</td><td>{latency["ready_queue_ms"]["p95"]} ms</td><td>{latency["ready_queue_ms"]["max"]} ms</td></tr>'
@@ -669,6 +684,7 @@ def render_html(report: dict) -> str:
         <details class="subsection"><summary><b>Job latency distribution</b><span>View table</span></summary><div class="sub-content">{latency_table}</div></details>
         <details class="subsection"><summary><b>Scheduler and host telemetry</b><span>View metrics</span></summary><div class="sub-content">{queue}</div></details>
         <div class="charts"><details class="subsection"><summary><b>Dispatch phase latency</b><span>View table</span></summary><div class="sub-content">{dispatch_table}</div></details>
+        <details class="subsection"><summary><b>Worker and callback latency</b><span>View table</span></summary><div class="sub-content">{worker_table}</div></details>
         <details class="subsection"><summary><b>Store operation latency</b><span>View table</span></summary><div class="sub-content">{store_table}</div></details></div></div></details>'''
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Titan benchmark verification</title>
@@ -700,7 +716,7 @@ thead th{{position:sticky;top:0;background:#152024;z-index:3}}.panel th:first-ch
 <tr><td>Dependencies, attempts, status, ready wait, scheduler-to-callback interval</td><td><span class="pill ok">AVAILABLE</span></td><td>Execution span journal</td></tr>
 <tr><td>Queue composition, worker load/capacity, CPU, memory, heartbeat RTT</td><td><span class="pill ok">AVAILABLE</span></td><td>Scheduler telemetry samples; subject to bounded retention</td></tr>
 <tr><td>Dispatch route/select/record/store/send and store read/write latency</td><td><span class="pill ok">AVAILABLE</span></td><td>Scheduler telemetry event buffers</td></tr>
-<tr><td>RPC transit, worker queue, process startup, script execution, callback transit</td><td><span class="pill bad">NOT SEPARATED</span></td><td>Add worker-side timestamps and preserve them in completion callbacks</td></tr>
+<tr><td>Worker queue, preprocessing, process startup, script execution, callback transit and terminal persistence</td><td><span class="pill ok">AVAILABLE</span></td><td>Worker monotonic durations correlated through completion callbacks; callback transit assumes synchronized host clocks</td></tr>
 <tr><td>Master CPU/memory, network bytes, process/thread counts</td><td><span class="pill bad">NOT CAPTURED</span></td><td>Add master process and RPC transport instrumentation</td></tr>
 <tr><td>Hardware, power state, Git/config identity</td><td><span class="pill bad">RUNNER DATA</span></td><td>Capture in the benchmark harness, not the engine</td></tr>
 </tbody></table></div></details>

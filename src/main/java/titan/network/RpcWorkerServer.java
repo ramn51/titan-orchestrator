@@ -547,6 +547,7 @@ public class RpcWorkerServer {
      * @param payload The task-specific data, potentially including a job ID (format: "JOB_ID|TASK_DATA" or just "TASK_DATA").
      */
     private void handleAsyncExecution(DataOutputStream out, String payload){
+        long requestReceived = System.nanoTime();
         if(!reserveSlot()){
             try{
                 TitanProtocol.send(out, TitanProtocol.OP_ERROR, "ERROR_WORKER_SATURATED");
@@ -558,6 +559,7 @@ public class RpcWorkerServer {
 
         try {
         workerPool.submit(() ->{
+            long runnableStarted = System.nanoTime();
             // Parse Job ID for Callback
             // Payload Format expected: "JOB-123|calc.py" (Standard) or "calc.py" (Legacy/Direct)
             String[] parts = payload.split("\\|", 2);
@@ -567,6 +569,7 @@ public class RpcWorkerServer {
             if(parts[0].equals("TEST")) { jobId = "TEST-JOB"; taskData = parts[1]; }
             String callbackStatus;
             String callbackResult;
+            ScriptExecutorHandler.ExecutionTiming executionTiming = null;
             try {
                 if (LOG_JOB_EVENTS) System.out.println("[ASYNC] Starting job "+ jobId + ": " + taskData);
                 TaskHandler handler = taskHanlderMap.get("RUN_SCRIPT");
@@ -578,6 +581,10 @@ public class RpcWorkerServer {
                 // Result: "JOB-123|my_script.py|--verbose"
                 String payloadForHandler = jobId + "|" + taskData;
                 callbackResult = handler.execute(payloadForHandler);
+                if (handler instanceof ScriptExecutorHandler scriptExecutor) {
+                    ScriptExecutorHandler.ExecutionTiming timing = scriptExecutor.consumeTiming(jobId);
+                    executionTiming = timing;
+                }
                 // This allows the worker to handle PDF_CONVERT or any other key
 //                String result = processCommand(taskData);
 
@@ -593,7 +600,10 @@ public class RpcWorkerServer {
             // this worker still reports itself full and reject the new request.
             String completedJobId = jobId;
             String completedStatus = callbackStatus;
-            String completedResult = callbackResult;
+            ScriptExecutorHandler.ExecutionTiming timing = executionTiming;
+            String completedResult = timing == null ? callbackResult : ExecutionTimingEnvelope.wrap(
+                    callbackResult, runnableStarted - requestReceived, timing.preprocessNanos(),
+                    timing.processStartupNanos(), timing.scriptNanos(), System.currentTimeMillis());
             releaseSlotBeforeCallback(activeJobs,
                     () -> sendCallback(completedJobId, completedStatus, completedResult));
         });

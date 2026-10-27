@@ -48,6 +48,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - attr_list
   - md_in_html
   - pymdownx.blocks.caption
@@ -56,8 +58,11 @@ markdown_extensions:
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
-          class: mermaid
+          class: titan-mermaid-source
           format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra_javascript:
+  - javascripts/mermaid.mjs
 
 nav:
   - 🏠 Home: index.md
@@ -67,6 +72,10 @@ nav:
       - Agentic Workflows (Python): examples/agentic.md
       - Human Approval Gates: examples/hitl.md
       - Dagster Integration: examples/dagster.md
+  - 🤖 MCP Control Plane: integrations/mcp.md
+  - 📊 Benchmarking:
+      - Benchmark Overview: benchmarks/index.md
+      - Interactive Report: benchmarks/titan-benchmark-report.html
   - 📚 API and SDK Reference: 
       - Titan SDK: reference/sdk.md
       - Java Engine API: javadocs/docs/index.html
@@ -75,6 +84,7 @@ nav:
 
   - 🧠 Architecture Deep Dive:
       - System Design: architecture/design.md
+      - Fault Tolerance & Recovery: architecture/fault-tolerance.md
       - TitanStore & IPC: architecture/internals.md
   - 🤝 Contributing: contributing.md
 

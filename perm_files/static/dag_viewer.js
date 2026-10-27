@@ -15,13 +15,16 @@ const isService = job => ['service', 'deploy_payload'].includes(String(job.spec?
 function serviceAddress(container, job, includeId = false) {
   container.replaceChildren();
   const endpoint = job.service;
-  if (!endpoint || job.status !== 'COMPLETED') { container.hidden = true; return; }
+  const lifecycle = job.service_lifecycle || 'UNKNOWN';
+  if (!isService(job)) { container.hidden = true; return; }
   container.hidden = false;
   if (includeId) {
-    const chip = document.createElement('span'); chip.className = 'service-chip'; chip.textContent = 'Service ready';
+    const chip = document.createElement('span'); chip.className = 'service-chip';
+    chip.dataset.lifecycle = lifecycle; chip.textContent = 'Service ' + lifecycle.toLowerCase();
     const id = document.createElement('strong'); id.textContent = job.id;
     container.append(chip, id);
-  } else container.append('Ready at ');
+  } else container.append(lifecycle === 'READY' ? 'Ready at ' : `Service ${lifecycle.toLowerCase()}`);
+  if (!endpoint || lifecycle !== 'READY') return;
   const address = document.createElement('a');
   const url = String(endpoint.url || '');
   if (/^http:\/\/[A-Za-z0-9.\-\[\]:]+:\d+$/.test(url)) {
@@ -47,7 +50,8 @@ document.querySelectorAll('.detail-tabs [role="tab"]').forEach(button => {
     if (pane === 'pane-files' && filePanel?.dataset.loaded !== 'true') {
       filePanel.dataset.loaded = 'true';
       refreshFileList(filePanel,
-        `/api/dag/files/${encodeURIComponent(filePanel.dataset.dagId)}/${encodeURIComponent(filePanel.dataset.jobId)}`,
+        `/api/dag/files/${encodeURIComponent(filePanel.dataset.dagId)}/${encodeURIComponent(filePanel.dataset.jobId)}` +
+          (filePanel.dataset.run ? `?run=${encodeURIComponent(filePanel.dataset.run)}` : ''),
         'No log or job-scoped artifact for this run yet.');
     }
     if (pane === 'pane-shared' && sharedPanel?.dataset.loaded !== 'true') {
@@ -77,7 +81,8 @@ async function refreshFileList(panel, url, emptyMessage) {
       link.textContent = file.name;
       link.title = 'Download ' + file.name;
       const detail = document.createElement('span');
-      detail.textContent = `${file.kind} · ${Math.ceil(file.size / 1024)} KB`;
+      const size = Number.isFinite(file.size) ? ` · ${Math.ceil(file.size / 1024)} KB` : '';
+      detail.textContent = `${file.kind}${size}`;
       row.append(link, detail);
       panel.append(row);
     }
@@ -134,14 +139,16 @@ async function refresh() {
         const node = [...document.querySelectorAll('.node')].find(el => el.dataset.jobId === job.id);
         if (!node) continue;
         node.dataset.status = job.status;
-        node.querySelector('.node-status').textContent = job.status;
+        if (isService(job)) node.dataset.serviceState = job.service_lifecycle || 'UNKNOWN';
+        node.querySelector('.node-status').textContent = isService(job) ?
+          (job.service_lifecycle || 'UNKNOWN') : job.status;
         node.querySelector('.node-type').textContent = isService(job) ? 'SERVICE' :
           job.spec?.hitl_message ? 'HUMAN GATE' : 'TASK';
       }
       const deployments = document.getElementById('service-deployments');
       if (deployments) {
         deployments.replaceChildren();
-        for (const service of dag.jobs.filter(job => isService(job) && job.service && job.status === 'COMPLETED')) {
+        for (const service of dag.jobs.filter(job => isService(job))) {
           const row = document.createElement('div'); serviceAddress(row, service, true); deployments.append(row);
         }
         deployments.hidden = !deployments.childElementCount;
@@ -149,7 +156,8 @@ async function refresh() {
       const current = document.body.dataset.selectedJob;
       const selected = dag.jobs.find(job => job.id === current);
       if (selected) {
-        state(document.getElementById('selected-status'), selected.status);
+        state(document.getElementById('selected-status'), isService(selected) ?
+          (selected.service_lifecycle || 'UNKNOWN') : selected.status);
         document.getElementById('selected-service-chip').hidden = !isService(selected);
         serviceAddress(document.getElementById('selected-service-endpoint'), selected);
         document.getElementById('selected-worker').textContent = selected.worker || 'Unassigned';
@@ -160,7 +168,10 @@ async function refresh() {
           (canCancel(selected.status) ? 'Worker capacity or scheduled delay' : '—');
         document.getElementById('selected-error').textContent = selected.last_error || '—';
         if (cancelJobButton && !cancelJobButton.dataset.pending) {
-          cancelJobButton.disabled = !canCancel(selected.status);
+          const liveService = isService(selected) && selected.service_lifecycle === 'READY';
+          cancelJobButton.disabled = !(canCancel(selected.status) || liveService);
+          cancelJobButton.textContent = liveService ? 'Stop service' : 'Stop job';
+          cancelJobButton.dataset.service = String(liveService);
         }
       }
     }
@@ -199,7 +210,9 @@ async function requestCancellation(button, url) {
 cancelDagButton?.addEventListener('click', () => requestCancellation(cancelDagButton,
   `/api/dag/cancel/${encodeURIComponent(cancelDagButton.dataset.dagId)}`));
 cancelJobButton?.addEventListener('click', () => requestCancellation(cancelJobButton,
-  `/api/dag/cancel/${encodeURIComponent(cancelJobButton.dataset.dagId)}/${encodeURIComponent(cancelJobButton.dataset.jobId)}`));
+  cancelJobButton.dataset.service === 'true' ?
+    `/api/dag/service/stop/${encodeURIComponent(cancelJobButton.dataset.dagId)}/${encodeURIComponent(cancelJobButton.dataset.jobId)}` :
+    `/api/dag/cancel/${encodeURIComponent(cancelJobButton.dataset.dagId)}/${encodeURIComponent(cancelJobButton.dataset.jobId)}`));
 
 const redeployButton = document.getElementById('redeploy');
 redeployButton?.addEventListener('click', async () => {

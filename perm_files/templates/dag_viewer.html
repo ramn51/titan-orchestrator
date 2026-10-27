@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Titan · DAG Pipelines</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='dag_viewer.css', v='12') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='dag_viewer.css', v='13') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='dag_viewer_typography.css', v='2') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='section_nav.css', v='2') }}">
-  <script src="{{ url_for('static', filename='dag_viewer.js', v='12') }}" defer></script>
+  <script src="{{ url_for('static', filename='dag_viewer.js', v='14') }}" defer></script>
   <script src="{{ url_for('static', filename='dag_viewer_zoom.js', v='1') }}" defer></script>
   <script src="{{ url_for('static', filename='dag_viewer_hitl.js', v='2') }}" defer></script>
 </head>
@@ -48,9 +48,9 @@
                   {% if historical or not selected.jobs|selectattr('status', 'in', ['WAITING', 'PENDING', 'RUNNING'])|list %}disabled{% endif %}>Stop pipeline</button>
           {% if selected.can_redeploy %}<button type="button" id="redeploy" data-dag-id="{{ selected.id }}">Redeploy</button>{% endif %}</div>
       </section>
-      <div id="service-deployments" class="service-deployments" {% if not selected.jobs|selectattr('service')|list %}hidden{% endif %}>
-        {% for service_job in selected.jobs if service_job.service and service_job.status == 'COMPLETED' %}
-          <div><span class="service-chip">Service ready</span><strong>{{ service_job.id }}</strong><a href="{{ service_job.service.url }}" target="_blank" rel="noopener noreferrer">{{ service_job.service.url }}</a><span>Port {{ service_job.service.port }}</span></div>
+      <div id="service-deployments" class="service-deployments">
+        {% for service_job in selected.jobs if service_job.service_lifecycle %}
+          <div><span class="service-chip" data-lifecycle="{{ service_job.service_lifecycle }}">Service {{ service_job.service_lifecycle|lower }}</span><strong>{{ service_job.id }}</strong>{% if service_job.service %}<a href="{{ service_job.service.url }}" target="_blank" rel="noopener noreferrer">{{ service_job.service.url }}</a><span>Port {{ service_job.service.port }}</span>{% else %}<span>No active endpoint</span>{% endif %}</div>
         {% endfor %}
       </div>
       <p id="action-feedback" class="action-feedback" role="status" aria-live="polite"></p>
@@ -89,10 +89,10 @@
       <section class="details" aria-label="Selected job">
         <div class="inspector">
           <p class="eyebrow">SELECTED STAGE</p><h2>{{ job.id }}</h2>{% if job.spec.get('job_type', 'run')|lower in ['service', 'deploy_payload'] %}<span id="selected-service-chip" class="service-chip">Service task</span>{% else %}<span id="selected-service-chip" class="service-chip" hidden>Service task</span>{% endif %}
-          <div class="inspector-status"><span id="selected-status" class="state" data-state="{{ job.status }}">{{ job.status }}</span>
+          <div class="inspector-status"><span id="selected-status" class="state" data-state="{{ job.service_lifecycle or job.status }}">{{ job.service_lifecycle or job.status }}</span>
             <button type="button" id="cancel-job" class="cancel-button" data-dag-id="{{ selected.id }}" data-job-id="{{ job.id }}"
-                    {% if historical or job.status not in ['WAITING', 'PENDING', 'RUNNING'] %}disabled{% endif %}>Stop job</button></div>
-          <div id="selected-service-endpoint" class="service-endpoint" {% if not job.service %}hidden{% endif %}>{% if job.service %}Ready at <a href="{{ job.service.url }}" target="_blank" rel="noopener noreferrer">{{ job.service.url }}</a> · Port {{ job.service.port }}{% endif %}</div>
+                    data-service="{{ 'true' if job.service_lifecycle == 'READY' else 'false' }}" {% if historical or (job.status not in ['WAITING', 'PENDING', 'RUNNING'] and job.service_lifecycle != 'READY') %}disabled{% endif %}>{{ 'Stop service' if job.service_lifecycle == 'READY' else 'Stop job' }}</button></div>
+          <div id="selected-service-endpoint" class="service-endpoint" {% if not job.service_lifecycle %}hidden{% endif %}>{% if job.service %}Ready at <a href="{{ job.service.url }}" target="_blank" rel="noopener noreferrer">{{ job.service.url }}</a> · Port {{ job.service.port }}{% elif job.service_lifecycle %}Service {{ job.service_lifecycle|lower }}{% endif %}</div>
           <dl><div><dt>Worker</dt><dd id="selected-worker">{{ job.worker or 'Unassigned' }}</dd></div>
               <div><dt>Duration</dt><dd>{{ job.duration or '—' }}</dd></div>
               <div><dt>Parents</dt><dd>{{ job.parents|join(', ') or 'None' }}</dd></div>
@@ -110,8 +110,8 @@
             <button type="button" role="tab" id="tab-info" aria-controls="pane-info" aria-selected="false" data-tab="info">Details</button>
           </div>
           <div id="pane-logs" class="detail-pane" role="tabpanel" aria-labelledby="tab-logs">{% if historical %}<p class="pane-note">Logs for this historical run were not archived. Current logs could contain a later run, so they are hidden here.</p>{% else %}<a class="live-logs" href="{{ url_for('view_logs', job_id=job.id) }}">Open live logs ↗</a><pre>{{ logs or 'No logs available yet.' }}</pre>{% endif %}</div>
-          <div id="pane-files" class="detail-pane" role="tabpanel" aria-labelledby="tab-files" hidden>{% if historical %}<p class="pane-note">Files for this historical run were not archived. Current workspace files are hidden here.</p>{% else %}<p class="pane-note">This job’s log and files under artifacts/{{ job.id }}/. Select a filename to download it.</p>
-            <div id="workspace-files" data-dag-id="{{ selected.id }}" data-job-id="{{ job.id }}" class="workspace-files"><p class="empty">Loading files…</p></div>{% endif %}</div>
+          <div id="pane-files" class="detail-pane" role="tabpanel" aria-labelledby="tab-files" hidden>{% if historical %}<p class="pane-note">Historical workspace logs are unavailable. Declared artifacts remain downloadable while retained by the master.</p>{% else %}<p class="pane-note">Logs, local job files, and declared Titan artifacts. Select a filename to download it.</p>{% endif %}
+            <div id="workspace-files" data-dag-id="{{ selected.id }}" data-job-id="{{ job.id }}" data-run="{{ selected.submitted or '' }}" class="workspace-files"><p class="empty">Loading files…</p></div></div>
           <div id="pane-shared" class="detail-pane" role="tabpanel" aria-labelledby="tab-shared" hidden>{% if historical %}<p class="pane-note">Shared workspace contents reflect the current filesystem, so they are hidden for historical runs.</p>{% else %}<p class="pane-note">Unassigned files in the common worker workspace. They may belong to another pipeline.</p>
             <div id="shared-files" class="workspace-files"><p class="empty">Loading files…</p></div>{% endif %}</div>
           <div id="pane-info" class="detail-pane info-pane" role="tabpanel" aria-labelledby="tab-info" hidden>

@@ -41,6 +41,12 @@ import titan.network.LogBatcher;
  * and legacy formats.
  */
     public class ScriptExecutorHandler implements TaskHandler {
+    private final ConcurrentMap<String, ExecutionTiming> completedTimings = new ConcurrentHashMap<>();
+
+    /** Durations are measured on one worker with a monotonic clock. */
+    public record ExecutionTiming(long preprocessNanos, long processStartupNanos, long scriptNanos) { }
+
+    public ExecutionTiming consumeTiming(String jobId) { return completedTimings.remove(jobId); }
     /**
      * The base directory name for all Titan worker workspaces.
      * All job-specific and shared workspaces will be created under this directory.
@@ -111,6 +117,7 @@ import titan.network.LogBatcher;
      */
     @Override
     public String execute(String payload) {
+        long handlerStarted = System.nanoTime();
         // ROBUST PARSING (Standardized Format: JOB_ID | FILENAME | ARGS)
         // We limit split to 3 so that arguments containing pipes are retained
         String[] parts = payload.split("\\|", 3);
@@ -208,7 +215,9 @@ import titan.network.LogBatcher;
 
             // 3. Start Process
             if (cancelled.contains(jobId)) throw new IllegalStateException("Job cancelled before start");
+            long launchStarted = System.nanoTime();
             Process process = pb.start();
+            long processStarted = System.nanoTime();
             activeProcesses.put(jobId, process);
             if (cancelled.contains(jobId)) terminateProcessTree(process);
 
@@ -256,6 +265,7 @@ import titan.network.LogBatcher;
                 streamer.join(1000);
                 throw new IllegalStateException("Script timed out (" + timeoutSeconds + "s limit)");
             }
+            long processEnded = System.nanoTime();
             streamer.join(); // this ensures we capture the last line of the o/p.
             if (streamError.get() != null) {
                 throw new IllegalStateException("Could not capture script output", streamError.get());
@@ -266,6 +276,10 @@ import titan.network.LogBatcher;
 //            String output = new String(outputBytes, StandardCharsets.UTF_8).trim();
             if (cancelled.contains(jobId)) throw new IllegalStateException("Job cancelled");
             int exitCode = process.exitValue();
+            completedTimings.put(jobId, new ExecutionTiming(
+                    launchStarted - handlerStarted,
+                    processStarted - launchStarted,
+                    processEnded - processStarted));
             // Format: COMPLETED|ExitCode|OutputContent
             return "COMPLETED|" + exitCode + "|" + finalOutput.toString().trim();
 

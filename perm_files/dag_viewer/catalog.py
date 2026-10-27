@@ -19,6 +19,24 @@ except ImportError:  # SDK-only installs can still show manifest-backed DAGs.
 TERMINAL = {"COMPLETED", "FAILED", "DEAD", "CANCELLED"}
 
 
+def service_lifecycle(status, endpoint):
+    """Translate job admission plus live registration into service semantics.
+
+    A service job reaches COMPLETED when readiness succeeds.  The spawned
+    process may continue after that transition, so the live endpoint registry
+    is the authoritative distinction between READY and STOPPED.
+    """
+    if endpoint:
+        return "READY"
+    if status in ("FAILED", "DEAD"):
+        return "FAILED"
+    if status in ("WAITING", "PENDING", "RUNNING"):
+        return "STARTING"
+    if status in ("COMPLETED", "CANCELLED"):
+        return "STOPPED"
+    return "UNKNOWN"
+
+
 def full_id(value):
     value = str(value)
     return value if value.startswith("DAG-") else "DAG-" + value
@@ -303,6 +321,7 @@ class DagCatalog:
             if endpoint:
                 spec.setdefault("job_type", "service")
                 spec.setdefault("port", endpoint.get("port"))
+            is_service = str(spec.get("job_type", "")).lower() in ("service", "deploy_payload")
             dag["jobs"].append({"id": jid, "status": status,
                                 "worker": seen.get("worker"), "duration": seen.get("duration", ""),
                                 "parents": [full_id(p) for p in info.get("deps", [])],
@@ -310,7 +329,9 @@ class DagCatalog:
                                 "retry_count": max(0, (len(attempts) or archived.get("attempts", 0)) - 1),
                                 "exit_code": int(exit_match.group(1)) if exit_match else archived.get("exit_code"),
                                 "last_error": error_lines[-1][:300] if error_lines else archived.get("last_error", ""),
-                                "spec": spec, "service": {
+                                "spec": spec,
+                                "service_lifecycle": service_lifecycle(status, endpoint) if is_service else None,
+                                "service": {
                                     "host": endpoint.get("host"), "port": endpoint.get("port"),
                                     "url": f"http://{endpoint.get('host')}:{endpoint.get('port')}"
                                 } if endpoint and int(endpoint.get("since") or 0) >= run_ts else None})

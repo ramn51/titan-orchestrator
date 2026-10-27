@@ -1,0 +1,1859 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A lightweight distributed execution runtime for DAGs, Agents, and Services.">
+      
+      
+      
+      
+        <link rel="prev" href="../integrations/mcp/">
+      
+      
+        <link rel="next" href="titan-benchmark-report.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../screenshots/Titan_logo.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
+    
+    
+      
+        <title>Benchmark Overview - Titan Orchestrator</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="light-green" data-md-color-accent="light-green">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#benchmarking-titan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Titan Orchestrator" class="md-header__button md-logo" aria-label="Titan Orchestrator" data-md-component="logo">
+      
+  <img src="../screenshots/Titan_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Titan Orchestrator
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Benchmark Overview
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="light-green" data-md-color-accent="light-green"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ramn51/titan-orchestrator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ramn51/titan-orchestrator
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  🏠 Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  🚀 Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../examples/yaml/" class="md-tabs__link">
+          
+  
+  
+  💡 Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../integrations/mcp/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  🤖 MCP Control Plane
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  📊 Benchmarking
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/sdk/" class="md-tabs__link">
+          
+  
+  
+  📚 API and SDK Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../architecture/design/" class="md-tabs__link">
+          
+  
+  
+  🧠 Architecture Deep Dive
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  🤝 Contributing
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Titan Orchestrator" class="md-nav__button md-logo" aria-label="Titan Orchestrator" data-md-component="logo">
+      
+  <img src="../screenshots/Titan_logo.png" alt="logo">
+
+    </a>
+    Titan Orchestrator
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ramn51/titan-orchestrator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ramn51/titan-orchestrator
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🏠 Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🚀 Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    💡 Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    💡 Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/yaml/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Static Pipelines (YAML)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/agentic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agentic Workflows (Python)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/hitl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Human Approval Gates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🤖 MCP Control Plane
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📊 Benchmarking
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    📊 Benchmarking
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Overview
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#evidence-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence at a glance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scientific-workflow-correctness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scientific workflow correctness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#single-machine-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Single-machine evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distributed-gcp-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distributed GCP evidence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Distributed GCP evidence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#two-vms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two VMs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#three-vms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three VMs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#controlled-gcp-task-granularity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Controlled GCP task granularity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-interpretation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance interpretation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance interpretation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-duration-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task-duration protocol
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recovery-and-fault-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery and fault injection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agentic-runtime-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agentic runtime evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-flow-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data-flow evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-the-full-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the full report
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="titan-benchmark-report.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    📚 API and SDK Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    📚 API and SDK Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/sdk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Titan SDK
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../javadocs/docs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Java Engine API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Titan CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/rpc-spec/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Titan RPC Spec
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🧠 Architecture Deep Dive
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    🧠 Architecture Deep Dive
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System Design
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/fault-tolerance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fault Tolerance & Recovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/internals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TitanStore & IPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    🤝 Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#evidence-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence at a glance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scientific-workflow-correctness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scientific workflow correctness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#single-machine-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Single-machine evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#distributed-gcp-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distributed GCP evidence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Distributed GCP evidence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#two-vms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two VMs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#three-vms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three VMs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#controlled-gcp-task-granularity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Controlled GCP task granularity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-interpretation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Performance interpretation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance interpretation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-duration-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task-duration protocol
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recovery-and-fault-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery and fault injection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agentic-runtime-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agentic runtime evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-flow-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data-flow evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-established" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is established
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reading-the-full-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reading the full report
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="benchmarking-titan">Benchmarking Titan</h1>
+<p>Titan's benchmark portfolio evaluates four separate questions:</p>
+<ol>
+<li><strong>Correctness:</strong> are dependencies released once and in the right order?</li>
+<li><strong>Distributed execution:</strong> does the same runtime work across machines and worker layouts?</li>
+<li><strong>Recovery:</strong> what happens when workers, the master, Store connections or callbacks fail?</li>
+<li><strong>Agentic execution:</strong> can runtime-planned stages become observable and recoverable DAGs?</li>
+</ol>
+<p><a class="md-button md-button--primary" href="titan-benchmark-report.html">Open the full interactive benchmark report</a></p>
+<p>The report is the evidence source. This page explains why the measurements matter to Titan and how to interpret them.</p>
+<div class="admonition note">
+<p class="admonition-title">Report snapshot</p>
+<p>The linked portfolio contains benchmark evidence recorded through October 26, 2026. MCP verification is documented separately in the <a href="../integrations/mcp/">MCP Control Plane</a>.</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">Living evidence portfolio</p>
+<p>The report evolves as Titan is tested on additional workflows, topologies and failure cases. Headline totals can increase or be refined when new runs are verified; every published snapshot states its evidence cutoff so its numbers remain interpretable.</p>
+</div>
+<h2 id="evidence-at-a-glance">Evidence at a glance</h2>
+<table>
+<thead>
+<tr>
+<th>Evidence</th>
+<th style="text-align: right;">Recorded result</th>
+<th>What it establishes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Selected evidence ledger</td>
+<td style="text-align: right;">59,504 jobs</td>
+<td>A conservative count of non-overlapping workflow and measured microbenchmark evidence</td>
+</tr>
+<tr>
+<td>Dependency edges</td>
+<td style="text-align: right;">129,596</td>
+<td>Dependency release was exercised substantially beyond small examples</td>
+</tr>
+<tr>
+<td>Selected WfCommons DAG runs</td>
+<td style="text-align: right;">44</td>
+<td>Repeated coverage across multiple scientific graph families</td>
+</tr>
+<tr>
+<td>Workflow families</td>
+<td style="text-align: right;">4</td>
+<td>Montage, Seismology, SoyKB and 1000Genome</td>
+</tr>
+<tr>
+<td>Largest strict run</td>
+<td style="text-align: right;">9,805 jobs / 24,027 edges</td>
+<td>Large DAG admission, dependency tracking and completion</td>
+</tr>
+<tr>
+<td>Distributed GCP workload runs</td>
+<td style="text-align: right;">35</td>
+<td>24 two-VM and 11 three-VM workload runs</td>
+</tr>
+<tr>
+<td>Local lifecycle and fault cases</td>
+<td style="text-align: right;">14/14 passed</td>
+<td>Expected terminal state for the exercised single-machine cases</td>
+</tr>
+<tr>
+<td>Two-VM fault campaign</td>
+<td style="text-align: right;">5/7 complete passes</td>
+<td>Five cases satisfied every invariant; two produced actionable findings</td>
+</tr>
+<tr>
+<td>Three-VM fault campaign</td>
+<td style="text-align: right;">6/8 complete passes</td>
+<td>Recovery across two worker hosts, with two actionable findings</td>
+</tr>
+<tr>
+<td>Observed throughput range</td>
+<td style="text-align: right;">5.7–16 tasks/s</td>
+<td>Current operating range across different graphs and configurations</td>
+</tr>
+</tbody>
+</table>
+<p>The selected workflow count excludes scaling-only cells, graph-shape probes, data-flow probes, recovery cases, unit tests and model-only DAGs. It should not be interpreted as Titan's lifetime job count.</p>
+<h2 id="scientific-workflow-correctness">Scientific workflow correctness</h2>
+<p>Titan ran graph structures from four WfCommons families:</p>
+<ul>
+<li><strong>Montage:</strong> wide astronomy workflows with substantial fan-out and fan-in</li>
+<li><strong>Seismology:</strong> large convergence points and high parent counts</li>
+<li><strong>SoyKB:</strong> deeper genomics-style processing stages</li>
+<li><strong>1000Genome:</strong> multi-stage genomics graphs with several roots and leaves</li>
+</ul>
+<p>These workflows matter because they exercise different scheduler risks. Wide graphs pressure admission and worker capacity. Deep graphs amplify release latency. Fan-in graphs test concurrent parent completion and exactly-once child admission.</p>
+<p>The largest completed graph contained 9,805 jobs and 24,027 edges with no recorded dependency-order violation.</p>
+<div class="admonition note">
+<p class="admonition-title">Scope</p>
+<p>The WfCommons runs preserve real workflow graph structures but mostly use short Python surrogate tasks. They test Titan's scheduling, dependencies, RPC, callbacks and persistence. They do not claim performance for the original scientific binaries.</p>
+</div>
+<h2 id="single-machine-evidence">Single-machine evidence</h2>
+<p>The local campaign places the master, Store, dashboard and worker processes on one Windows machine. It provides the broadest coverage of:</p>
+<ul>
+<li>Workflow families and DAG shapes</li>
+<li>Repeatability</li>
+<li>Slot and worker-process configurations</li>
+<li>Task granularity</li>
+<li>Dynamic agent stages</li>
+<li>Lifecycle and fault behavior</li>
+</ul>
+<p>Local results are useful for correctness and scheduler analysis. They are not evidence of cross-machine network behavior.</p>
+<h2 id="distributed-gcp-evidence">Distributed GCP evidence</h2>
+<p>The report separates two topologies rather than averaging them.</p>
+<h3 id="two-vms">Two VMs</h3>
+<ul>
+<li>VM 1: Titan master, TitanStore and dashboard</li>
+<li>VM 2: remote worker processes</li>
+</ul>
+<p>This topology verifies remote execution, cross-VM control traffic, scientific workflows, agentic cases, concurrency and selected recovery paths. It also measures slot and worker-process layouts on one worker host.</p>
+<h3 id="three-vms">Three VMs</h3>
+<ul>
+<li>VM 1: Titan master, TitanStore and dashboard</li>
+<li>VM 2: worker host</li>
+<li>VM 3: second worker host</li>
+</ul>
+<p>This topology adds real worker-host distribution. It covers controlled WfCommons execution on both hosts, concurrent Montage and SoyKB submissions, cross-worker KV and artifact transfer, and failures where work can move to a surviving worker.</p>
+<p>Numbers from the two topologies are not combined. A fair comparison requires the same graph, surrogate duration, runtime version, worker layout and hardware.</p>
+<h3 id="controlled-gcp-task-granularity">Controlled GCP task granularity</h3>
+<p>The two distributed layouts were also tested with the same logarithmic duration sweep: 32 independent tasks at 10, 20, 50, 100, 200, 500, 1000 and 2000 ms, with one excluded warm-up and five measured passes per duration.</p>
+<table>
+<thead>
+<tr>
+<th>Result</th>
+<th style="text-align: right;">Two VMs</th>
+<th style="text-align: right;">Three VMs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Valid measured DAGs</td>
+<td style="text-align: right;">40/40</td>
+<td style="text-align: right;">40/40</td>
+</tr>
+<tr>
+<td>Worker hosts</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>Advertised slots</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">8</td>
+</tr>
+<tr>
+<td>METG(50)</td>
+<td style="text-align: right;">500 ms</td>
+<td style="text-align: right;">500 ms</td>
+</tr>
+<tr>
+<td>Peak median throughput</td>
+<td style="text-align: right;">7.75 tasks/s</td>
+<td style="text-align: right;">11.48 tasks/s</td>
+</tr>
+</tbody>
+</table>
+<p>Adding the second worker host improved median throughput by <strong>1.47×</strong> across the eight durations. The gain ranged from <strong>1.26× to 1.92×</strong> and was strongest for the longer tasks. Every three-VM pass placed work on both worker hosts. This establishes a controlled distributed capacity benefit while showing that additional capacity does not by itself move the 50% efficiency boundary below 500 ms.</p>
+<h2 id="performance-interpretation">Performance interpretation</h2>
+<p>Observed throughput ranges from 5.7 to 16 tasks per second across workflow shapes and configurations.</p>
+<p>This is useful as a measured operating range, not as a universal Titan throughput number. Short tasks are affected by process startup, RPC, persistence, queueing and callback overhead. Different DAG shapes also expose different amounts of parallel work.</p>
+<p>For Titan, the current performance evidence means:</p>
+<ul>
+<li>The runtime completes large DAGs on local and distributed deployments.</li>
+<li>Additional workers help only when the graph exposes enough ready work and the dispatch path can feed them.</li>
+<li>Slot count alone does not guarantee speedup.</li>
+<li>Extremely short tasks expose orchestration overhead more strongly than scientific tasks lasting seconds or minutes.</li>
+</ul>
+<p>The report keeps performance separate from correctness. A slower completed run can still be strong correctness evidence.</p>
+<h3 id="task-duration-protocol">Task-duration protocol</h3>
+<p>The current granularity sweep uses one pinned worker with four slots and 32 tasks per duration. Every logarithmic duration has one excluded warm-up followed by five measured passes. The report gives:</p>
+<ul>
+<li>aggregate queue and execution p50, p95 and p99 across the measured task spans;</li>
+<li>median, minimum, maximum, standard deviation and coefficient of variation across passes;</li>
+<li>a deterministic bootstrap 95% confidence interval for each pass-level median;</li>
+<li>correctness checks for terminal state, dependency order, duplicate attempts and worker count.</li>
+</ul>
+<p>On the single-machine configuration, the five-pass median METG(50) is <strong>1000 ms</strong>. The 500 ms point has 49.6% median scheduler-window efficiency and the 1000 ms point has 66.5%. On both controlled GCP layouts, METG(50) is <strong>500 ms</strong>. Python process launch remains part of every measured execution path.</p>
+<h2 id="recovery-and-fault-injection">Recovery and fault injection</h2>
+<p>Fault campaigns cover duplicate callbacks, late callbacks after cancellation, Store interruption, master interruption, service readiness failure, descendant-process cleanup and worker restart behavior.</p>
+<p>A case passes only when all stated invariants hold. The distributed campaigns therefore retain findings instead of counting partial recovery as success.</p>
+<p>The findings are useful engineering evidence:</p>
+<ul>
+<li>A terminal status write missed during a Store outage was not reconciled after reconnect.</li>
+<li>A stale service endpoint could remain advertised after a worker restarted quickly.</li>
+</ul>
+<p>These results do not invalidate the passing cases. They identify the exact recovery boundaries that need work before a stronger availability claim.</p>
+<h2 id="agentic-runtime-evidence">Agentic runtime evidence</h2>
+<p>Agentic tests separate two concerns:</p>
+<ul>
+<li><strong>Planning:</strong> the model chooses tools, arguments, stages or branches.</li>
+<li><strong>Execution:</strong> Titan validates, schedules, runs and records the submitted stages.</li>
+</ul>
+<p>Model answer accuracy is not presented as scheduler correctness. Titan's relevant evidence is whether every submitted stage is represented as a DAG, executed under the normal lifecycle and visible through agent-run and DAG views.</p>
+<p>This supports Titan's main agentic-runtime claim: nondeterministic planning can produce dynamic work while execution remains observable and governed.</p>
+<h2 id="data-flow-evidence">Data-flow evidence</h2>
+<p>The data-flow suites check more than process completion:</p>
+<ul>
+<li>Parent tasks produce deterministic data.</li>
+<li>Children read and transform it.</li>
+<li>Fan-in tasks combine the results.</li>
+<li>Verifiers compare filenames, sizes and SHA-256 hashes.</li>
+<li>Three-VM cases distinguish shared-host files from explicit cross-worker data paths.</li>
+</ul>
+<p>This matters because dependency correctness alone does not prove that downstream tasks received usable data.</p>
+<h2 id="what-is-established">What is established</h2>
+<ul>
+<li>Titan executes multiple real scientific graph structures at useful scale.</li>
+<li>Dependency ordering held for the selected evidence.</li>
+<li>The runtime operates across one, two and three machines.</li>
+<li>Dynamic agent stages are executed and traced as normal Titan DAGs.</li>
+<li>Cancellation, approval, service lifecycle and several failure paths work end to end.</li>
+<li>Fault injection exposed concrete recovery gaps instead of hiding them.</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Evidence limits</p>
+<p>The portfolio does not yet support claims of complete runtime comparison, production high availability, or performance for the original scientific binaries. The interactive report records the exact limitations beside each result.</p>
+</div>
+<h2 id="reading-the-full-report">Reading the full report</h2>
+<p>The interactive report contains:</p>
+<ul>
+<li>Exact workflow and topology breakdowns</li>
+<li>Per-run configuration and evidence strength</li>
+<li>Scientific DAG visualizations</li>
+<li>Local, two-VM and three-VM sections</li>
+<li>Throughput, scaling and latency charts</li>
+<li>Agent-run diagrams</li>
+<li>Expandable fault-injection flows</li>
+<li>Known limitations and pending work</li>
+</ul>
+<p><a class="md-button" href="titan-benchmark-report.html">Open the full interactive benchmark report</a></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Ram Narayanan A S. Released under the <a href="https://github.com/ramn51/titan-orchestrator/blob/main/LICENSE" target="_blank">Apache 2.0 License</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../javascripts/mermaid.mjs" type="module"></script>
+      
+    
+  </body>
+</html>

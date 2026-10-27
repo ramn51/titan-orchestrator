@@ -18,6 +18,9 @@ There will be a single Master, Master is the single point of contact for the use
 
 > Scheduler for now is SPOF (Single point of failure).
 
+!!! info "Failure behavior and measured recovery"
+    See [Fault Tolerance & Recovery](fault-tolerance.md) for the job state machine, worker redispatch, callback safety, process cleanup, measured fault-injection results, and current consistency gaps.
+
 ```mermaid
 flowchart LR
     subgraph Clients["User / Clients"]
@@ -116,7 +119,7 @@ The Master Node: The Master acts as the Scheduler and Control Plane. It utilizes
     
 - **The Failure Detector (Heartbeats)**
 
-    The Master maintains a dedicated HeartBeatExecutor. It tracks the "Last Seen" timestamp of every worker. If a worker goes silent for >30s, it is marked DEAD, and its active jobs are immediately re-queued to healthy nodes to guarantee execution resilience.
+    The Master maintains a dedicated HeartBeatExecutor and tracks the last-seen timestamp of every worker. When the configured timeout expires, the worker is removed from scheduling and recoverable in-flight jobs become eligible for redispatch. Execution is at least once, so side-effecting jobs should be idempotent.
 
 - **Dead Letter Queue (DLQ) & Poison Pills**
 
@@ -126,7 +129,7 @@ The Master Node: The Master acts as the Scheduler and Control Plane. It utilizes
 
 ## 3. State Persistence & Data Bus (TitanStore)
 
-To eliminate the Master as a single point of failure and provide a unified state layer, Titan implements a custom in-memory data store backed by Redis primitives (RedisJava).
+To preserve runtime state across process restarts and provide a unified state layer, Titan implements a custom in-memory data store backed by Redis primitives (RedisJava). The Master remains a singleton control-plane process.
 
 **Append-Only File (AOF):** 
 
@@ -134,7 +137,7 @@ Every critical system transition (e.g., Node Locked, Job Dispatched, Worker Regi
 
 **Crash Recovery:** 
 
-If the Master process is killed abruptly, it does not lose the cluster state. Upon restart, it reads the AOF, reconstructs the ActiveJobQueue, and resumes the DAG exactly where it left off.
+After a Master restart, persisted state can be loaded to reconstruct scheduler state and resume eligible work. Recovery is at least once. State transitions attempted while the Store is unavailable require reconciliation; see [Fault Tolerance & Recovery](fault-tolerance.md#6-store-and-master-interruption).
 
 **Distributed Data Passing:** 
 

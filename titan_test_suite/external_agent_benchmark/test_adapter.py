@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from titan_test_suite.external_agent_benchmark.runner import build_jobs, encoded, load_case
 from titan_test_suite.external_agent_benchmark.stage import main as run_stage
@@ -121,22 +122,37 @@ class BfclAdapterTest(unittest.TestCase):
                 self.assertEqual(2, len(jobs[-1].parents))
 
     def test_all_pilot_mock_tools_execute_and_verify_ground_truth(self):
+        store = {}
+
+        def fake_request(opcode, payload):
+            if opcode == 0x60:
+                key, value = payload.split("|", 1)
+                store[key] = value
+                return "OK"
+            if opcode == 0x61:
+                return store.get(payload, "")
+            raise AssertionError(f"unexpected opcode {opcode}")
+
         previous = Path.cwd()
         with tempfile.TemporaryDirectory() as directory:
             os.chdir(directory)
             try:
-                for case_id in ("parallel_0", "parallel_1", "parallel_2"):
-                    _, case = load_bfcl_case(case_id)
-                    run_id = case_id
-                    for index, call in enumerate(case["ground_truth"]):
+                with patch(
+                    "titan_test_suite.external_agent_benchmark.bfcl_stage.request",
+                    side_effect=fake_request,
+                ):
+                    for case_id in ("parallel_0", "parallel_1", "parallel_2"):
+                        _, case = load_bfcl_case(case_id)
+                        run_id = case_id
+                        for index, call in enumerate(case["ground_truth"]):
+                            self.assertEqual(0, run_bfcl_stage([
+                                run_id, "tool", f"tool{index}", encoded({"call": call}),
+                            ]))
                         self.assertEqual(0, run_bfcl_stage([
-                            run_id, "tool", f"tool{index}", encoded({"call": call}),
+                            run_id, "verify", "verify",
+                            encoded({"case_id": case_id, "sources": ["tool0", "tool1"],
+                                     "expected": case["ground_truth"]}),
                         ]))
-                    self.assertEqual(0, run_bfcl_stage([
-                        run_id, "verify", "verify",
-                        encoded({"case_id": case_id, "sources": ["tool0", "tool1"],
-                                 "expected": case["ground_truth"]}),
-                    ]))
             finally:
                 os.chdir(previous)
 

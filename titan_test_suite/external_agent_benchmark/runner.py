@@ -16,7 +16,7 @@ sys.path.insert(0, str(REPO))
 import titan_sdk.titan_sdk as sdk  # noqa: E402
 from titan_sdk.titan_sdk import TitanClient, TitanJob  # noqa: E402
 
-TERMINAL = {"COMPLETED", "FAILED", "CANCELLED"}
+TERMINAL = {"COMPLETED", "FAILED", "CANCELLED", "DEAD"}
 RESULT_RE = re.compile(r"PARALLELQA_RESULT\s+(\{.*\})")
 
 
