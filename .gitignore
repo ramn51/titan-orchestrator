@@ -65,3 +65,6 @@ titan_test_suite/examples/agents_examples/doc_generator_agent/tools/.env
 telemetry/
 /*-live.*.log
 /dashboard-journal*.log
+/work
+/Titan_Paper
+/benchmark_results
