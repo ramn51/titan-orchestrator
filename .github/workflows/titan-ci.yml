@@ -1,0 +1,168 @@
+name: Titan CI
+
+on:
+  push:
+    branches: [master, local]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: titan-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bootstrap:
+    name: Build and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: setup.py
+
+      - name: Install Python test dependencies
+        run: python -m pip install --disable-pip-version-check -e . pytest flask pyyaml
+
+      - name: Test Java engine
+        run: mvn --batch-mode --no-transfer-progress test
+
+      - name: Test Python control and benchmark code
+        run: |
+          python -m pytest -q \
+            titan_mcp/tests \
+            titan_test_suite/paper_benchmark/test_common.py \
+            titan_test_suite/store_backend_benchmark/test_runner.py \
+            titan_test_suite/task_granularity_benchmark/test_runner.py \
+            perm_files/tests/test_dag_viewer.py
+
+      - name: Build runtime artifact
+        run: mvn --batch-mode --no-transfer-progress -DskipTests package
+
+      - name: Upload runtime artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: titan-runtime
+          path: target/titan-orchestrator-1.0-SNAPSHOT.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  dogfood:
+    name: Titan runs Titan tests
+    needs: bootstrap
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: titan-runtime
+          path: target
+
+      - name: Install Python runtime and test dependencies
+        run: python -m pip install --disable-pip-version-check -e . pytest flask pyyaml
+
+      - name: Start local Titan cluster
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i 's/titan.scheduler.autoscale=true/titan.scheduler.autoscale=false/' config.properties
+          mkdir -p "$RUNNER_TEMP/titan-ci/logs" "$RUNNER_TEMP/titan-ci/results"
+          export TITAN_CI_REPO="$GITHUB_WORKSPACE"
+          export TITAN_CI_RESULTS="$RUNNER_TEMP/titan-ci/results"
+
+          java -jar perm_files/TitanStore.jar >"$RUNNER_TEMP/titan-ci/logs/store.log" 2>&1 &
+          echo $! >"$RUNNER_TEMP/titan-ci/store.pid"
+
+          python - <<'PY'
+          import socket, time
+          deadline = time.monotonic() + 20
+          while time.monotonic() < deadline:
+              try:
+                  with socket.create_connection(("127.0.0.1", 6379), timeout=1):
+                      break
+              except OSError:
+                  time.sleep(.25)
+          else:
+              raise SystemExit("TitanStore did not become ready")
+          PY
+
+          java -cp target/titan-orchestrator-1.0-SNAPSHOT.jar titan.TitanMaster \
+            >"$RUNNER_TEMP/titan-ci/logs/master.log" 2>&1 &
+          echo $! >"$RUNNER_TEMP/titan-ci/master.pid"
+
+          python - <<'PY'
+          import socket, time
+          deadline = time.monotonic() + 30
+          while time.monotonic() < deadline:
+              try:
+                  with socket.create_connection(("127.0.0.1", 9090), timeout=1):
+                      break
+              except OSError:
+                  time.sleep(.25)
+          else:
+              raise SystemExit("Titan master did not become ready")
+          PY
+
+          TITAN_CI_REPO="$GITHUB_WORKSPACE" TITAN_CI_RESULTS="$RUNNER_TEMP/titan-ci/results" \
+            java -jar target/titan-orchestrator-1.0-SNAPSHOT.jar 8080 127.0.0.1 9090 GENERAL true \
+            >"$RUNNER_TEMP/titan-ci/logs/worker-8080.log" 2>&1 &
+          echo $! >"$RUNNER_TEMP/titan-ci/worker-8080.pid"
+          TITAN_CI_REPO="$GITHUB_WORKSPACE" TITAN_CI_RESULTS="$RUNNER_TEMP/titan-ci/results" \
+            java -jar target/titan-orchestrator-1.0-SNAPSHOT.jar 8081 127.0.0.1 9090 GENERAL true \
+            >"$RUNNER_TEMP/titan-ci/logs/worker-8081.log" 2>&1 &
+          echo $! >"$RUNNER_TEMP/titan-ci/worker-8081.pid"
+          sleep 5
+
+      - name: Run test DAG through Titan
+        env:
+          TITAN_CI_REPO: ${{ github.workspace }}
+          TITAN_CI_RESULTS: ${{ runner.temp }}/titan-ci/results
+        run: |
+          python -m titan_test_suite.ci_dogfood.runner \
+            --output "$TITAN_CI_RESULTS/summary.json" \
+            --timeout 420
+
+      - name: Stop local Titan cluster
+        if: always()
+        shell: bash
+        run: |
+          for name in worker-8081 worker-8080 master store; do
+            file="$RUNNER_TEMP/titan-ci/$name.pid"
+            if [[ -f "$file" ]]; then kill "$(cat "$file")" 2>/dev/null || true; fi
+          done
+
+      - name: Upload dogfood evidence and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: titan-dogfood-evidence
+          path: |
+            ${{ runner.temp }}/titan-ci/results
+            ${{ runner.temp }}/titan-ci/logs
+            .titan_dag_manifest.json
+            .titan_dag_run_history.jsonl
+          if-no-files-found: warn
+          retention-days: 14
