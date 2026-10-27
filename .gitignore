@@ -65,3 +65,9 @@ titan_test_suite/examples/agents_examples/doc_generator_agent/tools/.env
 telemetry/
 /*-live.*.log
 /dashboard-journal*.log
+
+# Local paper workspace and archived evidence
+/Titan_Paper/
+/benchmark_results
+*.aof
+/work

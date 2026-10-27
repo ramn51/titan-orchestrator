@@ -875,7 +875,7 @@ dialog.modal[open]{animation:pop .2s cubic-bezier(.2,.8,.2,1)}
 <article class="card">
 <div class="card-head"><div><h3>Not yet tested</h3><div class="card-sub">No claims are made for these</div></div><span class="pill pill-bad"><svg class="i"><use href="#i-x"></use></svg>GAPS</span></div>
 <ul class="gap-list">
-<li><svg class="i"><use href="#i-x"></use></svg><span>Real scientific binaries and large data movement (only small payloads verified across worker hosts)</span></li>
+<li><svg class="i"><use href="#i-x"></use></svg><span>Sustained high-volume transfer characterization beyond the measured Montage assets (multi-GB/TB datasets, bandwidth saturation and object-store backends)</span></li>
 <li class="in-progress"><svg class="i"><use href="#i-pulse"></use></svg><span>Same-hardware baseline comparison (Dask and others) <span class="pill pill-info" style="margin-left:4px">IN PROGRESS</span></span></li>
 <li><svg class="i"><use href="#i-x"></use></svg><span>Clusters beyond 3 VMs, autoscaling across hosts, and network partitions</span></li>
 <li><svg class="i"><use href="#i-x"></use></svg><span>Atomic mutation of a DAG that is already running (model only)</span></li>
@@ -911,7 +911,7 @@ dialog.modal[open]{animation:pop .2s cubic-bezier(.2,.8,.2,1)}
 <div class="jobs-top">
 <div>
 <div class="kpi-label">Jobs in the selected benchmark evidence ledger</div>
-<div class="jobs-big"><span data-count="59504">59,504</span><span class="unit">jobs</span></div>
+<div class="jobs-big"><span data-count="60521">60,521</span><span class="unit">jobs</span></div>
 <div class="kpi-sub">plus <b style="color:var(--text)">129,596</b> dependency edges evaluated in 44 selected WfCommons DAG runs</div>
 </div>
 <div class="legend" id="jobsLegend"></div>
@@ -3793,12 +3793,15 @@ const JOBS = [
   {k:'3-VM controlled WfCommons', n:15559, d:'11 controlled runs · two independent worker VMs', c:'var(--cyan)', go:'distributed'},
   {k:'3-VM concurrent WfCommons', n:1165, d:'Montage 619 + SoyKB 546 submitted together', c:'var(--warn)', go:'distributed'},
   {k:'Task Bench microbenchmarks', n:4800, d:'3,840 measured METG tasks across local, 2VM and 3VM sweeps + 960 graph-shape tasks; warm-ups excluded', c:'var(--series-3)', go:'scaling'},
-  {k:'Agentic workflows', n:428, d:'321 controlled (107 × 3) + 107 dashboard-visible', c:'var(--violet)', go:'agents'},
+  {k:'Agentic workflows', n:498, d:'428 earlier jobs + 70 submitted stages in the frozen 3-VM model-backed campaign', c:'var(--violet)', go:'agents'},
+  {k:'Executable WfBench (Titan)', n:615, d:'123 executable tasks × five measured passes; warm-up excluded', c:'var(--info)', go:'gcp-runtime-comparison'},
+  {k:'Real Montage binaries', n:130, d:'26 real Montage stages × five measured passes; warm-up excluded', c:'var(--cyan)', go:'gcp-real-montage'},
+  {k:'ML and service workflows', n:202, d:'160 public ML jobs + 27 application jobs + 15 OpenEnv service-dependent jobs', c:'var(--good)', go:'gcp-ml-workloads'},
 ];
 $('#jobsStack').innerHTML = JOBS.map((j, i) => `<i data-i="${i}" style="flex:${j.n};background:${j.c};min-width:6px"></i>`).join('');
 $('#jobsLegend').innerHTML = JOBS.map(j => `<span><i class="dot" style="background:${j.c}"></i><a href="#${j.go}" style="color:inherit">${j.k}</a> <b style="color:var(--text);font-family:var(--mono)">${fmt(j.n)}</b></span>`).join('');
 $$('#jobsStack i').forEach(b => { const j = JOBS[+b.dataset.i];
-  b.addEventListener('pointerenter', e => showTip(`<div class="tt-title">${j.k}</div>` + ttRow('Jobs', fmt(j.n), j.c) + ttRow('Share', (j.n / 59504 * 100).toFixed(1) + '%') + `<div class="tt-row" style="margin-top:6px">${j.d}</div>`, e));
+  b.addEventListener('pointerenter', e => showTip(`<div class="tt-title">${j.k}</div>` + ttRow('Jobs', fmt(j.n), j.c) + ttRow('Share', (j.n / 60521 * 100).toFixed(1) + '%') + `<div class="tt-row" style="margin-top:6px">${j.d}</div>`, e));
   b.addEventListener('pointermove', moveTip); b.addEventListener('pointerleave', hideTip); });
 $('#tiles').innerHTML = TILES.map(([id, l, v, s]) => { const p = PAGES.find(p => p.id === id);
   return `<a class="tile" href="#${id}"><div class="t-top"><span style="display:inline-flex;gap:8px;align-items:center">${icon(p.icon)}${l}</span>${icon('arrow','i arrow')}</div><div class="t-val">${v}</div><div class="t-sub">${s}</div></a>`; }).join('');

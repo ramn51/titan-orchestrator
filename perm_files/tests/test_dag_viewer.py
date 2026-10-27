@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import time
+import base64
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -49,7 +50,9 @@ def test_service_ready_and_failed_statuses(tmp_path):
     assert ready["status"] == "COMPLETED"
     service = next(job for job in ready["jobs"] if job["id"] == "DAG-service")
     assert service["service"]["url"] == "http://127.0.0.1:8123"
+    assert service["service_lifecycle"] == "READY"
     assert "SERVICE" in render_graph(ready)
+    assert "READY" in render_graph(ready)
 
     stats["workers"][0]["services"] = []
     stats["dag_jobs"]["DAG-service"] = {"status": "FAILED", "completed_at": 2000}
@@ -57,6 +60,50 @@ def test_service_ready_and_failed_statuses(tmp_path):
     failed = catalog.snapshot(stats)[0]
     assert failed["status"] == "FAILED"
     assert next(job for job in failed["jobs"] if job["id"] == "DAG-service")["service"] is None
+    assert next(job for job in failed["jobs"] if job["id"] == "DAG-service")["service_lifecycle"] == "FAILED"
+
+
+def test_completed_service_without_live_registration_is_stopped(tmp_path):
+    manifest = tmp_path / ".titan_dag_manifest.json"
+    manifest.write_text(json.dumps({
+        "DAG-service": {"dag": "service-demo", "deps": [], "run_ts": 1000,
+                        "spec": {"job_type": "service", "port": 8123}},
+    }))
+    stats = {"workers": [{"port": 8080, "services": [], "history": []}],
+             "dag_jobs": {"DAG-service": {"status": "COMPLETED", "completed_at": 2000}}}
+    service = DagCatalog(manifest, tmp_path).snapshot(stats)[0]["jobs"][0]
+    assert service["service"] is None
+    assert service["service_lifecycle"] == "STOPPED"
+    assert "STOPPED" in render_graph({"id": "DAG-service-demo", "jobs": [service]})
+
+
+def test_ready_service_can_be_stopped_from_dag_viewer(tmp_path):
+    manifest = tmp_path / ".titan_dag_manifest.json"
+    manifest.write_text(json.dumps({
+        "DAG-service": {"dag": "service-demo", "deps": [], "run_ts": 1000,
+                        "spec": {"job_type": "service", "port": 8123}},
+    }))
+    stats = {"workers": [{"host": "127.0.0.1", "port": 8080,
+                           "services": ["DAG-service"], "history": []}],
+             "dag_jobs": {"DAG-service": {"status": "COMPLETED", "completed_at": 2000}}}
+    calls = []
+
+    def communicate(opcode, payload):
+        if opcode == 9 and payload == "":
+            return json.dumps(stats)
+        if opcode == 9 and payload == "queue|500":
+            return json.dumps({"services": [{"id": "DAG-service", "host": "127.0.0.1",
+                                               "port": 8123, "since": 2000}]})
+        calls.append((opcode, payload))
+        return "STOPPED:1"
+
+    app = Flask(__name__)
+    app.register_blueprint(create_blueprint(communicate, 9, 22, manifest, tmp_path))
+    with app.test_client() as client:
+        response = client.post("/api/dag/service/stop/DAG-service-demo/DAG-service")
+    assert response.status_code == 200
+    assert response.json["lifecycle"] == "STOPPING"
+    assert calls == [(0x07, "DAG-service")]
 
 
 def test_old_run_is_not_shown_as_complete(tmp_path):
@@ -239,6 +286,63 @@ def test_workspace_files_include_local_autoscaled_worker_root(tmp_path):
         assert client.get(shared_files["child-summary.txt"]["url"]).data == b"nested workspace"
 
 
+def test_declared_cross_worker_artifact_is_downloaded_from_master(tmp_path):
+    manifest = tmp_path / ".titan_dag_manifest.json"
+    manifest.write_text(json.dumps({
+        "DAG-PACKAGE": {"dag": "distributed", "deps": [], "run_ts": 1000,
+                        "spec": {"expected_outputs": ["model.json"]}}
+    }))
+    calls = []
+
+    def communicate(opcode, payload):
+        calls.append((opcode, payload))
+        if opcode == 9:
+            return json.dumps({"workers": []})
+        if opcode == 0x54 and payload == "model.json":
+            return base64.b64encode(b'{"model":"verified"}').decode("ascii")
+        return "ERROR: missing"
+
+    app = Flask(__name__)
+    app.register_blueprint(create_blueprint(communicate, 9, 22, manifest, tmp_path))
+    with app.test_client() as client:
+        files = client.get("/api/dag/files/DAG-distributed/DAG-PACKAGE").json["files"]
+        artifact = next(item for item in files if item["name"] == "model.json")
+        assert artifact["kind"] == "Titan artifact"
+        assert artifact["size"] is None
+        downloaded = client.get(artifact["url"])
+        assert downloaded.status_code == 200
+        assert downloaded.data == b'{"model":"verified"}'
+        assert "attachment" in downloaded.headers["Content-Disposition"]
+        assert calls[-1] == (0x54, "model.json")
+        assert client.get("/api/dag/artifact/DAG-distributed/DAG-PACKAGE/other.json").status_code == 404
+
+
+def test_historical_declared_artifact_remains_downloadable(tmp_path):
+    manifest = tmp_path / ".titan_dag_manifest.json"
+    manifest.write_text(json.dumps({
+        "DAG-PACKAGE": {"dag": "distributed", "deps": [], "run_ts": 2000,
+                        "spec": {"expected_outputs": ["latest.json"]}}
+    }))
+    from titan_sdk.dag_journal import write_run
+    write_run(manifest, "distributed", 1000, {
+        "DAG-OLD": {"dag": "distributed", "deps": [], "run_ts": 1000,
+                    "spec": {"expected_outputs": ["old.json"]}}
+    }, "payload")
+
+    def communicate(opcode, payload):
+        if opcode == 9:
+            return json.dumps({"workers": []})
+        return base64.b64encode(payload.encode("utf-8")).decode("ascii")
+
+    app = Flask(__name__)
+    app.register_blueprint(create_blueprint(communicate, 9, 22, manifest, tmp_path))
+    with app.test_client() as client:
+        files = client.get("/api/dag/files/DAG-distributed/DAG-OLD?run=1000").json["files"]
+        assert [item["name"] for item in files] == ["old.json"]
+        downloaded = client.get(files[0]["url"])
+        assert downloaded.status_code == 200 and downloaded.data == b"old.json"
+
+
 def test_cancel_routes_target_only_jobs_in_selected_pipeline(tmp_path):
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps({
@@ -349,6 +453,9 @@ if __name__ == "__main__":
                  test_yaml_definition_and_live_poll,
                  test_current_failure_overrides_old_worker_history,
                  test_workspace_files_and_download_are_scoped_to_selected_job,
+                 test_workspace_files_include_local_autoscaled_worker_root,
+                 test_declared_cross_worker_artifact_is_downloaded_from_master,
+                 test_historical_declared_artifact_remains_downloadable,
                  test_cancel_routes_target_only_jobs_in_selected_pipeline,
                  test_page_fetches_logs_for_automatically_selected_job,
                  test_pipeline_pages_search_and_full_graph_exports,

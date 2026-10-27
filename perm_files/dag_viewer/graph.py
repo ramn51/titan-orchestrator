@@ -74,6 +74,14 @@ EXPORT_STYLE = """
 .node[data-status=WAITING] circle,.node[data-status=PENDING] circle{fill:#83c6f4}
 .node[data-status=CANCELLED] rect{fill:#283137;stroke:#8e9da8}
 .node[data-status=UNKNOWN] rect{fill:#20292e;stroke:#72828c}
+.node[data-service-state=READY] rect{fill:#176348;stroke:#55e1a0}
+.node[data-service-state=READY] circle{fill:#74efb4}
+.node[data-service-state=READY] .node-status{fill:#d9ffec}
+.node[data-service-state=STARTING] rect,.node[data-service-state=STOPPING] rect{fill:#40351d;stroke:#f4c765}
+.node[data-service-state=STARTING] .node-status,.node[data-service-state=STOPPING] .node-status{fill:#ffe5a6}
+.node[data-service-state=STOPPED] rect{fill:#243035;stroke:#82949d}
+.node[data-service-state=STOPPED] circle{fill:#82949d}
+.node[data-service-state=STOPPED] .node-status{fill:#c4d0d5}
 .node .service-type-chip{fill:#285846;stroke:#75d9a4}
 .node .service-type-chip + .node-type{fill:#d9ffea}
 """
@@ -112,13 +120,15 @@ def render_graph(dag, selected_job=None, run_ts=None, standalone=False):
         if run_ts is not None:
             href += f'&run={run_ts}'
         status = escape(job["status"])
+        display_status = escape(job.get("service_lifecycle") or job["status"])
         job_type = job.get("spec", {}).get("job_type", "run")
         type_label = "SERVICE" if str(job_type).lower() in ("service", "deploy_payload") else (
             "HUMAN GATE" if job.get("spec", {}).get("hitl_message") else "TASK")
         type_chip = '<rect class="service-type-chip" x="10" y="6" width="66" height="20" rx="4"/>' if type_label == "SERVICE" else ""
         chosen = ' selected' if jid == selected_job else ''
         parts.append(f'<a href="{escape(href, quote=True)}"><g class="node{chosen}" data-job-id="{escape(jid, quote=True)}" '
-                     f'data-status="{status}" transform="translate({x} {y})">'
+                     f'data-status="{status}" data-service-state="{display_status if type_label == "SERVICE" else ""}" '
+                     f'transform="translate({x} {y})">'
                      f'<title>{escape(jid)}</title>'
                      '<rect width="190" height="94" rx="8"/><circle cx="164" cy="18" r="5"/>'
                      f'{type_chip}'
@@ -126,5 +136,5 @@ def render_graph(dag, selected_job=None, run_ts=None, standalone=False):
                      '<foreignObject x="14" y="35" width="162" height="34">'
                      f'<div xmlns="http://www.w3.org/1999/xhtml" class="node-label">{label}</div>'
                      '</foreignObject>'
-                     f'<text class="node-status" x="14" y="82">{status}</text></g></a>')
+                     f'<text class="node-status" x="14" y="82">{display_status}</text></g></a>')
     return "".join(parts) + "</svg>"

@@ -87,19 +87,25 @@ DASHBOARD_HTML = """
         a { text-decoration: none; color: inherit; }
         a:hover { text-decoration: underline; color: #64b5f6; }
 
-        .card { background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 20px; width: 320px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+        .card { background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 20px; width: 320px; min-width: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
         .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; padding: 20px; }
 
         .section-title { font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; color: #757575; margin-top: 15px; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 2px;}
-        .service-tag { background: #263238; padding: 5px 8px; margin-top: 5px; border-radius: 4px; border-left: 3px solid #0288d1; font-family: monospace; font-size: 0.9em; cursor: pointer; transition: background 0.2s; }
+        .service-tag { background: #263238; padding: 5px 8px; margin-top: 5px; border-radius: 4px; border-left: 3px solid #0288d1; font-family: monospace; font-size: 0.9em; cursor: pointer; transition: background 0.2s; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .service-tag:hover { background: #37474f; }
+
+        .active-status { background: #2e2010; border: 1px solid #f57c00; padding: 12px; border-radius: 6px; display: flex; align-items: center; gap: 12px; margin-top: 5px; min-width: 0; }
+        .active-status-body { flex: 1 1 auto; min-width: 0; }
+        .active-job { font-family: monospace; font-size: 1.1em; color: #fff; min-width: 0; }
+        .active-job a { display: -webkit-box; max-width: 100%; overflow: hidden; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 
         .hist-list { list-style: none; padding: 0; margin: 0; }
         .hist-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; padding: 6px 0; border-bottom: 1px solid #2c2c2c; }
         .hist-item:last-child { border-bottom: none; }
 
-        .hist-id { color: #90caf9; font-family: monospace; }
-        .hist-meta { text-align: right; }
+        .hist-id { color: #90caf9; font-family: monospace; flex: 1 1 auto; min-width: 0; }
+        .hist-id a { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .hist-meta { text-align: right; flex: 0 0 auto; }
         .hist-time { display: block; font-size: 0.8em; color: #757575; }
 
         /* Skill Badge Style */
@@ -136,12 +142,12 @@ DASHBOARD_HTML = """
 
             <div class="section-title">Current Status</div>
             {% if w.active_job %}
-                <div style="background: #2e2010; border: 1px solid #f57c00; padding: 12px; border-radius: 6px; display: flex; align-items: center; gap: 12px; margin-top: 5px;">
+                <div class="active-status">
                     <div style="width: 12px; height: 12px; background: #ffb74d; border-radius: 50%; animation: pulse-yellow 1.5s infinite;"></div>
-                    <div style="flex-grow: 1;">
+                    <div class="active-status-body">
                         <div style="font-size: 0.7em; color: #ffcc80; letter-spacing: 0.5px; font-weight: bold;">EXECUTING NOW</div>
-                        <div style="font-family: monospace; font-size: 1.1em; color: #fff;">
-                            <a href="/logs/{{ w.active_job }}" target="_blank">📄 {{ w.active_job }}</a>
+                        <div class="active-job">
+                            <a href="/logs/{{ w.active_job }}" target="_blank" title="{{ w.active_job }}">📄 {{ w.active_job }}</a>
                         </div>
                     </div>
                 </div>
@@ -155,7 +161,7 @@ DASHBOARD_HTML = """
             <div>
                 {% for svc in w.services %}
                     <a href="/logs/{{ svc }}" target="_blank">
-                        <div class="service-tag">⚙️ {{ svc }}</div>
+                        <div class="service-tag" title="{{ svc }}">⚙️ {{ svc }}</div>
                     </a>
                 {% else %}
                     <div style="color:#555; font-style:italic; font-size:0.9em; padding: 5px 0;">• No active services</div>
@@ -167,7 +173,7 @@ DASHBOARD_HTML = """
                 {% for job in w.history %}
                     <li class="hist-item">
                         <span class="hist-id">
-                             <a href="/logs/{{ job.id }}" target="_blank">{{ job.id }}</a>
+                             <a href="/logs/{{ job.id }}" target="_blank" title="{{ job.id }}">{{ job.id }}</a>
                         </span>
                         <div class="hist-meta">
                             <span class="status-badge st-{{ job.status }}">{{ job.status }}</span>

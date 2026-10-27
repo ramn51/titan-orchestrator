@@ -4,6 +4,8 @@ import json
 import io
 import os
 import re
+import base64
+import binascii
 from pathlib import Path
 
 from flask import Blueprint, abort, jsonify, render_template, request, send_file, url_for
@@ -17,7 +19,8 @@ from .submission import GraphError, NAME, normalize, payload_for, read_manifest,
 
 
 def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml_root,
-                     submit_opcode=0x04, scripts_root=None, cancel_opcode=0x56):
+                     submit_opcode=0x04, scripts_root=None, cancel_opcode=0x56,
+                     fetch_asset_opcode=0x54, stop_service_opcode=0x07):
     viewer = Blueprint("dag_viewer", __name__)
     catalog = DagCatalog(Path(manifest_path), Path(yaml_root))
     agent_catalog = AgentRunCatalog(Path(manifest_path))
@@ -128,6 +131,19 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
             return jsonify({"error": "Some jobs could not be cancelled.", "responses": responses}), 502
         return jsonify({"status": "ok", "responses": responses})
 
+    @viewer.post("/api/dag/service/stop/<path:dag_id>/<path:job_id>")
+    def stop_service(dag_id, job_id):
+        dag = current_dag(dag_id)
+        job = next((item for item in dag["jobs"] if item["id"] == job_id), None) if dag else None
+        if job is None or not job.get("service_lifecycle"):
+            return jsonify({"error": "Service not found in this pipeline."}), 404
+        if job["service_lifecycle"] != "READY":
+            return jsonify({"error": f"Service is {job['service_lifecycle'].lower()}, not ready."}), 409
+        response = communicate(stop_service_opcode, job_id)
+        if not response or str(response).startswith("ERROR"):
+            return jsonify({"error": response or "Master did not respond to the stop request."}), 502
+        return jsonify({"status": "ok", "response": response, "lifecycle": "STOPPING"})
+
     def local_shared_roots():
         """Return bounded local worker workspaces visible to this dashboard.
 
@@ -148,16 +164,22 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
             worker_root = worker_root / "titan_workspace"
         return roots
 
-    def workspace_file_records(dag_id, job_id):
-        dag = next((item for item in snapshot()["dags"] if item["id"] == dag_id), None)
-        if not dag or not any(job["id"] == job_id for job in dag["jobs"]):
+    def workspace_file_records(dag_id, job_id, requested_run=None):
+        current = next((item for item in snapshot()["dags"] if item["id"] == dag_id), None)
+        dag = current
+        if requested_run and current and requested_run != current.get("submitted"):
+            dag = catalog.historical_snapshot(current["name"], requested_run)
+        job = next((item for item in dag["jobs"] if item["id"] == job_id), None) if dag else None
+        if job is None:
             abort(404)
+        historical = bool(requested_run and current
+                          and requested_run != current.get("submitted"))
         run_started = int(dag.get("submitted") or 0)
         metadata = catalog.metadata(job_id)
         log_offset = metadata.get("log_offset", 0) if isinstance(metadata, dict) else 0
         primary_shared = (workspace / "shared").resolve()
         files_by_name = {}
-        for shared in local_shared_roots():
+        for shared in (() if historical else local_shared_roots()):
             log = shared / f"{job_id}.log"
             artifact_root = shared / "artifacts" / job_id
             candidates = [log]
@@ -195,12 +217,29 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
                         files_by_name[relative] = record
                 except OSError:
                     continue
+        # Cross-VM workers upload outputs into the master's asset store rather
+        # than its local workspace. A job's declared outputs provide a bounded,
+        # explicit mapping from producer to downloadable asset without scanning
+        # or exposing unrelated uploads.
+        for filename in job.get("spec", {}).get("expected_outputs") or []:
+            if (not isinstance(filename, str) or not filename
+                    or Path(filename).name != filename or filename in files_by_name):
+                continue
+            files_by_name[filename] = {
+                "name": filename,
+                "size": None,
+                "kind": "Titan artifact",
+                "url": url_for("dag_viewer.download_asset", dag_id=dag_id,
+                               job_id=job_id, filename=filename,
+                               run=dag.get("submitted")),
+                "_modified": run_started,
+            }
         return sorted(files_by_name.values(), key=lambda item: (
             item["kind"] != "Job log", item["name"]))[:200]
 
-    def workspace_files(dag_id, job_id):
+    def workspace_files(dag_id, job_id, requested_run=None):
         return [{key: value for key, value in item.items() if not key.startswith("_")}
-                for item in workspace_file_records(dag_id, job_id)]
+                for item in workspace_file_records(dag_id, job_id, requested_run)]
 
     def shared_file_records():
         files_by_name = {}
@@ -242,7 +281,8 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
 
     @viewer.get("/api/dag/files/<path:dag_id>/<path:job_id>")
     def list_files(dag_id, job_id):
-        return jsonify({"files": workspace_files(dag_id, job_id)})
+        return jsonify({"files": workspace_files(
+            dag_id, job_id, request.args.get("run", type=int))})
 
     @viewer.get("/api/dag/shared_files")
     def list_shared_files():
@@ -262,6 +302,28 @@ def create_blueprint(communicate, stats_opcode, logs_opcode, manifest_path, yaml
                              mimetype="text/plain")
         return send_file(item["_path"], as_attachment=True,
                          download_name=Path(filename).name)
+
+    @viewer.get("/api/dag/artifact/<path:dag_id>/<path:job_id>/<path:filename>")
+    def download_asset(dag_id, job_id, filename):
+        current = next((item for item in snapshot()["dags"] if item["id"] == dag_id), None)
+        requested_run = request.args.get("run", type=int)
+        dag = current
+        if requested_run and current and requested_run != current.get("submitted"):
+            dag = catalog.historical_snapshot(current["name"], requested_run)
+        job = next((item for item in dag["jobs"] if item["id"] == job_id), None) if dag else None
+        declared = job.get("spec", {}).get("expected_outputs") or [] if job else []
+        if (job is None or filename not in declared or Path(filename).name != filename):
+            abort(404)
+        encoded = communicate(fetch_asset_opcode, filename)
+        if not encoded or encoded.startswith(("ERROR", "ASSET_NOT_FOUND")):
+            abort(404)
+        try:
+            content = base64.b64decode(encoded, validate=True)
+        except (ValueError, binascii.Error):
+            abort(502)
+        return send_file(io.BytesIO(content), as_attachment=True,
+                         download_name=filename,
+                         mimetype="application/octet-stream")
 
     @viewer.get("/api/dag/shared_file/<path:filename>")
     def download_shared_file(filename):
